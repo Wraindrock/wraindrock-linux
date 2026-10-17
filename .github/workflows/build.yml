@@ -304,7 +304,10 @@ jobs:
           repo="${IMAGE#*/}"
           manifest="${RUNNER_TEMP}/anonymous-manifest.json"
           token="$(curl -fsSL "https://${registry}/token?service=${registry}&scope=repository:${repo}:pull" | jq -r .token)"
-          code="$(curl -sS -o "${manifest}" -w '%{http_code}' \
+          # -L: GHCR answers blob reads with a redirect to a pre-signed CDN URL.
+          # curl does not forward the Authorization header across hosts, which is
+          # fine because the redirect target is already signed.
+          code="$(curl -sSL --max-redirs 5 -o "${manifest}" -w '%{http_code}' \
             -H "Authorization: Bearer ${token}" \
             -H 'Accept: application/vnd.oci.image.manifest.v1+json, application/vnd.docker.distribution.manifest.v2+json' \
             "https://${registry}/v2/${repo}/manifests/${DIGEST}")"
@@ -314,7 +317,7 @@ jobs:
             exit 1
           fi
           config_digest="$(jq -er '.config.digest' "${manifest}")"
-          code="$(curl -sS -o /dev/null -w '%{http_code}' \
+          code="$(curl -sSL --max-redirs 5 -o /dev/null -w '%{http_code}' \
             -H "Authorization: Bearer ${token}" \
             "https://${registry}/v2/${repo}/blobs/${config_digest}")"
           if [[ ${code} != 200 ]]; then
