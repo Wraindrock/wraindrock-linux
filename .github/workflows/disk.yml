@@ -215,7 +215,10 @@ jobs:
           version="${{ steps.image.outputs.version }}"
           revision="${{ steps.image.outputs.revision }}"
           digest="${{ steps.image.outputs.digest }}"
-          ref="ghcr.io/${GITHUB_REPOSITORY_OWNER}/wrainrock-linux-disk:${version}"
+          # GHCR repository paths are lowercase; GITHUB_REPOSITORY_OWNER keeps
+          # the account's casing ("Wraindrock"), which oras rejects.
+          owner=$(printf '%s' "${GITHUB_REPOSITORY_OWNER}" | tr '[:upper:]' '[:lower:]')
+          ref="ghcr.io/${owner}/wrainrock-linux-disk:${version}"
           iso=$(find output/bootiso -name '*.iso' -print -quit)
           qcow2=$(find output/qcow2 -name '*.qcow2' -print -quit)
           [ -n "${iso}" ] && [ -n "${qcow2}" ]
@@ -266,11 +269,12 @@ jobs:
 
           # Anonymous fetch proves the package is public, like build.yml's
           # anonymous image pull check.
-          token=$(curl -fsS "https://ghcr.io/token?service=ghcr.io&scope=repository:${GITHUB_REPOSITORY_OWNER}/wrainrock-linux-disk:pull" \
+          token=$(curl -fsS "https://ghcr.io/token?service=ghcr.io&scope=repository:${owner}/wrainrock-linux-disk:pull" \
             | python3 -c 'import json,sys; print(json.load(sys.stdin)["token"])')
           code=$(curl -sS -o /dev/null -w '%{http_code}' -H "Authorization: Bearer ${token}" \
             -H 'Accept: application/vnd.oci.image.manifest.v1+json' \
-            "https://ghcr.io/v2/${GITHUB_REPOSITORY_OWNER}/wrainrock-linux-disk/manifests/${version}")
+            "https://ghcr.io/v2/${owner}/wrainrock-linux-disk/manifests/${version}")
+          [ -n "${token}" ] || { echo "::error::cannot obtain an anonymous ghcr token; is the package public?"; exit 1; }
           [ "${code}" = 200 ] || { echo "::error::anonymous manifest fetch returned ${code}; is the package public?"; exit 1; }
           echo "anonymous manifest fetch: ${code}"
 
