@@ -102,8 +102,11 @@ sha256sum -c SHA256SUMS
   reboots into GDM.
 
 Both artifacts are built from a pinned `bootc-image-builder` digest and record
-the source image version, revision and resolved digest in the run summary. They
-are CI artifacts today; attaching them to a GitHub release is a later step.
+the source image version, revision and resolved digest in the run summary. The
+workflow also boots the ISO under KVM (`vm_test`, on by default), installs it to
+a scratch disk, and requires the installed system to reach its graphical
+welcome/login screen before the run turns green. They are CI artifacts today;
+attaching them to a GitHub release is a later step.
 
 ## Verify what you booted
 

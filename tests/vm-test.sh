@@ -6,7 +6,13 @@
 # them reaches a graphical login.
 #
 #   tests/vm-test.sh qcow2 PATH [--timeout 300]
-#   tests/vm-test.sh iso   PATH [--timeout 1200] [--disk-size 30G]
+#   tests/vm-test.sh iso   PATH [--timeout 1800] [--disk-size 30G]
+#
+# For an ISO the installer boots once, then the firmware boots the installed
+# disk. The ISO mode does not trust serial output (Anaconda installs a system
+# whose kernel may keep console=tty0), so it instead requires the installed
+# system's graphical screen: the GNOME welcome screen (compared against
+# tests/fixtures/gnome-initial-setup.png) or the Wrainrock GDM wallpaper.
 #
 # KVM is used when /dev/kvm is usable; otherwise QEMU falls back to TCG (slow,
 # but enough for a smoke test). Screenshots land in a temp directory unless
@@ -24,12 +30,15 @@ timeout=0
 out_dir=""
 disk_size="30G"
 expect_hostname="wrainrock"
+script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+screen_ref="${script_dir}/fixtures/gnome-initial-setup.png"
 while [[ $# -gt 0 ]]; do
     case "$1" in
         --timeout) timeout="$2"; shift 2 ;;
         --out) out_dir="$2"; shift 2 ;;
         --disk-size) disk_size="$2"; shift 2 ;;
         --expect-hostname) expect_hostname="$2"; shift 2 ;;
+        --screen-ref) screen_ref="$2"; shift 2 ;;
         *) echo "unknown argument: $1" >&2; exit 2 ;;
     esac
 done
@@ -47,7 +56,7 @@ for tool in qemu-system-x86_64 qemu-img python3; do
 done
 
 if [[ -z "${timeout}" || "${timeout}" == 0 ]]; then
-    if [[ "${mode}" == iso ]]; then timeout=1200; else timeout=300; fi
+    if [[ "${mode}" == iso ]]; then timeout=1800; else timeout=300; fi
 fi
 if [[ -z "${out_dir}" ]]; then
     out_dir="$(mktemp -d "${TMPDIR:-/tmp}/wrainrock-vm.XXXXXX")"
@@ -96,15 +105,17 @@ qemu_args=(
     -serial "file:${serial}"
     -monitor none
     -qmp "unix:${qmp},server=on,wait=off"
-    -boot "order=d,menu=off"
 )
 
 if [[ "${mode}" == qcow2 ]]; then
-    qemu_args+=(-drive "file=${artifact},if=virtio,format=qcow2")
+    qemu_args+=(-boot "order=c,menu=off" -drive "file=${artifact},if=virtio,format=qcow2")
 else
     disk="${out_dir}/disk.qcow2"
     qemu-img create -f qcow2 "${disk}" "${disk_size}" >/dev/null
+    # Boot the installer once; after its reboot the firmware falls back to the
+    # disk, so the install is not repeated forever.
     qemu_args+=(
+        -boot "once=d,menu=off"
         -drive "file=${artifact},media=cdrom,readonly=on"
         -drive "file=${disk},if=virtio,format=qcow2"
     )
@@ -164,6 +175,9 @@ start=$(date +%s)
 best_file=""
 best_size=0
 count=0
+install_finished=0
+screen_hits=0
+screen_ok=0
 while :; do
     now=$(date +%s)
     elapsed=$((now - start))
@@ -193,11 +207,34 @@ while :; do
     # also non-trivial, so this is a lower bound, not proof of GDM; the human
     # reviewing the screenshot makes that call. The threshold rejects a blank
     # or stuck-black framebuffer.
+    if [[ "${install_finished}" == 0 ]] && grep -Fq 'Install finished' "${serial}" 2>/dev/null; then
+        install_finished=${now}
+        echo "installer finished at t=${elapsed}s; waiting for the installed system"
+    fi
+    if [[ "${mode}" == iso && "${install_finished}" != 0 && -s "${frame}" ]]; then
+        # The installed system may show the GNOME welcome screen (white) or the
+        # GDM login screen (the Wrainrock wallpaper). Both prove that the
+        # graphical stack came up; an Anaconda screen matches neither.
+        blue=$(python3 "${script_dir}/png-stats.py" "${frame}" | sed 's/.*blue=//')
+        diff=$(python3 "${script_dir}/png-stats.py" "${frame}" "${screen_ref}" | awk '{print $NF}')
+        if python3 -c "import sys; sys.exit(0 if float('${blue}') >= 0.6 or float('${diff}') <= 25 else 1)" 2>/dev/null; then
+            screen_hits=$((screen_hits + 1))
+            echo "graphical screen after install (blue=${blue} diff=${diff}, hit ${screen_hits}/2)"
+            if [[ "${screen_hits}" -ge 2 ]]; then
+                screen_ok=1
+                echo "detected the installed system's graphical screen; stopping"
+                break
+            fi
+        else
+            screen_hits=0
+        fi
+    fi
     sleep 20
-    # The installer environment is text-only; gdm.service plus a getty prompt
-    # means the installed system finished booting. Break early instead of
-    # burning the whole timeout.
-    if grep -Fq 'gdm.service' "${serial}" 2>/dev/null &&
+    # A serial getty carries the kernel hostname even when nobody logs in; on
+    # systems whose kernel keeps console=tty0 that is the end-to-end hostname
+    # check. Break early instead of burning the whole timeout.
+    if [[ "${mode}" == qcow2 ]] &&
+       grep -Fq 'gdm.service' "${serial}" 2>/dev/null &&
        grep -Fq "${expect_hostname} login:" "${serial}" 2>/dev/null; then
         echo "detected a graphical login on ${expect_hostname}; stopping"
         break
@@ -220,6 +257,15 @@ if [[ "${best_size}" -le 30000 ]]; then
     exit 1
 fi
 echo "PASS: captured a non-trivial frame; inspect ${best_file}"
+
+if [[ "${mode}" == iso ]]; then
+    if [[ "${screen_ok}" != 1 ]]; then
+        echo "FAIL: the installed system never reached a graphical welcome/login screen" >&2
+        exit 1
+    fi
+    echo "PASS: the ISO installer finished and the installed system reached its graphical screen"
+    exit 0
+fi
 
 # A getty prompt carries the kernel hostname even when no user logs in. This is
 # the end-to-end check that DEFAULT_HOSTNAME survived into the installed system;

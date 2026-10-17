@@ -335,6 +335,26 @@ else
     fail "disk_config/disk.toml is missing"
 fi
 
+echo "VM harness"
+if [[ -s tests/fixtures/gnome-initial-setup.png ]]; then
+    pass "GNOME welcome reference frame"
+else
+    fail "tests/fixtures/gnome-initial-setup.png is missing"
+fi
+if python3 -m py_compile tests/png-stats.py 2>/dev/null; then
+    pass "tests/png-stats.py compiles"
+else
+    fail "tests/png-stats.py does not compile"
+fi
+rm -rf tests/__pycache__
+for needle in 'Install finished' 'once=d' 'screen_ok' 'png-stats.py'; do
+    if grep -Fq -e "${needle}" tests/vm-test.sh; then
+        pass "vm-test.sh handles: ${needle}"
+    else
+        fail "tests/vm-test.sh is missing: ${needle}"
+    fi
+done
+
 echo "secrets"
 if grep -rInE 'gh[pousr]_[A-Za-z0-9]{20,}|BEGIN (RSA|OPENSSH|EC) PRIVATE KEY' \
         --exclude-dir=.git . >/dev/null 2>&1; then

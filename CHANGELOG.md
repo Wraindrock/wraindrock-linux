@@ -16,13 +16,19 @@ image versions are the Fedora channel plus an immutable build tag, see
   the bootable MBR signature, `EFI/BOOT/BOOTX64.EFI` and `images/`, writes
   `SHA256SUMS`, and uploads both artifacts.
 - `disk_config/disk.toml`: qcow2 root filesystem sized at 20 GiB.
+- The `disk` workflow boots the ISO under QEMU/KVM (`vm_test`, default true),
+  installs it to a scratch disk, boots the installed system and requires the
+  GNOME welcome screen or the Wrainrock GDM wallpaper before passing. The VM
+  harness (`tests/vm-test.sh`, `tests/png-stats.py`) is shared with local runs;
+  qcow2 mode still asserts `gdm.service` and the `wrainrock` serial getty.
 
 ### Fixed
 
 - The image no longer contains the builder's empty `/etc/hostname` placeholder:
-  `podman build --no-hostname` keeps the file out and parity asserts its
-  absence, so a fresh install uses `DEFAULT_HOSTNAME` (`wrainrock`) instead of
-  the kernel default `fedora`.
+  `podman build --no-hostname` keeps the file out, so a fresh install uses
+  `DEFAULT_HOSTNAME` (`wrainrock`) instead of the kernel default `fedora`.
+  (Parity cannot assert the absence: `podman run` injects `/etc/hostname` at
+  runtime. `tests/lint.sh` asserts the `--no-hostname` build flag instead.)
 
 ### Documented
 
