@@ -32,6 +32,23 @@ container without capabilities cannot build images (you will see
 `cannot write setgroups file` or lock-file errors — that is the environment, not
 the repository).
 
+## Local VM test
+
+`tests/vm-test.sh` boots a disk image under QEMU and captures screenshots until
+it sees a non-trivial frame:
+
+```bash
+tests/vm-test.sh qcow2 artifacts/wrainrock-*-qcow2/disk.qcow2 --timeout 300
+tests/vm-test.sh iso   artifacts/wrainrock-*-iso/disk.iso   --timeout 1200
+```
+
+It uses KVM when `/dev/kvm` is readable *and* writable, otherwise it falls back
+to TCG (slow but usable). The script does not attach a network device: the
+qcow2 does not need one and the ISO carries its kickstart on the media.
+Screenshots are written next to the serial log; open the best frame to confirm
+that GDM appears. The script cannot prove GDM by itself — it only proves that
+QEMU rendered something, so a human still looks at the PNG.
+
 Open a pull request against `main`. PRs run lint, build, parity and smoke tests
 and never publish. A maintainer merges only after those are green.
 

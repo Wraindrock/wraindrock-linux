@@ -1,6 +1,7 @@
 # Build outputs kept out of the tree
 _build/
 out/
+artifacts/
 *.iso
 *.qcow2
 *.raw
