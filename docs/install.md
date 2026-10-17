@@ -1,6 +1,6 @@
 # Installing Wrainrock Linux
 
-Wrainrock v0.1 is installed **on top of an existing Fedora Atomic Desktop**. It
+Wrainrock v0.2 is installed **on top of an existing Fedora Atomic Desktop**. It
 is a `bootc switch`, not a repartition: your home directory, flatpaks, containers
 and user data are untouched. The switch adds a new boot deployment; your current
 system stays on disk as the rollback target.
@@ -25,8 +25,8 @@ bootc status
 ```
 
 You should see `Booted: ...` and a `Base:` image. On a non-bootc system (plain
-Workstation, rpm-ostree from before the bootc split) stop here — v0.1 does not
-ship an installer.
+Workstation, rpm-ostree from before the bootc split) stop here — Wrainrock does
+not ship an installer yet; that is v0.3 on the roadmap.
 
 ## Preheat checks
 
@@ -58,10 +58,10 @@ Run these once. Five minutes now avoids a bad afternoon.
    sudo bootc status > ~/bootc-status-before-switch.txt
    ```
 
-4. **Secure Boot.** Wrainrock v0.1 ships Fedora's signed kernels and shim,
-   unmodified. Secure Boot is expected to work, but v0.1 has not been validated
-   on Secure Boot hardware. If you dual-boot with a custom key setup, read your
-   firmware's recovery path before switching.
+4. **Secure Boot.** Wrainrock ships Fedora's signed kernels and shim,
+   unmodified. Secure Boot is expected to work, but the branded image has not
+   been validated on Secure Boot hardware. If you dual-boot with a custom key
+   setup, read your firmware's recovery path before switching.
 
 ## Switch
 
@@ -91,6 +91,32 @@ bootc status
 - `Booted:` should reference `ghcr.io/wraindrock/wrainrock-linux:44`.
 - The previous Silverblue deployment should still be listed as the rollback
   deployment.
+
+```bash
+cat /usr/lib/os-release
+# NAME="Wrainrock Linux"
+# ID=wrainrock
+# ID_LIKE="fedora"
+```
+
+`PRETTY_NAME` keeps the base Fedora version (`Wrainrock Linux 44.<build>
+(Silverblue)`): the version tells you which Fedora release and update window
+you are actually running.
+
+```bash
+cat /usr/share/wrainrock/delta.json
+```
+
+Every intended difference from the base is listed there. If the image differs
+from the base in any other way, that is a bug — report it.
+
+```bash
+hostnamectl
+```
+
+The default hostname for new installs is `wrainrock`, but on a `bootc switch`
+the existing static hostname in `/etc/hostname` wins. Change it with
+`sudo hostnamectl set-hostname <name>`; this does not modify the image.
 
 ```bash
 cat /usr/share/wrainrock/build-info.json
@@ -217,8 +243,8 @@ did not stage — re-run it and read the error.
 
 ### Secure Boot refuses to boot Wrainrock
 
-**Cause:** v0.1 uses Fedora's signed kernels, but a custom key enrollment or a
-non-standard shim can break the chain.
+**Cause:** Wrainrock uses Fedora's signed kernels, but a custom key enrollment or
+a non-standard shim can break the chain.
 
 **Fix:** enroll Fedora's key or disable Secure Boot after understanding the risk;
 this is a firmware/key-management issue, not an image defect.

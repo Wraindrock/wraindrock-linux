@@ -3,7 +3,7 @@
 Each milestone is a reviewable change set with a test that fails before it and
 passes after it. Nothing is "done" because the image builds.
 
-## v0.1 — parity bootstrap (current)
+## v0.1 — parity bootstrap (done)
 
 **Goal:** prove the whole pipeline on an image that is *exactly* Fedora
 Silverblue 44.
@@ -21,27 +21,40 @@ Silverblue 44.
 
 **Non-goals:** branding, package changes, installer ISO, automatic updates.
 
-## v0.2 — first real customization
+## v0.2 — branded identity (current)
 
 **Goal:** make Wrainrock *Wrainrock*, without touching the OS machinery.
 
-- `os-release` identity (`NAME="Wrainrock Linux"`, `VARIANT="Wrainrock"`,
-  `ID=wrainrock`, `ID_LIKE="fedora"`, `VERSION_ID=44`, `HOME_URL`, `BUG_REPORT_URL`)
-- Branding package: wallpapers, logo, GDM background
-- Default applications decision (start with *no removals*: add nothing, remove
-  nothing until the branding pipeline is stable)
-- Parity test relaxed to "base **plus** recorded deltas": each change must be
-  listed in a manifest that CI diffs against the actual RPM/file delta, so
-  unintended drift still fails
-- `/usr/share/wrainrock/build-info.json` gains `customizations[]`
+- [x] `os-release` identity: `NAME="Wrainrock Linux"`, `PRETTY_NAME` derived from
+      the base version, `ID=wrainrock`, `ID_LIKE="fedora"`, `LOGO`,
+      `DEFAULT_HOSTNAME="wrainrock"`, project URLs, `CPE_NAME`
+- [x] `VERSION`, `VERSION_ID`, `OSTREE_VERSION` and `SUPPORT_END` stay Fedora's:
+      the update cadence and support window are not ours to rewrite yet
+- [x] Placeholder logo: black `Wrainrock` wordmark (long) and `W` mark (short)
+      with a thin blue outline, shipped as SVG **outlines** so rendering never
+      depends on a font being installed
+- [x] GDM login logo through `zz-wrainrock.gschema.override`; Fedora's own
+      override is left untouched
+- [x] `delta.json` manifest; the parity test relaxes to "base **plus exactly**
+      the recorded delta", and cross-checks every declared value
+- [x] No package changes: the RPM set is still identical, and a lint rule fails
+      the build if `build.sh` grows a package install
+- [x] `bootc container lint` and the smoke test stay green on the branded image
 
-**Test that must fail first:** a new test asserts `NAME="Wrainrock Linux"` in
-`/usr/lib/os-release`; it fails on v0.1 and passes on v0.2.
+**Test that must fail first:** `tests/parity.sh` asserts `NAME="Wrainrock Linux"`
+in `/usr/lib/os-release`; that assertion fails on v0.1 and passes on v0.2.
+
+**Known limit:** the black wordmark has low contrast on a dark GDM background.
+The background is Fedora's until the wallpaper/GDM work in v0.3.
+
+**Non-goals:** package changes, wallpapers, Plymouth, GRUB theme, installer ISO,
+automatic updates. The identity delta is deliberately the only delta.
 
 ## v0.3 — installable ISO
 
 **Goal:** a fresh machine can be installed without an existing Fedora system.
 
+- Branding package: wallpapers, GDM background, Plymouth splash, GRUB theme
 - `bootc-image-builder` produces an Anaconda ISO in CI
 - Automated VM install test (qemu + kickstart) boots to GDM
 - ISO artifact uploaded to the GitHub release with checksums

@@ -287,23 +287,41 @@ jobs:
             --certificate-oidc-issuer "https://token.actions.githubusercontent.com" \
             "${IMAGE}@${DIGEST}"
 
-      - name: Make the package public (best effort)
+      - name: Anonymous pull check (package must be public)
         if: github.ref == 'refs/heads/main'
-        continue-on-error: true
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          PACKAGE: ${{ steps.meta.outputs.image_name }}
+          IMAGE: ${{ steps.meta.outputs.image }}
+          DIGEST: ${{ steps.published.outputs.digest }}
         run: |
           set -euo pipefail
-          # GHCR packages are private by default. The workflow token may not be
-          # allowed to change visibility; if it is not, the owner flips it once
-          # in the package settings and this warning is the reminder.
-          if gh api --method PATCH "/user/packages/container/${PACKAGE}" \
-               -f visibility=public >/dev/null; then
-            echo "package ${PACKAGE} is public"
-          else
-            echo "::warning::could not make the package public with GITHUB_TOKEN; set it in the package settings"
+          # A freshly installed bootc host has no registry credentials, so the
+          # published manifest and its config blob must be readable anonymously.
+          # Query the registry API directly instead of `podman pull`: the image
+          # is still in local storage, so a pull could pass without touching the
+          # network. The workflow token cannot change package visibility; if
+          # this fails, flip it once in the package settings linked below.
+          registry="${IMAGE%%/*}"
+          repo="${IMAGE#*/}"
+          manifest="${RUNNER_TEMP}/anonymous-manifest.json"
+          token="$(curl -fsSL "https://${registry}/token?service=${registry}&scope=repository:${repo}:pull" | jq -r .token)"
+          code="$(curl -sS -o "${manifest}" -w '%{http_code}' \
+            -H "Authorization: Bearer ${token}" \
+            -H 'Accept: application/vnd.oci.image.manifest.v1+json, application/vnd.docker.distribution.manifest.v2+json' \
+            "https://${registry}/v2/${repo}/manifests/${DIGEST}")"
+          if [[ ${code} != 200 ]]; then
+            echo "::error::anonymous manifest fetch failed for ${IMAGE}@${DIGEST} (HTTP ${code})"
+            echo "make the package public: https://github.com/users/${GITHUB_REPOSITORY_OWNER}/packages/container/${IMAGE##*/}/settings"
+            exit 1
           fi
+          config_digest="$(jq -er '.config.digest' "${manifest}")"
+          code="$(curl -sS -o /dev/null -w '%{http_code}' \
+            -H "Authorization: Bearer ${token}" \
+            "https://${registry}/v2/${repo}/blobs/${config_digest}")"
+          if [[ ${code} != 200 ]]; then
+            echo "::error::anonymous config blob fetch failed for ${IMAGE}@${DIGEST} (HTTP ${code})"
+            exit 1
+          fi
+          echo "anonymous manifest + config blob accessible: ${IMAGE}@${DIGEST}"
 
       - name: Job summary
         env:

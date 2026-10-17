@@ -43,8 +43,8 @@ sudo bootc switch quay.io/fedora/fedora-silverblue:44
 sudo systemctl reboot
 ```
 
-This is the cleanest "uninstall" for v0.1: your data stays, and the next boot is
-plain Fedora. Do this before reporting an install problem if you need a working
+This is the cleanest "uninstall": your data stays, and the next boot is plain
+Fedora. Do this before reporting an install problem if you need a working
 machine quickly.
 
 ## If the system does not boot
@@ -59,8 +59,8 @@ machine quickly.
    attempt to "repair" the deployment by editing files in place — switch to a
    known-good image instead.
 4. **Reinstall as a last resort.** Back up `/home` from the live environment
-   first. v0.1 has no installer of its own; reinstall Silverblue with Anaconda
-   and then `bootc switch` back if you want Wrainrock again.
+   first. Wrainrock has no installer of its own yet; reinstall Silverblue with
+   Anaconda and then `bootc switch` back if you want Wrainrock again.
 
 ## What rollback does *not* recover
 

@@ -6,9 +6,11 @@
    not evidence. For image changes, that means a new assertion in
    `tests/parity.sh`, `tests/smoke.sh` or `tests/lint.sh` that is red on `main`
    and green with your change.
-2. **Do not weaken the parity test to make a build pass.** If customization
-   intentionally changes the RPM set, update the delta manifest and the test
-   together, in the same PR, with the reason in the commit message.
+2. **Do not weaken the parity test to make a build pass.** The image may differ
+   from its base only in ways listed in `/usr/share/wrainrock/delta.json`. A new
+   customization means extending the manifest *and* the test's expected sets in
+   the same PR, with the reason in the commit message — never deleting an
+   assertion or widening the diff to "anything goes".
 3. **Never overwrite a published immutable tag.** The workflow enforces this;
    do not add an override.
 4. **No secrets in the repository.** No tokens, keys, PATs, authfiles. CI uses
@@ -69,6 +71,9 @@ Prefer not to patch. When a build-time patch is unavoidable:
 - [ ] `bash tests/lint.sh` passes
 - [ ] parity/smoke pass for image changes
 - [ ] new behaviour has an assertion that fails without the change
+- [ ] any new deviation from the base is in `delta.json` and the parity test's
+      expected sets (no silent widening of the diff)
+- [ ] branding assets are SVG outlines, not `<text>` (no font dependency)
 - [ ] docs updated (install, rollback, architecture or roadmap as relevant)
 - [ ] no new secrets, no new long-lived credentials
 - [ ] immutable-tag and signing logic untouched unless the PR is specifically

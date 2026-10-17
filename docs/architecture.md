@@ -19,7 +19,7 @@ installed or switched to as an OS. We consume them as an OCI base layer, pin the
 resolved digest at build time, and record it in the image.
 
 The choice of Silverblue over `fedora-bootc` is deliberate: `fedora-bootc` is a
-minimal image with no desktop. Wrainrock v0.1 wants exactly the GNOME desktop
+minimal image with no desktop. Wrainrock wants exactly the GNOME desktop
 that Fedora ships and maintains, with Fedora's kernel, firmware, driver and
 update cadence. Owning that stack ourselves is a v0.4+ decision, not a bootstrap
 one.
@@ -44,7 +44,7 @@ image.env ──► workflow (lint) ──► pull base, resolve digest
                               Containerfile (FROM digest-pinned base)
                                         │
                               build_files/build.sh
-                              (assert base identity, write provenance)
+                              (assert base identity, brand, write delta)
                                         │
                               bootc container lint
                                         │
@@ -60,32 +60,68 @@ image.env ──► workflow (lint) ──► pull base, resolve digest
 Everything is driven by `image.env`, so "which Fedora release is this?" is a
 one-line, reviewable change.
 
-### The parity invariant (v0.1)
+### The delta invariant (v0.2)
 
-For v0.1 the repository enforces a single strong invariant:
+v0.1 enforced "identical to Fedora Silverblue". v0.2 keeps the falsifiable part
+and makes the allowed difference machine-checkable:
 
-> The image's RPM set and `/usr/lib/os-release` are identical to the base
-> image's. The only added files are under `/usr/share/wrainrock/`.
+> The image's RPM set is identical to the base's. `/usr/lib/os-release` differs
+> only in the identity keys listed in `/usr/share/wrainrock/delta.json`, and
+> every added file is declared there.
 
-The parity test diffs `rpm -qa` between the base and the built image and diffs
-`/usr/lib/os-release`. This is what makes v0.1 falsifiable: a green build is
-proof that the pipeline is a faithful reproducer, not that we "customized
-something and hope".
+The parity test still diffs `rpm -qa`. For os-release it parses both files and
+allows only the changed keys `NAME`, `PRETTY_NAME`, `ID`, `LOGO`,
+`DEFAULT_HOSTNAME`, the four URLs and `CPE_NAME`, plus the added `ID_LIKE`. A
+removed, added or changed key outside that set fails the build; each declared
+value is then cross-checked against the actual file, so the manifest cannot
+drift into a polite fiction. The test also proves the GDM override is compiled
+into `gschemas.compiled` and that `rpm -V --nomtime
+fedora-release-identity-silverblue` reports exactly one modified file,
+`/usr/lib/os-release`. (`--nomtime` is required: image layers store mtime 0 for
+ostree hardlinks while rpm headers record build time, so the timestamp check
+would flag every file and hide the real diff.)
 
-Once v0.2 starts changing the system, this invariant is deliberately relaxed:
-the test moves from "identical" to "superset, with recorded deltas". The
-mechanism itself (compare against base, fail on unexpected drift) stays.
+Adding a customization therefore means adding it to the manifest **and**
+teaching the test about it — never relaxing the diff.
+
+### Branding
+
+The v0.2 delta is identity-only on purpose:
+
+| Change | Mechanism |
+| --- | --- |
+| display name, pretty name, ID, `ID_LIKE` | `sed` on `/usr/lib/os-release` |
+| logo icon (`Settings` → `About`) | `/usr/share/icons/hicolor/scalable/apps/wrainrock-logo-icon.svg` |
+| GDM login logo | `/usr/share/pixmaps/wrainrock-gdm-logo.{svg,png}` + `zz-wrainrock.gschema.override` |
+| default hostname | `DEFAULT_HOSTNAME` (the booted hostname is still set by the installer/`/etc/hostname`) |
+
+The logo assets are generated outlines, not `<text>`: rendering does not depend
+on Cantarell or any other font being present. GDM merges gschema overrides in
+name order, so a `zz-` file wins over Fedora's own; Fedora's file is left
+untouched. Known caveat: the wordmark is black, so on a dark GDM background it
+has low contrast. Fixing that belongs to the wallpaper/GDM-background work in
+v0.3, not to the identity patch.
+
+`gtk-update-icon-cache` is deliberately not run: the hicolor theme resolves
+scalable SVGs without a cache, and skipping it avoids a generated
+`icon-theme.cache` that would be one more unowned delta. `glib-compile-schemas`
+*is* run, because GSettings only reads compiled schemas; that rewrites
+`/usr/share/glib-2.0/schemas/gschemas.compiled`, which the delta lists under
+`files.modified`.
 
 ### Provenance
 
-`build_files/build.sh` writes two files:
+`build_files/build.sh` writes three files:
 
 - `/usr/share/wrainrock/build-info.json` — schema, image/version, build
-  number, git SHA, build date, base image + digest, Fedora version, parity
+  number, git SHA, build date, base image + digest, Fedora version, identity
   marker, RPM count, RPM-set SHA-256.
+- `/usr/share/wrainrock/delta.json` — every intended difference from the base:
+  changed/added os-release keys with their actual values, modified files and
+  added files. This is the manifest the parity test enforces.
 - `/usr/share/wrainrock/base-os-release` — pristine copy of the base's
-  `/usr/lib/os-release`, so "what was this built from?" survives even after
-  `/usr/lib/os-release` is customized in later versions.
+  `/usr/lib/os-release`, so "what was this built from?" survives even though
+  the live file is now branded.
 
 The build fails if the base is not `ID=fedora`, `VERSION_ID=44`,
 `VARIANT_ID=silverblue`, or if `/usr/bin/bootc` / `/usr/lib/bootc` are missing.
@@ -166,9 +202,10 @@ These are design decisions, not backlog items:
 2. **A package manager that mutates the live root.** `rpm-ostree install` layers
    are a user escape hatch on the installed system, not a Wrainrock feature. The
    image is the unit of change.
-3. **Forking Fedora packages or the kernel in v0.1.** There is nothing Wrainrock
-   can meaningfully test about a forked glibc or kernel yet. Build-time patches,
-   when they arrive, must assert a single match and be recorded in `PATCHES.md`.
+3. **Forking Fedora packages or the kernel through v0.2.** There is nothing
+   Wrainrock can meaningfully test about a forked glibc or kernel yet. Build-time
+   patches, when they arrive, must assert a single match and be recorded in
+   `PATCHES.md`.
 4. **KDE/XFCE/other spins.** One variant until one variant is reliable.
 5. **TLS / disk encryption / installer UX.** Handled by Fedora/Anaconda/bootc;
    reimplementing it is how distributions die.

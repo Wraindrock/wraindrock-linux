@@ -95,6 +95,53 @@ else
     fail "${containerfile} is missing"
 fi
 
+echo "branding"
+for asset in \
+    build_files/branding/wrainrock-logo-icon.svg \
+    build_files/branding/wrainrock-gdm-logo.svg \
+    build_files/branding/wrainrock-gdm-logo.png; do
+    if [[ -s ${asset} ]]; then
+        pass "${asset} exists"
+    else
+        fail "${asset} is missing"
+    fi
+done
+for svg in \
+    build_files/branding/wrainrock-logo-icon.svg \
+    build_files/branding/wrainrock-gdm-logo.svg; do
+    if grep -q '<text' "${svg}"; then
+        fail "${svg} renders text at runtime (use outlines instead)"
+    else
+        pass "${svg} is font-independent"
+    fi
+done
+if grep -Fq '#3C6EB4' build_files/branding/wrainrock-logo-icon.svg &&
+   grep -Fq '#3C6EB4' build_files/branding/wrainrock-gdm-logo.svg; then
+    pass "branding assets use the documented Wrainrock blue"
+else
+    fail "branding assets lost the Wrainrock blue outline"
+fi
+
+echo "build invariants"
+for needle in 'base-os-release' 'delta.json' 'zz-wrainrock.gschema.override'; do
+    if grep -Fq "${needle}" build_files/build.sh; then
+        pass "build.sh handles ${needle}"
+    else
+        fail "build.sh does not handle ${needle}"
+    fi
+done
+if grep -Eq 'dnf[[:space:]]+(install|remove|upgrade|groupinstall)|rpm[[:space:]]+-[iUe]' \
+        build_files/build.sh; then
+    fail "build.sh changes the RPM set; v0.2 must keep it identical to the base"
+else
+    pass "build.sh does not change the RPM set"
+fi
+if grep -Fq 'delta' tests/parity.sh; then
+    pass "parity.sh enforces the delta manifest"
+else
+    fail "parity.sh does not check the delta manifest"
+fi
+
 echo "documentation"
 for doc in README.md docs/architecture.md docs/install.md docs/roadmap.md \
            docs/rollback.md SECURITY.md CHANGELOG.md; do
@@ -110,11 +157,18 @@ if grep -Fq "bootc switch" docs/install.md &&
 else
     fail "docs/install.md does not document a bootc switch command"
 fi
+if grep -Fq 'delta.json' docs/architecture.md &&
+   grep -Fq 'delta.json' docs/install.md; then
+    pass "docs document the delta manifest"
+else
+    fail "docs do not describe /usr/share/wrainrock/delta.json"
+fi
 
 echo "workflow"
 if [[ -r .github/workflows/build.yml ]]; then
     pass "build workflow exists"
-    for needle in 'packages: write' 'id-token: write' 'cosign sign' 'bootc container lint'; do
+    for needle in 'packages: write' 'id-token: write' 'cosign sign' \
+                  'bootc container lint' 'Anonymous pull check'; do
         if grep -Fq "${needle}" .github/workflows/build.yml; then
             pass "workflow contains ${needle}"
         else

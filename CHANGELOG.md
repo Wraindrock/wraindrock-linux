@@ -5,6 +5,49 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 image versions are the Fedora channel plus an immutable build tag, see
 [docs/architecture.md](docs/architecture.md).
 
+## [0.2.0] - 2026-10-17
+
+### Added
+
+- Branded identity: `NAME="Wrainrock Linux"`, `PRETTY_NAME` derived from the base
+  version, `ID=wrainrock` with `ID_LIKE="fedora"`, `LOGO=wrainrock-logo-icon`,
+  `DEFAULT_HOSTNAME="wrainrock"`, project URLs, and
+  `CPE_NAME="cpe:/o:wraindrock:wrainrock_linux:44"`.
+- Placeholder logo assets shipped as SVG **outlines** (no font dependency):
+  `wrainrock-logo-icon.svg` (Settings → About) and
+  `wrainrock-gdm-logo.{svg,png}` (GDM login screen).
+- `zz-wrainrock.gschema.override` so the GDM login screen shows the Wrainrock
+  wordmark; Fedora's own override is left untouched.
+- `/usr/share/wrainrock/delta.json`: the manifest of every intended difference
+  from the base — changed/added os-release keys with their actual values,
+  modified files and added files.
+- CI anonymous-pull check: the published digest must be pullable without
+  credentials, because a freshly installed bootc host has none.
+
+### Changed
+
+- `tests/parity.sh` enforces "base plus exactly the recorded delta" instead of
+  byte-identical os-release: the RPM set must stay identical, os-release may
+  differ only in the manifest's keys (with the recorded values), and
+  `rpm -V --nomtime fedora-release-identity-silverblue` must report exactly one
+  modified file (the mtime check is skipped because ostree hardlinks carry mtime
+  0, not the rpm header's build time).
+- `tests/lint.sh` fails if `build.sh` starts changing the RPM set, and requires
+  the branding assets to be font-independent outlines.
+- The workflow no longer tries to flip GHCR package visibility with
+  `GITHUB_TOKEN` (it lacks `packages` scope); it asserts anonymous
+  pullability instead and fails with the package-settings link if the package is
+  private.
+- `build-info.json` gains `"identity": "wrainrock"`.
+
+### Notes
+
+- `VERSION`, `VERSION_ID`, `OSTREE_VERSION` and `SUPPORT_END` stay Fedora's: the
+  update cadence and support window are not rewritten yet.
+- No package changes: the RPM set is identical to Fedora Silverblue 44.
+- GDM background, wallpapers, Plymouth and GRUB theming move to v0.3.
+- Known limit: the black wordmark has low contrast on a dark GDM background.
+
 ## [0.1.0] - 2026-10-17
 
 ### Added

@@ -33,6 +33,10 @@ your machine (bootc)                    ── verifies only if you ask it to
 
 - The base image is pulled **by digest** at build time; the digest is recorded
   in `/usr/share/wrainrock/build-info.json`.
+- The only deviation from that base is the v0.2 identity delta, listed in
+  `/usr/share/wrainrock/delta.json`. `rpm -V fedora-release-identity-silverblue`
+  reporting `/usr/lib/os-release` as modified is expected, not tampering; a
+  deviation not listed in the manifest is a bug worth reporting.
 - The workflow runs on GitHub-hosted runners only. There are no self-hosted
   runners and no long-lived registry credentials.
 - The only credentials in the pipeline are the ephemeral `GITHUB_TOKEN` and the
@@ -50,8 +54,8 @@ your machine (bootc)                    ── verifies only if you ask it to
 
 State it plainly rather than implying a guarantee:
 
-1. **A compromised Fedora base image.** Every package in Wrainrock v0.1 comes
-   from Fedora. If Fedora's infrastructure is compromised, so is Wrainrock.
+1. **A compromised Fedora base image.** Every package in Wrainrock comes from
+   Fedora. If Fedora's infrastructure is compromised, so is Wrainrock.
 2. **A compromised GitHub Actions runner.** The build executes on GitHub's
    infrastructure; a runner compromise can produce a signed malicious image.
    This is the same trust assumption every GitHub-built container makes.
@@ -63,8 +67,8 @@ State it plainly rather than implying a guarantee:
    host; its system services run as root. Rootless podman is a convenience for
    users and is **not** a tenant boundary against untrusted users on the same
    kernel.
-6. **Physical access, firmware implants, disk theft without encryption.** v0.1
-   ships Fedora's defaults and adds no hardening of its own. Full-disk
+6. **Physical access, firmware implants, disk theft without encryption.**
+   Wrainrock ships Fedora's defaults and adds no hardening of its own. Full-disk
    encryption is an installer (v0.3) topic.
 
 ## Credentials and build hygiene
@@ -85,7 +89,7 @@ State it plainly rather than implying a guarantee:
 
 ## Hardening principles for future changes
 
-When Wrainrock starts shipping its own services (v0.2+):
+When Wrainrock starts shipping its own services (v0.5+):
 
 - run as non-root with an explicit `User=`;
 - `NoNewPrivileges=yes`, `ProtectSystem=strict`, `ProtectHome=read-only`,
