@@ -19,6 +19,11 @@ on:
         default: "ghcr.io/wraindrock/wrainrock-linux:44"
         required: true
         type: string
+      vm_test:
+        description: "Boot the ISO under QEMU/KVM and wait for the installed system"
+        required: false
+        type: boolean
+        default: true
 
 permissions:
   contents: read
@@ -56,6 +61,7 @@ jobs:
           command -v xorriso >/dev/null || missing+=(xorriso)
           command -v mkfs.btrfs >/dev/null || missing+=(btrfs-progs)
           command -v qemu-img >/dev/null || missing+=(qemu-utils)
+          command -v qemu-system-x86_64 >/dev/null || missing+=(qemu-system-x86)
           if [ "${#missing[@]}" -gt 0 ]; then
             sudo apt-get update
             sudo apt-get install -y "${missing[@]}"
@@ -168,6 +174,26 @@ jobs:
               sort | sed 's|^\./||' | xargs -r -n1 sha256sum ) > output/SHA256SUMS
           cat output/SHA256SUMS
           ls -lh "${iso}" "${qcow2}"
+
+      - name: Boot the ISO under KVM and wait for the installed system
+        if: inputs.vm_test
+        run: |
+          set -euo pipefail
+          # GitHub-hosted Linux runners expose /dev/kvm to the kvm group; the
+          # workflow user is not in it, so open it up for this job only.
+          sudo chmod 666 /dev/kvm 2>/dev/null || true
+          iso=$(find output/bootiso -name '*.iso' -print -quit)
+          tests/vm-test.sh iso "${iso}" --timeout 1500 --out "${RUNNER_TEMP}/vm"
+          echo "screenshots: ${RUNNER_TEMP}/vm"
+
+      - name: Upload VM evidence
+        if: always() && inputs.vm_test
+        uses: actions/upload-artifact@v4
+        with:
+          name: wrainrock-${{ steps.image.outputs.version }}-vm-evidence
+          path: ${{ runner.temp }}/vm
+          retention-days: 7
+          if-no-files-found: warn
 
       - name: Upload qcow2
         uses: actions/upload-artifact@v4

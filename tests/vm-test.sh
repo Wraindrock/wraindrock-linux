@@ -23,11 +23,13 @@ shift 2 2>/dev/null || true
 timeout=0
 out_dir=""
 disk_size="30G"
+expect_hostname="wrainrock"
 while [[ $# -gt 0 ]]; do
     case "$1" in
         --timeout) timeout="$2"; shift 2 ;;
         --out) out_dir="$2"; shift 2 ;;
         --disk-size) disk_size="$2"; shift 2 ;;
+        --expect-hostname) expect_hostname="$2"; shift 2 ;;
         *) echo "unknown argument: $1" >&2; exit 2 ;;
     esac
 done
@@ -192,6 +194,14 @@ while :; do
     # reviewing the screenshot makes that call. The threshold rejects a blank
     # or stuck-black framebuffer.
     sleep 20
+    # The installer environment is text-only; gdm.service plus a getty prompt
+    # means the installed system finished booting. Break early instead of
+    # burning the whole timeout.
+    if grep -Fq 'gdm.service' "${serial}" 2>/dev/null &&
+       grep -Fq "${expect_hostname} login:" "${serial}" 2>/dev/null; then
+        echo "detected a graphical login on ${expect_hostname}; stopping"
+        break
+    fi
 done
 
 kill "${qemu_pid}" 2>/dev/null || true
@@ -210,3 +220,19 @@ if [[ "${best_size}" -le 30000 ]]; then
     exit 1
 fi
 echo "PASS: captured a non-trivial frame; inspect ${best_file}"
+
+# A getty prompt carries the kernel hostname even when no user logs in. This is
+# the end-to-end check that DEFAULT_HOSTNAME survived into the installed system;
+# the screenshot alone cannot show it.
+if [[ -n "${expect_hostname}" ]]; then
+    if ! grep -Fq 'gdm.service' "${serial}" 2>/dev/null; then
+        echo "FAIL: GDM never started (the installed system did not reach a login screen)" >&2
+        exit 1
+    fi
+    if grep -Fq "${expect_hostname} login:" "${serial}" 2>/dev/null; then
+        echo "PASS: serial getty reports hostname ${expect_hostname}"
+    else
+        echo "FAIL: serial getty did not report '${expect_hostname} login:'" >&2
+        exit 1
+    fi
+fi
