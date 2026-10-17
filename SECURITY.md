@@ -33,7 +33,7 @@ your machine (bootc)                    ── verifies only if you ask it to
 
 - The base image is pulled **by digest** at build time; the digest is recorded
   in `/usr/share/wrainrock/build-info.json`.
-- The only deviation from that base is the v0.2 identity delta, listed in
+- The only deviation from that base is the recorded branding delta, listed in
   `/usr/share/wrainrock/delta.json`. `rpm -V fedora-release-identity-silverblue`
   reporting `/usr/lib/os-release` as modified is expected, not tampering; a
   deviation not listed in the manifest is a bug worth reporting.

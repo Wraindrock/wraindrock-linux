@@ -85,7 +85,8 @@ rm -rf "${rpm_db_tmp}"
 for asset in wrainrock-logo-icon.svg wrainrock-gdm-logo.svg \
     wrainrock-gdm-logo.png wrainrock-wallpaper.png \
     plymouth/wrainrock.plymouth plymouth/background.png \
-    plymouth/animation-0001.png plymouth/animation-0030.png; do
+    plymouth/animation-0001.png plymouth/animation-0030.png \
+    grub/theme.txt grub/background.png; do
     [[ -r ${branding_dir}/${asset} ]] || die "branding asset ${asset} is missing"
 done
 
@@ -182,6 +183,20 @@ chmod 0644 /etc/plymouth/plymouthd.conf
 grep -qx 'Theme=wrainrock' /etc/plymouth/plymouthd.conf \
     || die "failed to select the Plymouth theme"
 
+# 3f. GRUB boot menu theme (opt-in at runtime). bootc systems get their
+# /boot/grub2/grub.cfg from bootupd as a static config during installation, so
+# an image update cannot change the menu by itself. Ship the theme and a small
+# helper; the helper copies it to /boot and uses bootupd's supported
+# custom.cfg hook. See docs/architecture.md.
+grub_theme_dir=/usr/share/grub/themes/wrainrock
+install -d -m 0755 "${grub_theme_dir}"
+install -m 0644 "${branding_dir}/grub/theme.txt" "${grub_theme_dir}/theme.txt"
+install -m 0644 "${branding_dir}/grub/background.png" "${grub_theme_dir}/background.png"
+[[ -f /usr/share/grub/unicode.pf2 ]] \
+    || die "base image is missing /usr/share/grub/unicode.pf2"
+install -D -m 0755 "${script_dir}/grub-theme/wrainrock-grub-theme" /usr/bin/wrainrock-grub-theme
+[[ -x /usr/bin/wrainrock-grub-theme ]] || die "GRUB theme helper not installed"
+
 # --- 4. delta manifest ------------------------------------------------------
 # Every intended difference from the base, machine-readable. tests/parity.sh
 # fails the build if the real image differs in any other way.
@@ -269,6 +284,9 @@ cat > /usr/share/wrainrock/delta.json <<EOF
       "/usr/share/plymouth/themes/wrainrock/animation-0028.png",
       "/usr/share/plymouth/themes/wrainrock/animation-0029.png",
       "/usr/share/plymouth/themes/wrainrock/animation-0030.png",
+      "/usr/share/grub/themes/wrainrock/theme.txt",
+      "/usr/share/grub/themes/wrainrock/background.png",
+      "/usr/bin/wrainrock-grub-theme",
       "/usr/share/wrainrock/base-os-release",
       "/usr/share/wrainrock/build-info.json",
       "/usr/share/wrainrock/delta.json"
@@ -301,5 +319,6 @@ say "provenance written for ${IMAGE_NAME:-unknown} (${rpm_count} packages)"
 say "base os-release preserved at /usr/share/wrainrock/base-os-release"
 say "identity applied: $(unquote "$(field PRETTY_NAME)")"
 say "boot splash installed: ${plymouth_dir} (theme: wrainrock)"
+say "GRUB theme helper installed: /usr/bin/wrainrock-grub-theme (opt-in)"
 say "delta manifest written to /usr/share/wrainrock/delta.json"
 say "rpm database left byte-identical to the base"

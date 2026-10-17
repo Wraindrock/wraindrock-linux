@@ -107,6 +107,7 @@ wallpaper and boot splash in v0.3):
 | GDM login logo | `/usr/share/pixmaps/wrainrock-gdm-logo.{svg,png}` + `zz-wrainrock.gschema.override` |
 | default desktop + GDM wallpaper | `/usr/share/backgrounds/wrainrock/wrainrock-wallpaper.png` + `[org.gnome.desktop.background]` in `zz-wrainrock.gschema.override` |
 | Plymouth boot splash | `/usr/share/plymouth/themes/wrainrock/` (two-step theme) + `Theme=wrainrock` in `/etc/plymouth/plymouthd.conf` |
+| GRUB boot menu theme | `/usr/share/grub/themes/wrainrock/` assets + `/usr/bin/wrainrock-grub-theme`, which copies them to `/boot/grub2/themes/wrainrock/` and writes a marked `/boot/grub2/custom.cfg` (opt-in) |
 | default hostname | `DEFAULT_HOSTNAME` (the booted hostname is still set by the installer/`/etc/hostname`) |
 
 The logo assets are generated outlines, not `<text>`: rendering does not depend
@@ -132,6 +133,19 @@ deployment regenerates its initramfs, plymouth's
 theme and its plugin into the initrd. CI asserts the files, the config and that
 `plymouth-set-default-theme -l` lists the theme; it cannot assert the rendered
 splash or the initrd contents — verify those by rebooting after `bootc switch`.
+
+GRUB is different: on bootc systems `/boot/grub2/grub.cfg` is a static config
+that bootupd writes at install time, and image updates do not regenerate it, so
+the image cannot theme an existing boot menu by itself. It ships the theme
+assets plus a helper that acts only when the user runs it.
+`wrainrock-grub-theme enable` copies the theme to
+`/boot/grub2/themes/wrainrock/` (the boot filesystem is readable even with an
+encrypted root) and writes `/boot/grub2/custom.cfg`, which bootupd's
+`configs.d/41_custom.cfg` sources. The helper refuses to overwrite a
+`custom.cfg` it did not write, refuses systems whose GRUB config has no
+`custom.cfg` hook, and does nothing on systemd-boot hosts. The delta records the
+shipped assets; the `/boot` copy is user state, not image state, and is not
+listed in `delta.json`.
 
 `gtk-update-icon-cache` is deliberately not run: the hicolor theme resolves
 scalable SVGs without a cache, and skipping it avoids a generated

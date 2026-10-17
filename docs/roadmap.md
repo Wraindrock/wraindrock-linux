@@ -66,8 +66,14 @@ below ships as its own immutable release; no step relaxes the delta invariant.
       `/etc/plymouth/plymouthd.conf` selecting `wrainrock`; parity asserts the
       theme file, the daemon config, frame count/format/dimensions and
       `plymouth-set-default-theme -l`
-- [ ] Step 3 — GRUB theme (boot menu), with a test that it is installed and
-      referenced by the bootloader configuration
+- [x] Step 3 — GRUB menu theme, delivered as an opt-in helper:
+      `/usr/bin/wrainrock-grub-theme` copies the assets to
+      `/boot/grub2/themes/wrainrock/` and writes a marked `custom.cfg` that
+      bootupd's static config sources. It refuses foreign `custom.cfg` files and
+      systemd-boot hosts. The image cannot rewrite an installed GRUB config, so
+      automatic application is delegated to the installer (step 4); parity
+      exercises enable, idempotency, both refusals and disable against throwaway
+      boot trees
 - [ ] Step 4 — `bootc-image-builder` produces an Anaconda ISO in CI; automated
       VM install test (qemu + kickstart) boots to GDM; ISO artifact uploaded to
       the GitHub release with checksums; install docs rewritten around the ISO
@@ -80,6 +86,10 @@ v0.2 image and the Wrainrock PNG on v0.3.
 **Test that must fail first (step 2):** `tests/parity.sh` asserts the
 `wrainrock` theme file and `Theme=wrainrock` in `/etc/plymouth/plymouthd.conf`;
 both fail on the step-1 image and pass once the splash is installed.
+
+**Test that must fail first (step 3):** `tests/parity.sh` runs
+`wrainrock-grub-theme` against fixture boot trees; on the step-2 image the
+helper does not exist and every helper assertion fails.
 
 **Non-goals:** custom partitioning UX, encryption UI, dual-boot UX.
 

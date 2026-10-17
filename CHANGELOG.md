@@ -5,6 +5,31 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 image versions are the Fedora channel plus an immutable build tag, see
 [docs/architecture.md](docs/architecture.md).
 
+## [0.5.0] - 2026-10-17
+
+### Added
+
+- GRUB boot menu theme, shipped as an opt-in helper:
+  `/usr/share/grub/themes/wrainrock/` (theme.txt plus the 1920x1080 Wrainrock
+  background) and `/usr/bin/wrainrock-grub-theme`. `enable` copies the theme to
+  `/boot/grub2/themes/wrainrock/`, installs the GRUB font, and writes a marked
+  `/boot/grub2/custom.cfg` that bootupd's static config sources; `disable`
+  removes only files the helper owns; `status` reports the state. It refuses a
+  foreign `custom.cfg` and systems without a `custom.cfg` hook, and it never
+  edits `/boot/grub2/grub.cfg`.
+- Parity checks: theme background dimensions, and a fixture-boot-tree test that
+  exercises enable, idempotency, the foreign-`custom.cfg` refusal, the
+  missing-hook refusal, non-interactive `disable` refusal and `disable --yes`.
+- Lint checks: helper is executable and handles `custom.cfg`, `loadfont`,
+  `set theme=`, `--boot-dir`; theme.txt has the expected keys; background is
+  1920x1080.
+
+### Changed
+
+- `delta.json` `files.added` now declares the GRUB theme assets and the helper.
+- Docs and roadmap: v0.3 step 3 is closed (opt-in by design); the next step is
+  the installable ISO.
+
 ## [0.4.0] - 2026-10-17
 
 ### Added

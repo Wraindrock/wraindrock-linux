@@ -200,6 +200,9 @@ expected_added = {
     "/usr/share/wrainrock/delta.json",
     "/usr/share/plymouth/themes/wrainrock/wrainrock.plymouth",
     "/usr/share/plymouth/themes/wrainrock/background.png",
+    "/usr/share/grub/themes/wrainrock/theme.txt",
+    "/usr/share/grub/themes/wrainrock/background.png",
+    "/usr/bin/wrainrock-grub-theme",
 }
 expected_added |= {
     f"/usr/share/plymouth/themes/wrainrock/animation-{i:04d}.png"
@@ -421,6 +424,60 @@ if rpm_verify="$(in_image "${IMAGE}" "rpm -V --nomtime ${identity_package} || tr
     fi
 else
     fail "could not run rpm verification"
+fi
+
+# --- GRUB boot menu theme ---------------------------------------------------
+# The image ships an opt-in helper because bootc images cannot rewrite
+# /boot/grub2/grub.cfg (bootupd installs it as a static config). Exercise the
+# helper against throwaway boot trees inside the image.
+if in_image "${IMAGE}" 'wrainrock-grub-theme status --boot-dir /nonexistent' > /dev/null; then
+    pass "GRUB theme helper handles a missing GRUB directory"
+else
+    fail "GRUB theme helper failed on a missing directory"
+fi
+
+if grub_dims="$(in_image "${IMAGE}" 'od -An -tu4 --endian=big -j16 -N8 /usr/share/grub/themes/wrainrock/background.png' 2>/dev/null || true)"; then
+    read -r grub_w grub_h <<<"${grub_dims}"
+    if [[ ${grub_w:-} == 1920 && ${grub_h:-} == 1080 ]]; then
+        pass "GRUB theme background is 1920x1080"
+    else
+        fail "GRUB theme background is ${grub_w:-?}x${grub_h:-?}, want 1920x1080"
+    fi
+else
+    fail "could not read the GRUB theme background"
+fi
+
+grub_test_script='set -eu
+fixture=$(mktemp -d)
+mkdir -p "$fixture/grub2"
+printf "insmod blscfg\nblscfg\nif [ -f \$prefix/custom.cfg ]; then source \$prefix/custom.cfg; fi\n" > "$fixture/grub2/grub.cfg"
+wrainrock-grub-theme enable --boot-dir "$fixture" > /dev/null
+test -s "$fixture/grub2/themes/wrainrock/theme.txt"
+test -s "$fixture/grub2/themes/wrainrock/background.png"
+test -s "$fixture/grub2/themes/wrainrock/unicode.pf2"
+grep -q "loadfont \${prefix}/themes/wrainrock/unicode.pf2" "$fixture/grub2/custom.cfg"
+grep -q "set theme=\${prefix}/themes/wrainrock/theme.txt" "$fixture/grub2/custom.cfg"
+wrainrock-grub-theme status --boot-dir "$fixture" | grep -q "managed by wrainrock-grub-theme"
+wrainrock-grub-theme enable --boot-dir "$fixture" > /dev/null
+printf "user snippet\n" > "$fixture/grub2/custom.cfg"
+if wrainrock-grub-theme enable --boot-dir "$fixture" > /dev/null 2>&1; then exit 1; fi
+grep -qx "user snippet" "$fixture/grub2/custom.cfg"
+fixture2=$(mktemp -d)
+mkdir -p "$fixture2/grub2"
+printf "blscfg\n" > "$fixture2/grub2/grub.cfg"
+if wrainrock-grub-theme enable --boot-dir "$fixture2" > /dev/null 2>&1; then exit 1; fi
+fixture3=$(mktemp -d)
+mkdir -p "$fixture3/grub2"
+printf "if [ -f \$prefix/custom.cfg ]; then source \$prefix/custom.cfg; fi\n" > "$fixture3/grub2/grub.cfg"
+wrainrock-grub-theme enable --boot-dir "$fixture3" > /dev/null
+if wrainrock-grub-theme disable --boot-dir "$fixture3" < /dev/null > /dev/null 2>&1; then exit 1; fi
+wrainrock-grub-theme disable --yes --boot-dir "$fixture3" > /dev/null
+test ! -e "$fixture3/grub2/custom.cfg"
+test ! -e "$fixture3/grub2/themes/wrainrock"'
+if in_image "${IMAGE}" "${grub_test_script}"; then
+    pass "GRUB theme helper: enable, idempotency, refusals, disable"
+else
+    fail "GRUB theme helper behavior is wrong"
 fi
 
 # --- Provenance -------------------------------------------------------------

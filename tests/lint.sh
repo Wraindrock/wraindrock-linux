@@ -17,6 +17,8 @@ shell_files=()
 while IFS= read -r file; do shell_files+=("$file"); done < <(
     find . -path ./.git -prune -o -type f -name '*.sh' -print | sort
 )
+# The GRUB theme helper is a bash script without a .sh suffix.
+shell_files+=("build_files/grub-theme/wrainrock-grub-theme")
 for file in "${shell_files[@]}"; do
     if bash -n "${file}"; then
         pass "${file}"
@@ -105,7 +107,9 @@ for asset in \
     build_files/branding/plymouth/wrainrock.plymouth \
     build_files/branding/plymouth/background.png \
     build_files/branding/plymouth/wrainrock-boot-background.svg \
-    build_files/branding/plymouth/wrainrock-boot-frame.svg; do
+    build_files/branding/plymouth/wrainrock-boot-frame.svg \
+    build_files/branding/grub/theme.txt \
+    build_files/branding/grub/background.png; do
     if [[ -s ${asset} ]]; then
         pass "${asset} exists"
     else
@@ -128,7 +132,8 @@ if grep -Fiq '#3C6EB4' build_files/branding/wrainrock-logo-icon.svg &&
    grep -Fiq '#3C6EB4' build_files/branding/wrainrock-gdm-logo.svg &&
    grep -Fiq '#3C6EB4' build_files/branding/wrainrock-wallpaper.svg &&
    grep -Fiq '3c6eb4' build_files/branding/plymouth/wrainrock-boot-frame.svg &&
-   grep -Fiq '3c6eb4' build_files/branding/plymouth/wrainrock.plymouth; then
+   grep -Fiq '3c6eb4' build_files/branding/plymouth/wrainrock.plymouth &&
+   grep -Fiq '3c6eb4' build_files/branding/grub/theme.txt; then
     pass "branding assets use the documented Wrainrock blue"
 else
     fail "branding assets lost the Wrainrock blue outline"
@@ -184,10 +189,47 @@ else
     fail "Plymouth assets have unexpected dimensions"
 fi
 
+echo "GRUB boot menu theme"
+if [[ -x build_files/grub-theme/wrainrock-grub-theme ]]; then
+    pass "GRUB theme helper is executable"
+else
+    fail "GRUB theme helper is missing or not executable"
+fi
+for needle in 'custom.cfg' 'set theme=' '--boot-dir' \
+              'refusing to modify' 'loadfont'; do
+    if grep -Fq -e "${needle}" build_files/grub-theme/wrainrock-grub-theme; then
+        pass "GRUB theme helper handles ${needle}"
+    else
+        fail "GRUB theme helper is missing ${needle}"
+    fi
+done
+for needle in 'desktop-image: "background.png"' 'title-text: "Wrainrock Linux"' \
+              '+ boot_menu' 'id = "__timeout__"'; do
+    if grep -Fq "${needle}" build_files/branding/grub/theme.txt; then
+        pass "GRUB theme contains ${needle}"
+    else
+        fail "GRUB theme is missing ${needle}"
+    fi
+done
+if python3 - <<'PYGRUB'
+import struct
+
+with open("build_files/branding/grub/background.png", "rb") as handle:
+    data = handle.read(24)
+assert data[:8] == b"\x89PNG\r\n\x1a\n", "not a PNG"
+width, height = struct.unpack(">II", data[16:24])
+assert (width, height) == (1920, 1080), f"background is {width}x{height}"
+PYGRUB
+then
+    pass "GRUB theme background is a 1920x1080 PNG"
+else
+    fail "GRUB theme background is not a 1920x1080 PNG"
+fi
+
 echo "build invariants"
 for needle in 'base-os-release' 'delta.json' 'zz-wrainrock.gschema.override' \
               'wrainrock-wallpaper.png' 'Theme=wrainrock' \
-              'plymouth/animation-'; do
+              'plymouth/animation-' 'grub/theme.txt' 'wrainrock-grub-theme'; do
     if grep -Fq "${needle}" build_files/build.sh; then
         pass "build.sh handles ${needle}"
     else
@@ -220,6 +262,12 @@ if grep -Fq "bootc switch" docs/install.md &&
     pass "install doc documents the switch command"
 else
     fail "docs/install.md does not document a bootc switch command"
+fi
+if grep -Fq 'wrainrock-grub-theme' docs/architecture.md &&
+   grep -Fq 'wrainrock-grub-theme' docs/install.md; then
+    pass "docs document the GRUB theme helper"
+else
+    fail "docs do not document the GRUB theme helper"
 fi
 if grep -Fq 'delta.json' docs/architecture.md &&
    grep -Fq 'delta.json' docs/install.md; then

@@ -130,6 +130,25 @@ so it only changes after the new deployment regenerates its initrd. `bootc`
 does that on deploy; if you ever need to force it, `sudo dracut -f`.
 
 ```bash
+sudo wrainrock-grub-theme status
+```
+
+The GRUB menu theme is **opt-in**. bootc images cannot rewrite
+`/boot/grub2/grub.cfg`: bootupd installs it as a static config when the system
+is installed. The image ships `/usr/bin/wrainrock-grub-theme`, which copies the
+theme to `/boot/grub2/themes/wrainrock/` and wires it in through bootupd's
+supported `custom.cfg` hook:
+
+```bash
+sudo wrainrock-grub-theme enable
+sudo systemctl reboot
+```
+
+The helper refuses to touch a `custom.cfg` it does not manage, and it only works
+on systems whose GRUB config sources `custom.cfg` (systemd-boot hosts are not
+supported). To undo it: `sudo wrainrock-grub-theme disable --yes`.
+
+```bash
 hostnamectl
 ```
 
@@ -269,6 +288,18 @@ a non-standard shim can break the chain.
 this is a firmware/key-management issue, not an image defect.
 
 **Escape hatch:** bootloader menu → previous Silverblue entry.
+
+### GRUB menu still looks like Fedora
+
+`sudo wrainrock-grub-theme status` reports `custom.cfg: absent`, and the boot
+menu is unchanged. The theme is opt-in by design; enable it with
+`sudo wrainrock-grub-theme enable`.
+
+If enable fails with `error: ... does not source custom.cfg`, the installed
+bootloader config predates bootupd's static configs. Run
+`sudo bootupctl migrate-static-grub-config` (it keeps a backup at
+`/boot/grub2/grub.cfg.backup`), then retry. Escape hatch:
+`sudo wrainrock-grub-theme disable --yes`.
 
 ### Logs and upstream
 
