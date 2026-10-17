@@ -18,6 +18,14 @@ image versions are the Fedora channel plus an immutable build tag, see
   pullable. GitHub Release assets are not used: GitHub caps them at 2 GiB and
   both artifacts are larger.
 
+### Fixed
+
+- `SHA256SUMS` is computed after the VM boots, not before: the qcow2 boot test
+  previously wrote into the artifact itself (machine-id, logs, SSH keys), so the
+  published checksum described a different file than the one pushed. The qcow2
+  test now boots a sparse copy under the evidence directory and the publish step
+  re-hashes the pristine files immediately before `oras push`.
+
 ## [0.6.1] - 2026-10-17
 
 ### Added

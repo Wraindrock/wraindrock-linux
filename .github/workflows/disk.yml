@@ -223,6 +223,12 @@ jobs:
           qcow2=$(find output/qcow2 -name '*.qcow2' -print -quit)
           [ -n "${iso}" ] && [ -n "${qcow2}" ]
 
+          # Hash after the VM boots, so the checksums describe the files that
+          # are actually pushed (the qcow2 test boots a copy, not this file).
+          ( cd output && find . -type f \( -name '*.iso' -o -name '*.qcow2' \) -print |
+              sort | sed 's|^\./||' | xargs -r -n1 sha256sum ) > output/SHA256SUMS
+          cat output/SHA256SUMS
+
           echo "${{ github.token }}" | oras login ghcr.io -u "${{ github.actor }}" --password-stdin
 
           # Immutable: one version maps to exactly one artifact set. Rerunning
@@ -254,8 +260,18 @@ jobs:
           with open(sys.argv[1], encoding="utf-8") as handle:
               manifest = json.load(handle)
           assert manifest["artifactType"] == "application/vnd.wrainrock.disk.v1+json", manifest.get("artifactType")
-          layers = {layer["annotations"]["org.opencontainers.image.title"]: layer for layer in manifest["layers"]}
+          # oras records the pushed path (`output/qcow2/disk.qcow2`) as the
+          # title; compare by basename.
+          layers = {
+              os.path.basename(layer["annotations"]["org.opencontainers.image.title"]): layer
+              for layer in manifest["layers"]
+          }
           assert set(layers) == {"disk.qcow2", "install.iso", "SHA256SUMS"}, layers
+          sums = {}
+          with open("output/SHA256SUMS", encoding="utf-8") as handle:
+              for line in handle:
+                  hexdigest, relpath = line.split()
+                  sums[os.path.basename(relpath)] = hexdigest
           for path in sys.argv[2:]:
               digest = hashlib.sha256()
               with open(path, "rb") as handle:
@@ -263,6 +279,8 @@ jobs:
                       digest.update(chunk)
               layer = layers[os.path.basename(path)]
               assert layer["digest"] == "sha256:" + digest.hexdigest(), (path, layer["digest"])
+              if os.path.basename(path) != "SHA256SUMS":
+                  assert sums[os.path.basename(path)] == digest.hexdigest(), (path, sums.get(os.path.basename(path)))
               assert layer["size"] == os.path.getsize(path), (path, layer["size"])
           print("artifact manifest matches the local files")
           PY

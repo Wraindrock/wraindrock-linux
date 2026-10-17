@@ -107,8 +107,14 @@ qemu_args=(
     -qmp "unix:${qmp},server=on,wait=off"
 )
 
+workdir=""
 if [[ "${mode}" == qcow2 ]]; then
-    qemu_args+=(-boot "order=c,menu=off" -drive "file=${artifact},if=virtio,format=qcow2")
+    # A booted disk is written to (machine-id, logs, SSH host keys), so test a
+    # copy: the artifact we publish must stay identical to its checksum.
+    workdir=$(mktemp -d "${out_dir}/qcow2-boot.XXXXXX")
+    boot_disk="${workdir}/disk.qcow2"
+    cp --sparse=always -- "${artifact}" "${boot_disk}"
+    qemu_args+=(-boot "order=c,menu=off" -drive "file=${boot_disk},if=virtio,format=qcow2")
 else
     disk="${out_dir}/disk.qcow2"
     qemu-img create -f qcow2 "${disk}" "${disk_size}" >/dev/null
@@ -124,7 +130,7 @@ fi
 qemu_log="${out_dir}/qemu.log"
 qemu-system-x86_64 "${qemu_args[@]}" >"${qemu_log}" 2>&1 &
 qemu_pid=$!
-trap 'kill "${qemu_pid}" 2>/dev/null || true; wait "${qemu_pid}" 2>/dev/null || true' EXIT
+trap 'kill "${qemu_pid}" 2>/dev/null || true; wait "${qemu_pid}" 2>/dev/null || true; [[ -z "${workdir}" ]] || rm -rf -- "${workdir}"' EXIT
 
 # QMP screendump, one frame per call.
 screendump() {
