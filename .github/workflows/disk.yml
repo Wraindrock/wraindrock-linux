@@ -183,8 +183,17 @@ jobs:
           # workflow user is not in it, so open it up for this job only.
           sudo chmod 666 /dev/kvm 2>/dev/null || true
           iso=$(find output/bootiso -name '*.iso' -print -quit)
-          tests/vm-test.sh iso "${iso}" --timeout 2400 --out "${RUNNER_TEMP}/vm"
-          echo "screenshots: ${RUNNER_TEMP}/vm"
+          tests/vm-test.sh iso "${iso}" --timeout 2400 --out "${RUNNER_TEMP}/vm-iso"
+          echo "screenshots: ${RUNNER_TEMP}/vm-iso"
+
+      - name: Boot the qcow2 under KVM and require the Wrainrock hostname
+        if: inputs.vm_test
+        run: |
+          set -euo pipefail
+          sudo chmod 666 /dev/kvm 2>/dev/null || true
+          qcow2=$(find output/qcow2 -name '*.qcow2' -print -quit)
+          tests/vm-test.sh qcow2 "${qcow2}" --timeout 900 --out "${RUNNER_TEMP}/vm-qcow2"
+          echo "screenshots: ${RUNNER_TEMP}/vm-qcow2"
 
       - name: Upload VM evidence
         if: always() && inputs.vm_test
@@ -193,9 +202,12 @@ jobs:
           name: wrainrock-${{ steps.image.outputs.version }}-vm-evidence
           # Keep the evidence small: the 30 GiB boot disk is not evidence.
           path: |
-            ${{ runner.temp }}/vm/*.png
-            ${{ runner.temp }}/vm/serial.log
-            ${{ runner.temp }}/vm/qemu.log
+            ${{ runner.temp }}/vm-iso/*.png
+            ${{ runner.temp }}/vm-iso/serial.log
+            ${{ runner.temp }}/vm-iso/qemu.log
+            ${{ runner.temp }}/vm-qcow2/*.png
+            ${{ runner.temp }}/vm-qcow2/serial.log
+            ${{ runner.temp }}/vm-qcow2/qemu.log
           retention-days: 7
           if-no-files-found: warn
 
