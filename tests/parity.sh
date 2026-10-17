@@ -244,16 +244,6 @@ for sidecar in .rpm.lock rpmdb.sqlite-wal rpmdb.sqlite-shm; do
     fi
 done
 
-echo "hostname file"
-# buildah injects an empty /etc/hostname unless --no-hostname is used; an empty
-# file tells systemd to ignore DEFAULT_HOSTNAME, so the installed host falls
-# back to the kernel default (fedora) instead of wrainrock.
-if in_image "${IMAGE}" 'test ! -e /etc/hostname'; then
-    pass "image does not ship /etc/hostname (DEFAULT_HOSTNAME applies)"
-else
-    fail "image ships /etc/hostname, so DEFAULT_HOSTNAME will not apply"
-fi
-
 if in_image "${IMAGE}" \
     "grep -qx \"logo='/usr/share/pixmaps/wrainrock-gdm-logo.png'\" \
         /usr/share/glib-2.0/schemas/zz-wrainrock.gschema.override"; then

@@ -302,8 +302,8 @@ echo "workflow"
 if [[ -r .github/workflows/build.yml ]]; then
     pass "build workflow exists"
     for needle in 'packages: write' 'id-token: write' 'cosign sign' \
-                  'bootc container lint' 'Anonymous pull check'; do
-        if grep -Fq "${needle}" .github/workflows/build.yml; then
+                  'bootc container lint' '--no-hostname' 'Anonymous pull check'; do
+        if grep -Fq -e "${needle}" .github/workflows/build.yml; then
             pass "workflow contains ${needle}"
         else
             fail "workflow is missing ${needle}"
