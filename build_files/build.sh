@@ -51,13 +51,20 @@ grep -qx 'VARIANT_ID=silverblue' "${os_release}" \
 install -d -m 0755 /usr/share/wrainrock
 install -m 0644 "${os_release}" /usr/share/wrainrock/base-os-release
 
-rpm_count="$(rpm -qa | wc -l)"
+# Query a throwaway copy of the RPM database. Opening the image's database
+# directly leaves rpmdb.sqlite-wal, rpmdb.sqlite-shm and .rpm.lock behind, and
+# buildah would commit those into the image as undeclared files.
+rpm_db_tmp="$(mktemp -d /tmp/wrainrock-rpmdb.XXXXXX)"
+cp -a /usr/share/rpm/rpmdb.sqlite "${rpm_db_tmp}/rpmdb.sqlite"
+rpm_query() { rpm --dbpath "${rpm_db_tmp}" "$@"; }
+rpm_count="$(rpm_query -qa | wc -l)"
 rpm_set_sha256="$(
-    rpm -qa --qf '%{NAME}-%{VERSION}-%{RELEASE}.%{ARCH}\n' \
+    rpm_query -qa --qf '%{NAME}-%{VERSION}-%{RELEASE}.%{ARCH}\n' \
         | LC_ALL=C sort \
         | sha256sum \
         | cut -d' ' -f1
 )"
+rm -rf "${rpm_db_tmp}"
 
 # --- 3. identity ------------------------------------------------------------
 for asset in wrainrock-logo-icon.svg wrainrock-gdm-logo.svg wrainrock-gdm-logo.png; do
@@ -175,7 +182,10 @@ cat > /usr/share/wrainrock/delta.json <<EOF
       "/usr/share/icons/hicolor/scalable/apps/wrainrock-logo-icon.svg",
       "/usr/share/pixmaps/wrainrock-gdm-logo.svg",
       "/usr/share/pixmaps/wrainrock-gdm-logo.png",
-      "/usr/share/glib-2.0/schemas/zz-wrainrock.gschema.override"
+      "/usr/share/glib-2.0/schemas/zz-wrainrock.gschema.override",
+      "/usr/share/wrainrock/base-os-release",
+      "/usr/share/wrainrock/build-info.json",
+      "/usr/share/wrainrock/delta.json"
     ]
   }
 }
@@ -205,3 +215,17 @@ say "provenance written for ${IMAGE_NAME:-unknown} (${rpm_count} packages)"
 say "base os-release preserved at /usr/share/wrainrock/base-os-release"
 say "identity applied: $(unquote "$(field PRETTY_NAME)")"
 say "delta manifest written to /usr/share/wrainrock/delta.json"
+
+# --- 5. builder-only artifacts ---------------------------------------------
+# RPM was queried from a throwaway copy of the database, so sqlite's -wal/-shm
+# and .rpm.lock must not exist here. The builder also records an empty
+# /etc/hostname placeholder in the layer; the build never writes a hostname
+# there, and systemd reads an empty file as "unset", so DEFAULT_HOSTNAME still
+# applies (see docs/architecture.md).
+for stray in \
+    /usr/share/rpm/rpmdb.sqlite-wal \
+    /usr/share/rpm/rpmdb.sqlite-shm \
+    /usr/share/rpm/.rpm.lock; do
+    [[ ! -e ${stray} ]] || die "transient rpm file leaked into the image: ${stray}"
+done
+say "no transient rpm files in the image"

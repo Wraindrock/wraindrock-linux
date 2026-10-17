@@ -187,8 +187,16 @@ assert delta["files"]["modified"] == [
     "/usr/lib/os-release",
     "/usr/share/glib-2.0/schemas/gschemas.compiled",
 ], delta["files"]
-for path in delta["files"]["added"]:
-    assert path.startswith("/usr/share/"), path
+expected_added = {
+    "/usr/share/icons/hicolor/scalable/apps/wrainrock-logo-icon.svg",
+    "/usr/share/pixmaps/wrainrock-gdm-logo.svg",
+    "/usr/share/pixmaps/wrainrock-gdm-logo.png",
+    "/usr/share/glib-2.0/schemas/zz-wrainrock.gschema.override",
+    "/usr/share/wrainrock/base-os-release",
+    "/usr/share/wrainrock/build-info.json",
+    "/usr/share/wrainrock/delta.json",
+}
+assert set(delta["files"]["added"]) == expected_added, delta["files"]["added"]
 PY
 then
     pass "delta manifest matches the image"
@@ -196,15 +204,29 @@ else
     fail "delta manifest is missing, invalid, or out of sync"
 fi
 
-for path in \
-    /usr/share/icons/hicolor/scalable/apps/wrainrock-logo-icon.svg \
-    /usr/share/pixmaps/wrainrock-gdm-logo.svg \
-    /usr/share/pixmaps/wrainrock-gdm-logo.png \
-    /usr/share/glib-2.0/schemas/zz-wrainrock.gschema.override; do
+# Every file the image adds must be one the manifest declares, and every
+# declared path must really exist. This is the added-file half of the delta
+# invariant; a stray file cannot ride along unnoticed.
+python3 -c 'import json,sys; print("\n".join(json.load(open(sys.argv[1]))["files"]["added"]))' \
+    "${tmpdir}/delta.json" > "${tmpdir}/added-files"
+while IFS= read -r path; do
     if in_image "${IMAGE}" "test -s ${path}"; then
-        pass "added file present: ${path}"
+        pass "declared added file present: ${path}"
     else
-        fail "added file missing: ${path}"
+        fail "declared added file missing: ${path}"
+    fi
+done < "${tmpdir}/added-files"
+
+# Builder scratch must not ship. A fresh container has no process that would
+# create these, so their presence means the build leaked them into the layer.
+for stray in \
+    /usr/share/rpm/rpmdb.sqlite-wal \
+    /usr/share/rpm/rpmdb.sqlite-shm \
+    /usr/share/rpm/.rpm.lock; do
+    if in_image "${IMAGE}" "test ! -e ${stray}"; then
+        pass "no builder artifact: ${stray}"
+    else
+        fail "builder artifact leaked into the image: ${stray}"
     fi
 done
 

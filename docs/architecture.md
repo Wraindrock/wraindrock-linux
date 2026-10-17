@@ -84,6 +84,16 @@ would flag every file and hide the real diff.)
 Adding a customization therefore means adding it to the manifest **and**
 teaching the test about it — never relaxing the diff.
 
+The manifest also covers the files the build itself adds: the three
+`/usr/share/wrainrock/` provenance files sit next to the four branding files in
+`files.added`, and parity requires that set to match exactly. RPM is queried
+from a throwaway copy of the database, so sqlite's `-wal`/`-shm`/`.rpm.lock`
+never land in the layer, and parity rejects any rpmdb transient that reappears.
+The builder records an empty `/etc/hostname` placeholder in the layer; the build
+never writes a hostname there, and systemd reads an empty file as "unset", so
+`DEFAULT_HOSTNAME` still applies (how the builder mounts that path is not
+something a `RUN` step can change).
+
 ### Branding
 
 The v0.2 delta is identity-only on purpose:
