@@ -1,0 +1,23 @@
+# The image build only needs Containerfile and build_files/.
+.git
+.github
+docs
+tests
+patches
+_build
+out
+
+*.iso
+*.qcow2
+*.raw
+*.log
+.editorconfig
+.gitignore
+.dockerignore
+Justfile
+README.md
+CONTRIBUTING.md
+CHANGELOG.md
+LICENSE
+SECURITY.md
+image.env

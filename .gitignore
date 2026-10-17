@@ -1,0 +1,12 @@
+# Build outputs kept out of the tree
+_build/
+out/
+*.iso
+*.qcow2
+*.raw
+*.log
+
+# Local environment
+.cache/
+.idea/
+.vscode/

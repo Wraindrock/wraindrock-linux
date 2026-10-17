@@ -1,0 +1,327 @@
+# ---------------------------------------------------------------------------
+# Build, test and publish Wrainrock Linux.
+#
+#   pull request  -> lint + build + parity + smoke (never pushes)
+#   push to main  -> the above, then push immutable + channel tags and sign
+#   nightly       -> rebuild against the freshest Fedora base (security fixes)
+#
+# Tag policy (see docs/architecture.md):
+#   <fedora>.<UTC timestamp>.<run>  immutable artifact of record, never reused
+#   <fedora> / latest               moving channel pointers for `bootc switch`
+#   previous                        the outgoing channel image, for rollback
+#
+# Only main publishes. A pull request must never be able to replace the image
+# a user's next `bootc update` would pick up.
+# ---------------------------------------------------------------------------
+name: build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    - cron: "17 3 * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  IMAGE_REGISTRY: ghcr.io/${{ github.repository_owner }}
+
+jobs:
+  build:
+    name: build and publish
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Read image metadata from image.env
+        id: meta
+        run: |
+          set -euo pipefail
+          # shellcheck disable=SC1091
+          . ./image.env
+          registry="$(printf '%s' "${IMAGE_REGISTRY}" | tr '[:upper:]' '[:lower:]')"
+          now="$(date -u +%Y%m%dT%H%M%SZ)"
+          channel="${DEFAULT_TAG}"
+          {
+            echo "image_name=${IMAGE_NAME}"
+            echo "channel=${channel}"
+            echo "base_image=${BASE_IMAGE}"
+            echo "fedora_version=${FEDORA_VERSION}"
+            echo "immutable_tag=${FEDORA_VERSION}.${now}.${GITHUB_RUN_NUMBER}"
+            echo "registry=${registry}"
+            echo "registry_host=${registry%%/*}"
+            echo "image=${registry}/${IMAGE_NAME}"
+            echo "local_image=localhost/${IMAGE_NAME}"
+            echo "git_sha=$(git rev-parse --short HEAD)"
+            echo "build_date=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          } >> "$GITHUB_OUTPUT"
+          cat "$GITHUB_OUTPUT"
+
+      - name: Lint
+        run: bash tests/lint.sh
+
+      - name: Pull the base image and resolve its digest
+        id: base
+        env:
+          BASE_IMAGE: ${{ steps.meta.outputs.base_image }}
+        run: |
+          set -euo pipefail
+          podman pull --quiet "${BASE_IMAGE}"
+          ref="$(
+            podman image inspect "${BASE_IMAGE}" --format '{{index .RepoDigests 0}}'
+          )"
+          digest="${ref##*@}"
+          [[ ${digest} == sha256:* ]] || {
+            echo "could not resolve a digest for ${BASE_IMAGE} (got: ${ref})" >&2
+            exit 1
+          }
+          echo "digest=${digest}" >> "$GITHUB_OUTPUT"
+          echo "ref=${BASE_IMAGE}@${digest}" >> "$GITHUB_OUTPUT"
+          podman image inspect "${BASE_IMAGE}" \
+            --format '{{.Id}} {{.Created}}' | sed 's/^/base image: /'
+          echo "base digest: ${digest}"
+
+      - name: Build image
+        env:
+          LOCAL_IMAGE: ${{ steps.meta.outputs.local_image }}
+          TAG: ${{ steps.meta.outputs.immutable_tag }}
+          BASE_IMAGE: ${{ steps.meta.outputs.base_image }}
+          BASE_DIGEST: ${{ steps.base.outputs.digest }}
+          BASE_REF: ${{ steps.base.outputs.ref }}
+        run: |
+          set -euo pipefail
+          # FROM is digest-pinned, so the base cannot move between the digest
+          # resolution above and this build.
+          podman build \
+            --build-arg "BASE_REF=${BASE_REF}" \
+            --build-arg "BASE_IMAGE=${BASE_IMAGE}" \
+            --build-arg "BASE_DIGEST=${BASE_DIGEST}" \
+            --build-arg "IMAGE_NAME=${{ steps.meta.outputs.image_name }}" \
+            --build-arg "IMAGE_REGISTRY=${{ steps.meta.outputs.registry }}" \
+            --build-arg "IMAGE_VERSION=${TAG}" \
+            --build-arg "FEDORA_VERSION=${{ steps.meta.outputs.fedora_version }}" \
+            --build-arg "GIT_SHA=${{ steps.meta.outputs.git_sha }}" \
+            --build-arg "BUILD_DATE=${{ steps.meta.outputs.build_date }}" \
+            --build-arg "BUILD_NUMBER=${GITHUB_RUN_NUMBER}" \
+            --label "org.opencontainers.image.created=${{ steps.meta.outputs.build_date }}" \
+            --label "org.opencontainers.image.version=${TAG}" \
+            --label "org.opencontainers.image.revision=${{ steps.meta.outputs.git_sha }}" \
+            --tag "${LOCAL_IMAGE}:${TAG}" \
+            --file Containerfile \
+            .
+          podman images --filter "reference=${LOCAL_IMAGE}"
+
+      - name: Image contract (bootc container lint)
+        env:
+          LOCAL_IMAGE: ${{ steps.meta.outputs.local_image }}
+          TAG: ${{ steps.meta.outputs.immutable_tag }}
+        run: |
+          set -euo pipefail
+          # Re-run the contract outside the build cache: warnings that the
+          # build log buried are visible here, and errors fail the job.
+          podman run --rm --entrypoint /usr/bin/bootc \
+            "${LOCAL_IMAGE}:${TAG}" container lint
+
+      - name: Parity test
+        env:
+          LOCAL_IMAGE: ${{ steps.meta.outputs.local_image }}
+          TAG: ${{ steps.meta.outputs.immutable_tag }}
+          BASE_REF: ${{ steps.base.outputs.ref }}
+        run: bash tests/parity.sh "${BASE_REF}" "${LOCAL_IMAGE}:${TAG}"
+
+      - name: Smoke test (systemd boots)
+        env:
+          LOCAL_IMAGE: ${{ steps.meta.outputs.local_image }}
+          TAG: ${{ steps.meta.outputs.immutable_tag }}
+        run: bash tests/smoke.sh "${LOCAL_IMAGE}:${TAG}"
+
+      # Everything below publishes. It only runs after both behavioural tests
+      # passed, and only for main.
+      - name: Log in to the container registry
+        if: github.ref == 'refs/heads/main'
+        env:
+          AUTHFILE: ${{ runner.temp }}/auth.json
+          DOCKER_AUTHFILE: ${{ runner.temp }}/docker-config/config.json
+        run: |
+          set -euo pipefail
+          registry_host="${{ steps.meta.outputs.registry_host }}"
+          mkdir -p "$(dirname "${DOCKER_AUTHFILE}")"
+          printf '%s' "${{ secrets.GITHUB_TOKEN }}" | \
+            podman login "${registry_host}" -u "${{ github.actor }}" --password-stdin \
+              --authfile "${AUTHFILE}"
+          cp "${AUTHFILE}" "${DOCKER_AUTHFILE}"
+          printf '%s' "${{ secrets.GITHUB_TOKEN }}" | \
+            podman login "${registry_host}" -u "${{ github.actor }}" --password-stdin
+
+      - name: Refuse to overwrite an existing immutable tag
+        if: github.ref == 'refs/heads/main'
+        env:
+          IMAGE: ${{ steps.meta.outputs.image }}
+          TAG: ${{ steps.meta.outputs.immutable_tag }}
+          AUTHFILE: ${{ runner.temp }}/auth.json
+        run: |
+          set -euo pipefail
+          if podman manifest inspect --authfile "${AUTHFILE}" "docker://${IMAGE}:${TAG}" >/dev/null 2>&1; then
+            echo "immutable tag ${IMAGE}:${TAG} already exists; refusing to overwrite it" >&2
+            exit 1
+          fi
+          echo "immutable tag ${IMAGE}:${TAG} is free"
+
+      - name: Preserve the outgoing channel image as :previous
+        if: github.ref == 'refs/heads/main'
+        continue-on-error: true
+        env:
+          IMAGE: ${{ steps.meta.outputs.image }}
+          CHANNEL: ${{ steps.meta.outputs.channel }}
+          AUTHFILE: ${{ runner.temp }}/auth.json
+        run: |
+          set -euo pipefail
+          if podman pull --quiet --authfile "${AUTHFILE}" "${IMAGE}:${CHANNEL}"; then
+            podman tag "${IMAGE}:${CHANNEL}" "${IMAGE}:previous"
+            podman push --authfile "${AUTHFILE}" "${IMAGE}:previous"
+            echo "tagged the outgoing ${CHANNEL} image as :previous"
+          else
+            echo "no published image yet, nothing to preserve"
+          fi
+
+      - name: Tag this build
+        if: github.ref == 'refs/heads/main'
+        env:
+          IMAGE: ${{ steps.meta.outputs.image }}
+          LOCAL_IMAGE: ${{ steps.meta.outputs.local_image }}
+          TAG: ${{ steps.meta.outputs.immutable_tag }}
+          CHANNEL: ${{ steps.meta.outputs.channel }}
+        run: |
+          set -euo pipefail
+          image_id="$(podman image inspect "${LOCAL_IMAGE}:${TAG}" --format '{{.Id}}')"
+          podman tag "${image_id}" "${IMAGE}:${TAG}"
+          podman tag "${image_id}" "${IMAGE}:${CHANNEL}"
+          podman tag "${image_id}" "${IMAGE}:latest"
+          podman images --filter "reference=${IMAGE}"
+
+      - name: Push immutable tag
+        if: github.ref == 'refs/heads/main'
+        env:
+          IMAGE: ${{ steps.meta.outputs.image }}
+          TAG: ${{ steps.meta.outputs.immutable_tag }}
+          AUTHFILE: ${{ runner.temp }}/auth.json
+        run: |
+          set -euo pipefail
+          for attempt in 1 2 3; do
+            if podman push --authfile "${AUTHFILE}" \
+              --digestfile "${RUNNER_TEMP}/digest" "${IMAGE}:${TAG}"; then
+              exit 0
+            fi
+            echo "push failed on attempt ${attempt}, retrying in 15s"
+            sleep 15
+          done
+          echo "push of ${IMAGE}:${TAG} failed after 3 attempts" >&2
+          exit 1
+
+      - name: Push channel tags
+        if: github.ref == 'refs/heads/main'
+        env:
+          IMAGE: ${{ steps.meta.outputs.image }}
+          CHANNEL: ${{ steps.meta.outputs.channel }}
+          AUTHFILE: ${{ runner.temp }}/auth.json
+        run: |
+          set -euo pipefail
+          podman push --authfile "${AUTHFILE}" "${IMAGE}:${CHANNEL}"
+          podman push --authfile "${AUTHFILE}" "${IMAGE}:latest"
+
+      - name: Resolve the published digest
+        if: github.ref == 'refs/heads/main'
+        id: published
+        env:
+          IMAGE: ${{ steps.meta.outputs.image }}
+          TAG: ${{ steps.meta.outputs.immutable_tag }}
+        run: |
+          set -euo pipefail
+          digest="$(cat "${RUNNER_TEMP}/digest")"
+          [[ ${digest} == sha256:* ]] || {
+            echo "push recorded no valid digest (got: ${digest:-empty})" >&2
+            exit 1
+          }
+          echo "digest=${digest}" >> "$GITHUB_OUTPUT"
+          echo "published ${IMAGE}:${TAG} as ${digest}"
+
+      - name: Install cosign
+        if: github.ref == 'refs/heads/main'
+        uses: sigstore/cosign-installer@v3
+        with:
+          cosign-release: v2.5.2
+
+      - name: Sign the published image (keyless)
+        if: github.ref == 'refs/heads/main'
+        env:
+          IMAGE: ${{ steps.meta.outputs.image }}
+          DIGEST: ${{ steps.published.outputs.digest }}
+          DOCKER_CONFIG: ${{ runner.temp }}/docker-config
+        run: |
+          set -euo pipefail
+          target="${IMAGE}@${DIGEST}"
+          echo "signing ${target}"
+          cosign sign --yes "${target}"
+
+      - name: Verify the published signature
+        if: github.ref == 'refs/heads/main'
+        env:
+          IMAGE: ${{ steps.meta.outputs.image }}
+          DIGEST: ${{ steps.published.outputs.digest }}
+          DOCKER_CONFIG: ${{ runner.temp }}/docker-config
+        run: |
+          set -euo pipefail
+          cosign verify \
+            --certificate-identity-regexp "^https://github.com/${GITHUB_REPOSITORY}/" \
+            --certificate-oidc-issuer "https://token.actions.githubusercontent.com" \
+            "${IMAGE}@${DIGEST}"
+
+      - name: Make the package public (best effort)
+        if: github.ref == 'refs/heads/main'
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PACKAGE: ${{ steps.meta.outputs.image_name }}
+        run: |
+          set -euo pipefail
+          # GHCR packages are private by default. The workflow token may not be
+          # allowed to change visibility; if it is not, the owner flips it once
+          # in the package settings and this warning is the reminder.
+          if gh api --method PATCH "/user/packages/container/${PACKAGE}" \
+               -f visibility=public >/dev/null; then
+            echo "package ${PACKAGE} is public"
+          else
+            echo "::warning::could not make the package public with GITHUB_TOKEN; set it in the package settings"
+          fi
+
+      - name: Job summary
+        env:
+          IMAGE: ${{ steps.meta.outputs.image }}
+          TAG: ${{ steps.meta.outputs.immutable_tag }}
+          CHANNEL: ${{ steps.meta.outputs.channel }}
+          DIGEST: ${{ steps.published.outputs.digest }}
+        run: |
+          {
+            echo "### Wrainrock Linux \`${TAG}\`"
+            echo
+            echo "- image: \`${IMAGE}\`"
+            echo "- immutable: \`${IMAGE}:${TAG}\`"
+            echo "- channel: \`${IMAGE}:${CHANNEL}\` (moving)"
+            echo "- digest: \`${DIGEST:-not published}\`"
+            echo
+            echo "Switch to it with:"
+            echo '```'
+            echo "sudo bootc switch ${IMAGE}:${CHANNEL}"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"

@@ -1,0 +1,97 @@
+# Security policy
+
+## Reporting a vulnerability
+
+Open a **private** GitHub security advisory:
+<https://github.com/Wraindrock/wrainrock-linux/security/advisories/new>
+
+Do not file a public issue for a vulnerability. Include the image tag (or
+`build-info.json`), a reproduction, and the impact you believe it has. We aim to
+acknowledge within 72 hours and to publish a fixed build before disclosing.
+
+## Supported versions
+
+Only the current Fedora channel (`44` at the time of writing) and the `previous`
+tag receive security rebuilds. Older immutable tags are kept for audit and
+reproducibility but are **not** patched. The nightly workflow rebuilds the
+channel against the freshest Fedora base, so Fedora's fixes reach Wrainrock
+without a Wrainrock commit.
+
+## Trust model
+
+```
+Fedora (base image, packages, kernel)   ── trusted upstream
+        │
+GitHub Actions (public workflow)        ── trusted build environment
+        │
+Sigstore keyless signature              ── binds artifact to workflow identity
+        │
+ghcr.io (registry)                      ── distribution
+        │
+your machine (bootc)                    ── verifies only if you ask it to
+```
+
+- The base image is pulled **by digest** at build time; the digest is recorded
+  in `/usr/share/wrainrock/build-info.json`.
+- The workflow runs on GitHub-hosted runners only. There are no self-hosted
+  runners and no long-lived registry credentials.
+- The only credentials in the pipeline are the ephemeral `GITHUB_TOKEN` and the
+  OIDC token cosign exchanges for a short-lived signing certificate.
+- Image signatures are **keyless**: the certificate identity is
+  `https://github.com/Wraindrock/wrainrock-linux/.github/workflows/build.yml@refs/heads/main`
+  and the issuer is `https://token.actions.githubusercontent.com`. `cosign
+  verify` is documented in [docs/install.md](docs/install.md).
+- `bootc` verifies the image is a bootc image and imports it atomically; it does
+  **not** verify the Sigstore signature for you. Run `cosign verify` yourself if
+  provenance matters. The immutable tag plus the recorded digest is the
+  reproducibility story.
+
+## What this project does not protect against
+
+State it plainly rather than implying a guarantee:
+
+1. **A compromised Fedora base image.** Every package in Wrainrock v0.1 comes
+   from Fedora. If Fedora's infrastructure is compromised, so is Wrainrock.
+2. **A compromised GitHub Actions runner.** The build executes on GitHub's
+   infrastructure; a runner compromise can produce a signed malicious image.
+   This is the same trust assumption every GitHub-built container makes.
+3. **A malicious commit merged to `main`.** Signing proves *who built it*, not
+   that the change is benign. Review and branch protection are the control here.
+4. **Compromise of Sigstore/Fulcio/Rekor or cosign themselves.** We use the
+   standard keyless flow; its failure modes are inherited.
+5. **Kernel-level attacks from the container model.** A bootc image *is* the
+   host; its system services run as root. Rootless podman is a convenience for
+   users and is **not** a tenant boundary against untrusted users on the same
+   kernel.
+6. **Physical access, firmware implants, disk theft without encryption.** v0.1
+   ships Fedora's defaults and adds no hardening of its own. Full-disk
+   encryption is an installer (v0.3) topic.
+
+## Credentials and build hygiene
+
+- No secrets are baked into the image. Build arguments are public by design
+  (`BASE_DIGEST`, `GIT_SHA`, versions) and appear in image history; never pass a
+  token as a build argument.
+- Local registry credentials live in `$XDG_RUNTIME_DIR/containers/auth.json`
+  (0600) or a podman `--authfile`. Do not copy them into the repository; the
+  lint check rejects credential-shaped strings.
+- If you fork this repository: the cosign identity regexp, the image name and
+  the GHCR package must all change together. A fork that keeps the original
+  identity can produce images that *look* signed by the upstream workflow — change
+  `IMAGE_REGISTRY`/`IMAGE_NAME` and the verification examples in the same PR.
+- Rotating the `GITHUB_TOKEN` is automatic (per workflow run). There is no
+  project-wide secret to rotate; if that ever changes, this file must document
+  the source and rotation procedure for each name.
+
+## Hardening principles for future changes
+
+When Wrainrock starts shipping its own services (v0.2+):
+
+- run as non-root with an explicit `User=`;
+- `NoNewPrivileges=yes`, `ProtectSystem=strict`, `ProtectHome=read-only`,
+  `PrivateTmp=yes`, and a narrowed `CapabilityBoundingSet=`;
+- listen on `127.0.0.1` unless a host reverse proxy terminates TLS;
+- any privilege escalation (docker socket, `--privileged`, host networking) is
+  a named, documented, disable-able flag — never a default;
+- credentials only via 0600 files or runtime environment, never in the image,
+  logs, `/proc` visible command lines, or shell history.
