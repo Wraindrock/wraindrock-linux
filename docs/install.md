@@ -8,6 +8,27 @@ system stays on disk as the rollback target.
 > **Read [rollback.md](rollback.md) before you switch.** The escape hatch is the
 > reason this is safe, and it is boring — but only if you know it.
 
+## Install from the ISO (v0.3)
+
+The ISO produced by `.github/workflows/disk.yml` is **unattended**: its baked
+kickstart runs `autopart`, clears the first disk, installs the embedded image and
+reboots. There is no disk picker and no confirmation prompt.
+
+> **Warning:** booting the ISO on a machine with data disks attached will wipe
+> the first one. Test in a VM, or physically detach everything you want to keep.
+
+```bash
+# Get the artifact from the Actions run, then verify it
+sha256sum -c SHA256SUMS
+sudo dd if=wrainrock-*.iso of=/dev/sdX bs=8M status=progress oflag=direct conv=fsync
+```
+
+Boot the USB on a UEFI machine (Secure Boot: enrol Fedora's key if prompted, as
+with any Fedora media). Anaconda runs in text mode on the console; when it
+finishes, the machine reboots into GDM. The first boot shows the Wrainrock
+wallpaper, Plymouth splash and GDM wordmark. The GRUB menu theme remains opt-in
+after install (`sudo wrainrock-grub-theme enable`).
+
 ## Supported starting points
 
 | System | Notes |

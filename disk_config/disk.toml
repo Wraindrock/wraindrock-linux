@@ -1,0 +1,7 @@
+# bootc-image-builder config for the qcow2 disk artifact.
+#
+# The ISO keeps bootc-image-builder's default unattended kickstart (autopart,
+# btrfs, reboot); this file only sizes the root filesystem for the qcow2.
+[[customizations.filesystem]]
+mountpoint = "/"
+minsize = "20 GiB"

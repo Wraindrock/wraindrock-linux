@@ -1,0 +1,207 @@
+---
+# Build installable disk artifacts (qcow2 + Anaconda installer ISO) from a
+# published Wrainrock image. This workflow is deliberately separate from
+# build.yml: the OCI image is the source of truth, and disk artifacts are
+# derived, expensive, and versioned by the image they were built from.
+#
+# Usage:
+#   gh workflow run disk.yml -f image_ref=ghcr.io/wraindrock/wrainrock-linux:44
+#
+# Pin image_ref to a digest for reproducible artifacts; a moving tag is
+# accepted for convenience and the resolved digest is recorded in the summary.
+name: Build disk images
+
+on:
+  workflow_dispatch:
+    inputs:
+      image_ref:
+        description: "Container image reference to build from (tag or digest)"
+        default: "ghcr.io/wraindrock/wrainrock-linux:44"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  packages: read
+
+concurrency:
+  group: disk
+  cancel-in-progress: false
+
+env:
+  # Pinned by digest: the builder turns a bootc image into disk artifacts and
+  # a floating tag would make "same commit, different ISO" possible.
+  BIB_IMAGE: "quay.io/centos-bootc/bootc-image-builder@sha256:30e7eac70b6e4448da57aaff66d6a89dbd1526572e8b77be31da129e692eb3e9"
+
+jobs:
+  disk:
+    name: Build qcow2 + installer ISO
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Free runner disk space
+        uses: ublue-os/remove-unwanted-software@695eb75bc387dbcd9685a8e72d23439d8686cba6
+        with:
+          remove-codeql: true
+
+      - name: Install podman and xorriso
+        run: |
+          set -euo pipefail
+          missing=()
+          command -v podman >/dev/null || missing+=(podman)
+          command -v xorriso >/dev/null || missing+=(xorriso)
+          command -v mkfs.btrfs >/dev/null || missing+=(btrfs-progs)
+          command -v qemu-img >/dev/null || missing+=(qemu-utils)
+          if [ "${#missing[@]}" -gt 0 ]; then
+            sudo apt-get update
+            sudo apt-get install -y "${missing[@]}"
+          fi
+          podman --version
+          xorriso --version | head -1
+
+      - name: Mount podman storage on a loopback btrfs
+        # The runner's root filesystem is too small for image build tree +
+        # podman storage + qcow2 + ISO at once. /mnt has ~70 GB free.
+        run: |
+          set -euo pipefail
+          img=/mnt/podman-storage.img
+          if [ ! -d /mnt ]; then img=/var/tmp/podman-storage.img; fi
+          sudo mkdir -p /var/lib/containers/storage
+          sudo truncate -s 40G "$img"
+          sudo mkfs.btrfs -f "$img"
+          sudo podman system reset --force || true
+          sudo systemctl stop podman.service podman.socket 2>/dev/null || true
+          sudo mount -o compress=zstd:1 "$img" /var/lib/containers/storage
+          sudo df -h /var/lib/containers/storage
+
+      - name: Pull image and builder
+        run: |
+          set -euo pipefail
+          for attempt in 1 2 3; do
+            sudo podman pull "${{ inputs.image_ref }}" && break
+            [ "$attempt" = 3 ] && { echo "::error::cannot pull ${{ inputs.image_ref }}"; exit 1; }
+            sleep $((attempt * 20))
+          done
+          sudo podman pull "${BIB_IMAGE}"
+
+      - name: Record image identity
+        id: image
+        run: |
+          set -euo pipefail
+          VERSION=$(sudo podman image inspect --format '{{ index .Labels "org.opencontainers.image.version" }}' "${{ inputs.image_ref }}")
+          REVISION=$(sudo podman image inspect --format '{{ index .Labels "org.opencontainers.image.revision" }}' "${{ inputs.image_ref }}")
+          DIGEST=$(sudo podman image inspect --format '{{ .Digest }}' "${{ inputs.image_ref }}")
+          [ -n "${VERSION}" ] && [ -n "${REVISION}" ]
+          {
+            echo "version=${VERSION}"
+            echo "revision=${REVISION}"
+            echo "digest=${DIGEST}"
+          } >> "$GITHUB_OUTPUT"
+          echo "Image: ${{ inputs.image_ref }}"
+          echo "Version: ${VERSION}  Revision: ${REVISION}"
+          echo "Digest: ${DIGEST}"
+
+      - name: Build qcow2
+        run: |
+          set -euo pipefail
+          mkdir -p output
+          sudo podman run --rm --privileged \
+            --security-opt label=type:unconfined_t \
+            -v /var/lib/containers/storage:/var/lib/containers/storage \
+            -v "${PWD}/output:/output" \
+            -v "${PWD}/disk_config/disk.toml:/config.toml:ro" \
+            "${BIB_IMAGE}" \
+            build --output /output --chown "$(id -u):$(id -g)" \
+            --rootfs btrfs --use-librepo=True \
+            --type qcow2 "${{ inputs.image_ref }}"
+          qcow2=$(find output -type f -name '*.qcow2' | head -1)
+          [ -n "${qcow2}" ] || { echo "::error::no qcow2 produced"; exit 1; }
+
+      - name: Build installer ISO
+        run: |
+          set -euo pipefail
+          sudo podman run --rm --privileged \
+            --security-opt label=type:unconfined_t \
+            -v /var/lib/containers/storage:/var/lib/containers/storage \
+            -v "${PWD}/output:/output" \
+            "${BIB_IMAGE}" \
+            build --output /output --chown "$(id -u):$(id -g)" \
+            --rootfs btrfs --use-librepo=True \
+            --type anaconda-iso "${{ inputs.image_ref }}"
+          iso=$(find output -type f -name '*.iso' | head -1)
+          [ -n "${iso}" ] || { echo "::error::no ISO produced"; exit 1; }
+
+      - name: Verify artifacts
+        run: |
+          set -euo pipefail
+          iso=$(find output -type f -name '*.iso' | head -1)
+          qcow2=$(find output -type f -name '*.qcow2' | head -1)
+          [ -n "${iso}" ] && [ -n "${qcow2}" ]
+
+          # qcow2: QFI\xfb magic, and qemu-img can open it.
+          magic=$(head -c 4 "${qcow2}" | od -An -tx1 | tr -d ' \n')
+          [ "${magic}" = "514649fb" ] || { echo "::error::bad qcow2 magic: ${magic}"; exit 1; }
+          qemu-img info "${qcow2}" || true
+
+          # ISO: ISO9660 primary volume descriptor at 32769 ("CD001") and a
+          # bootable MBR signature.
+          iso_magic=$(dd if="${iso}" bs=1 skip=32769 count=5 status=none)
+          [ "${iso_magic}" = "CD001" ] || { echo "::error::not an ISO9660 image"; exit 1; }
+          mbr=$(dd if="${iso}" bs=1 skip=510 count=2 status=none | od -An -tx1 | tr -d ' \n')
+          [ "${mbr}" = "55aa" ] || { echo "::error::ISO is not bootable (no 0x55aa MBR)"; exit 1; }
+
+          # Mount and look for the pieces the installer needs.
+          sudo mkdir -p /mnt/iso
+          sudo mount -o loop,ro "${iso}" /mnt/iso
+          trap 'sudo umount /mnt/iso' EXIT
+          test -f /mnt/iso/EFI/BOOT/BOOTX64.EFI || { echo "::error::ISO has no EFI bootloader"; exit 1; }
+          test -d /mnt/iso/images || { echo "::error::ISO has no images/ payload"; exit 1; }
+          find /mnt/iso/EFI /mnt/iso/images -maxdepth 2 -type f | sort | head -20
+          sudo umount /mnt/iso
+          trap - EXIT
+
+          ( cd output && find . -type f \( -name '*.iso' -o -name '*.qcow2' \) -print |
+              sort | sed 's|^\./||' | xargs -r -n1 sha256sum ) > output/SHA256SUMS
+          cat output/SHA256SUMS
+          ls -lh "${iso}" "${qcow2}"
+
+      - name: Upload qcow2
+        uses: actions/upload-artifact@v4
+        with:
+          name: wrainrock-${{ steps.image.outputs.version }}-qcow2
+          path: output/qcow2
+          retention-days: 7
+          if-no-files-found: error
+          compression-level: 0
+
+      - name: Upload installer ISO + checksums
+        uses: actions/upload-artifact@v4
+        with:
+          name: wrainrock-${{ steps.image.outputs.version }}-iso
+          path: |
+            output/bootiso
+            output/SHA256SUMS
+          retention-days: 7
+          if-no-files-found: error
+          compression-level: 0
+
+      - name: Summary
+        run: |
+          {
+            echo "## Wrainrock disk artifacts"
+            echo
+            echo "| Field | Value |"
+            echo "| --- | --- |"
+            echo "| Image | \`${{ inputs.image_ref }}\` |"
+            echo "| Version | \`${{ steps.image.outputs.version }}\` |"
+            echo "| Revision | \`${{ steps.image.outputs.revision }}\` |"
+            echo "| Resolved digest | \`${{ steps.image.outputs.digest }}\` |"
+            echo
+            echo '```'
+            cat output/SHA256SUMS
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"

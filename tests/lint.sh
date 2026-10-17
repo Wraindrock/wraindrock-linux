@@ -286,6 +286,18 @@ else
     fail "docs/architecture.md does not describe the Plymouth theme"
 fi
 
+if grep -Fq 'first disk' docs/install.md &&
+   grep -Fq 'unattended' docs/install.md; then
+    pass "docs/install.md warns that the ISO is unattended and clears the first disk"
+else
+    fail "docs/install.md does not warn about the unattended ISO"
+fi
+if grep -Fq 'disk.yml' README.md; then
+    pass "README documents the disk-image workflow"
+else
+    fail "README does not mention disk.yml"
+fi
+
 echo "workflow"
 if [[ -r .github/workflows/build.yml ]]; then
     pass "build workflow exists"
@@ -299,6 +311,28 @@ if [[ -r .github/workflows/build.yml ]]; then
     done
 else
     fail ".github/workflows/build.yml is missing"
+fi
+if [[ -r .github/workflows/disk.yml ]]; then
+    pass "disk workflow exists"
+    for needle in 'bootc-image-builder' '--type anaconda-iso' '--type qcow2' \
+                  'SHA256SUMS' 'sha256sum' 'BIB_IMAGE'; do
+        if grep -Fq -e "${needle}" .github/workflows/disk.yml; then
+            pass "disk workflow contains ${needle}"
+        else
+            fail "disk workflow is missing ${needle}"
+        fi
+    done
+else
+    fail ".github/workflows/disk.yml is missing"
+fi
+if [[ -r disk_config/disk.toml ]]; then
+    if grep -Fq 'minsize = "20 GiB"' disk_config/disk.toml; then
+        pass "qcow2 disk config sizes the root filesystem"
+    else
+        fail "disk_config/disk.toml does not size the root filesystem"
+    fi
+else
+    fail "disk_config/disk.toml is missing"
 fi
 
 echo "secrets"

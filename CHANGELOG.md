@@ -5,6 +5,29 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 image versions are the Fedora channel plus an immutable build tag, see
 [docs/architecture.md](docs/architecture.md).
 
+## [0.6.0] - 2026-10-17
+
+### Added
+
+- `.github/workflows/disk.yml`: on-demand qcow2 and unattended Anaconda ISO
+  builds from a published image, using a digest-pinned
+  `bootc-image-builder`. The run resolves and prints the source image version,
+  revision and digest, verifies the qcow2 magic, the ISO9660 volume descriptor,
+  the bootable MBR signature, `EFI/BOOT/BOOTX64.EFI` and `images/`, writes
+  `SHA256SUMS`, and uploads both artifacts.
+- `disk_config/disk.toml`: qcow2 root filesystem sized at 20 GiB.
+
+### Documented
+
+- The ISO is unattended by construction (bootc-image-builder's baked kickstart
+  runs `autopart` and clears the first disk); README and install docs warn
+  explicitly. Full KVM install-to-GDM verification is the remaining step.
+
+### Changed
+
+- README installation entry points now cover both `bootc switch` (existing
+  Atomic systems) and the ISO (fresh machines).
+
 ## [0.5.0] - 2026-10-17
 
 ### Added

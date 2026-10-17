@@ -74,10 +74,12 @@ below ships as its own immutable release; no step relaxes the delta invariant.
       automatic application is delegated to the installer (step 4); parity
       exercises enable, idempotency, both refusals and disable against throwaway
       boot trees
-- [ ] Step 4 — `bootc-image-builder` produces an Anaconda ISO in CI; automated
-      VM install test (qemu + kickstart) boots to GDM; ISO artifact uploaded to
-      the GitHub release with checksums; install docs rewritten around the ISO
-      (`bootc switch` remains the upgrade path)
+- [ ] Step 4 — `bootc-image-builder` produces an Anaconda ISO and a qcow2 in CI
+      (`.github/workflows/disk.yml`, gated by structural checks and SHA256SUMS);
+      the ISO is unattended by construction (BIB baked kickstart: autopart,
+      btrfs, reboot). Remaining: a qemu/KVM install test that boots the installed
+      disk to GDM, then attach the artifacts to a GitHub release. `bootc switch`
+      remains the upgrade path for existing systems.
 
 **Test that must fail first (step 1):** `tests/parity.sh` runs `gsettings get
 org.gnome.desktop.background picture-uri`; it returns Fedora's f44 JXL on the

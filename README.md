@@ -19,8 +19,10 @@ state: an update either becomes the next boot entry or it does not happen.
 > opt-in because bootc images cannot rewrite a bootloader config that bootupd
 > generated at install time. Every difference is recorded in
 > `/usr/share/wrainrock/delta.json`, and `tests/parity.sh` fails if the image
-> differs from the base in any way that is not in that manifest. An installer
-> ISO is still Fedora's on purpose — see [docs/roadmap.md](docs/roadmap.md).
+> differs from the base in any way that is not in that manifest. An installable
+> qcow2/ISO pair is built from the same image by
+> `.github/workflows/disk.yml`; the installer is unattended and installs to the
+> first disk — see [docs/install.md](docs/install.md).
 
 ## Why
 
@@ -78,6 +80,30 @@ Full preflight checks, verification and the way back are in
 
 The workflow refuses to overwrite an existing immutable tag. Install the channel
 tag; quote the immutable tag when you need to say exactly what you ran.
+
+## Disk images
+
+The image is the source of truth; disk artifacts are derived from a published
+image and built on demand, never on every push:
+
+```bash
+gh workflow run disk.yml -f image_ref=ghcr.io/wraindrock/wrainrock-linux:44
+gh run download <run-id> -n wrainrock-<version>-qcow2
+gh run download <run-id> -n wrainrock-<version>-iso
+sha256sum -c SHA256SUMS
+```
+
+- **qcow2** — a preinstalled disk; boot it with QEMU/virt-manager for testing or
+  as a ready-made VM.
+- **Anaconda ISO** — the installation media. bootc-image-builder bakes an
+  unattended kickstart (`autopart`, btrfs, reboot), so the ISO **installs over
+  the first disk without asking**. Use a scratch machine or detach data disks.
+  On a UEFI machine, write it to USB with `dd` and boot it; the installed system
+  reboots into GDM.
+
+Both artifacts are built from a pinned `bootc-image-builder` digest and record
+the source image version, revision and resolved digest in the run summary. They
+are CI artifacts today; attaching them to a GitHub release is a later step.
 
 ## Verify what you booted
 
@@ -179,6 +205,8 @@ tests/lint.sh              static repository checks
 tests/parity.sh            "is this still Silverblue, plus only the delta?" test
 tests/smoke.sh             "does it boot?" test
 .github/workflows/build.yml  build, test, publish, sign
+.github/workflows/disk.yml   qcow2 + unattended Anaconda ISO (on demand)
+disk_config/disk.toml      qcow2 root filesystem size
 docs/architecture.md       design, invariants, tag policy, non-goals
 docs/install.md            switch, preflight, verification, troubleshooting
 docs/rollback.md           escape hatches, step by step

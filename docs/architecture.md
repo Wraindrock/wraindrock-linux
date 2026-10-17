@@ -240,10 +240,10 @@ for the boundary and the reporting process.
 
 These are design decisions, not backlog items:
 
-1. **A custom installer ISO in v0.1–v0.2.** `bootc switch` on an existing Fedora
-   Atomic system is the supported install path. `bootc-image-builder`-produced
-   ISOs are v0.3, because an ISO pipeline doubles the test surface before the
-   image pipeline is boring.
+1. **A custom installer UX before v0.3.** `bootc switch` on an existing Fedora
+   Atomic system remains the upgrade path. v0.3 adds bootc-image-builder's stock
+   unattended Anaconda ISO (it clears the first disk); a custom installer UX,
+   partitioning UI and encryption flow stay out of scope.
 2. **A package manager that mutates the live root.** `rpm-ostree install` layers
    are a user escape hatch on the installed system, not a Wrainrock feature. The
    image is the unit of change.
