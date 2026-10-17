@@ -173,8 +173,10 @@ supported). To undo it: `sudo wrainrock-grub-theme disable --yes`.
 hostnamectl
 ```
 
-The default hostname for new installs is `wrainrock`, but on a `bootc switch`
-the existing static hostname in `/etc/hostname` wins. Change it with
+A fresh install seeds the hostname to `wrainrock` on its first boot
+(`wrainrock-hostname-seed.service`). It only replaces an unconfigured name — the
+base's `fedora` or an empty file — and never touches a name you already set. On
+a `bootc switch` the existing `/etc/hostname` wins. Change it with
 `sudo hostnamectl set-hostname <name>`; this does not modify the image.
 
 ```bash

@@ -1,0 +1,37 @@
+#!/bin/bash
+# Seed the Wrainrock hostname once, on the first boot of an installed system.
+#
+# bootc-image-builder's install path does not apply os-release's DEFAULT_HOSTNAME
+# (the installed system inherits the base deployment's /etc), so a fresh install
+# comes up with the base hostname. This script runs once, replaces only an
+# un-configured hostname with DEFAULT_HOSTNAME, and records a marker so a later
+# choice made by the user or installer is never overwritten.
+set -euo pipefail
+
+state_dir=/var/lib/wrainrock
+marker="${state_dir}/hostname-seeded"
+
+# Idempotent: a second boot is a no-op.
+[[ -e ${marker} ]] && exit 0
+
+default="$(sed -n 's/^DEFAULT_HOSTNAME="\(.*\)"$/\1/p' /usr/lib/os-release | head -n 1)"
+[[ -n ${default} ]] || default=wrainrock
+
+# /etc/hostname is what persists; the running hostname is what the user sees.
+# An empty file means "nothing was configured"; "fedora" is the base image's
+# own default that the installer copies over. Both are safe to replace.
+configured="$(cat /etc/hostname 2>/dev/null || true)"
+running="$(hostname 2>/dev/null || true)"
+if [[ -z ${configured} || ${configured} == fedora || ${running} == fedora ]]; then
+    install -d -m 0755 "${state_dir}"
+    printf '%s\n' "${default}" > "${state_dir}/hostname.tmp"
+    chmod 0644 "${state_dir}/hostname.tmp"
+    mv -f "${state_dir}/hostname.tmp" /etc/hostname
+    # systemd-hostnamed might not be up yet at sysinit; setting the kernel
+    # hostname is enough and does not require D-Bus.
+    hostname "${default}" 2>/dev/null || true
+fi
+
+install -d -m 0755 "${state_dir}"
+: > "${marker}"
+chmod 0644 "${marker}"

@@ -91,10 +91,18 @@ from a throwaway copy of the database, so the image's rpmdb and sqlite's
 `-wal`/`-shm`/`.rpm.lock` sidecars stay byte-identical to the base (the build
 checks this before and after the query, and parity compares the sidecar
 checksums). The build passes `--no-hostname` to `podman build`, so the image
-ships no `/etc/hostname` at all: systemd then applies `DEFAULT_HOSTNAME`
-(`wrainrock`) on first boot, and an installer or user that writes the file still
-wins. Leaving buildah's empty placeholder in place would make the kernel default
-(`fedora`) win, which parity now rejects.
+ships no `/etc/hostname` at all (buildah's empty placeholder would otherwise
+count as a configured, empty hostname).
+
+`DEFAULT_HOSTNAME` alone is not enough on an installed system:
+`bootc-image-builder`'s install path inherits the base deployment's `/etc`, so a
+fresh install came up as `fedora` in the v0.3 VM test. The image therefore ships
+`wrainrock-hostname-seed.service` (wired into `sysinit.target.wants`), which runs
+once before login. It reads `DEFAULT_HOSTNAME` from `/usr/lib/os-release` and
+replaces only an unconfigured value — empty, or the base's own `fedora` — then
+writes `/var/lib/wrainrock/hostname-seeded`. A hostname chosen by the user or
+installer is never overwritten, and the marker makes later boots no-ops. The
+unit is exercised in parity against a fixture with a temporary root.
 
 ### Branding
 

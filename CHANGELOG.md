@@ -5,6 +5,23 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 image versions are the Fedora channel plus an immutable build tag, see
 [docs/architecture.md](docs/architecture.md).
 
+## [0.6.1] - 2026-10-17
+
+### Added
+
+- `wrainrock-hostname-seed.service` (with `/usr/libexec/wrainrock-hostname-seed`):
+  a one-shot first-boot unit that applies `DEFAULT_HOSTNAME` on installed
+  systems, where `bootc-image-builder`'s install path otherwise leaves the base
+  deployment's `fedora` hostname in place. It only replaces an empty or `fedora`
+  hostname, records `/var/lib/wrainrock/hostname-seeded`, and never overwrites a
+  name the user or installer chose. Parity exercises the seeder against a
+  fixture and checks the unit's `sysinit.target.wants` wiring.
+
+### Fixed
+
+- Fresh installs now report `wrainrock` as the hostname, so the qcow2 install
+  test's serial prompt and `hostnamectl` agree with the image identity.
+
 ## [0.6.0] - 2026-10-17
 
 ### Added

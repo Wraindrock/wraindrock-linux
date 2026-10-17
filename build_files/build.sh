@@ -197,6 +197,25 @@ install -m 0644 "${branding_dir}/grub/background.png" "${grub_theme_dir}/backgro
 install -D -m 0755 "${script_dir}/grub-theme/wrainrock-grub-theme" /usr/bin/wrainrock-grub-theme
 [[ -x /usr/bin/wrainrock-grub-theme ]] || die "GRUB theme helper not installed"
 
+# 3g. First-boot hostname seeding. bootc-image-builder's install path does not
+# apply DEFAULT_HOSTNAME: the installed system inherits the base deployment's
+# /etc, so a fresh install comes up as "fedora". Seed the hostname once, on the
+# first boot, without touching a value the user already chose. The marker makes
+# it idempotent and keeps later hostnamectl changes.
+hostname_seed_dir="${script_dir}/hostname"
+install -D -m 0755 "${hostname_seed_dir}/wrainrock-hostname-seed" /usr/libexec/wrainrock-hostname-seed
+install -D -m 0644 "${hostname_seed_dir}/wrainrock-hostname-seed.service" \
+    /usr/lib/systemd/system/wrainrock-hostname-seed.service
+systemd_wants=/usr/lib/systemd/system/sysinit.target.wants
+install -d -m 0755 "${systemd_wants}"
+ln -sfn ../wrainrock-hostname-seed.service "${systemd_wants}/wrainrock-hostname-seed.service"
+[[ -x /usr/libexec/wrainrock-hostname-seed && -f /usr/lib/systemd/system/wrainrock-hostname-seed.service ]] \
+    || die "hostname seed unit or script not installed"
+[[ -L ${systemd_wants}/wrainrock-hostname-seed.service ]] \
+    || die "hostname seed unit is not enabled"
+grep -q '^WantedBy=sysinit.target$' /usr/lib/systemd/system/wrainrock-hostname-seed.service \
+    || die "hostname seed unit has the wrong target"
+
 # --- 4. delta manifest ------------------------------------------------------
 # Every intended difference from the base, machine-readable. tests/parity.sh
 # fails the build if the real image differs in any other way.
@@ -287,6 +306,9 @@ cat > /usr/share/wrainrock/delta.json <<EOF
       "/usr/share/grub/themes/wrainrock/theme.txt",
       "/usr/share/grub/themes/wrainrock/background.png",
       "/usr/bin/wrainrock-grub-theme",
+      "/usr/libexec/wrainrock-hostname-seed",
+      "/usr/lib/systemd/system/wrainrock-hostname-seed.service",
+      "/usr/lib/systemd/system/sysinit.target.wants/wrainrock-hostname-seed.service",
       "/usr/share/wrainrock/base-os-release",
       "/usr/share/wrainrock/build-info.json",
       "/usr/share/wrainrock/delta.json"

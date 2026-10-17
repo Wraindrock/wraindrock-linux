@@ -203,6 +203,9 @@ expected_added = {
     "/usr/share/grub/themes/wrainrock/theme.txt",
     "/usr/share/grub/themes/wrainrock/background.png",
     "/usr/bin/wrainrock-grub-theme",
+    "/usr/libexec/wrainrock-hostname-seed",
+    "/usr/lib/systemd/system/wrainrock-hostname-seed.service",
+    "/usr/lib/systemd/system/sysinit.target.wants/wrainrock-hostname-seed.service",
 }
 expected_added |= {
     f"/usr/share/plymouth/themes/wrainrock/animation-{i:04d}.png"
@@ -478,6 +481,41 @@ if in_image "${IMAGE}" "${grub_test_script}"; then
     pass "GRUB theme helper: enable, idempotency, refusals, disable"
 else
     fail "GRUB theme helper behavior is wrong"
+fi
+
+# --- Hostname seeding -------------------------------------------------------
+# A fresh install inherits the base deployment's /etc and comes up as "fedora"
+# even though os-release carries DEFAULT_HOSTNAME. The image ships a one-shot
+# first-boot unit; test its file wiring and its behavior against a fixture.
+seed_test_script='set -eu
+unit=/usr/lib/systemd/system/wrainrock-hostname-seed.service
+want=/usr/lib/systemd/system/sysinit.target.wants/wrainrock-hostname-seed.service
+test -x /usr/libexec/wrainrock-hostname-seed
+grep -qx "ExecStart=/usr/libexec/wrainrock-hostname-seed" "$unit"
+grep -qx "ConditionPathExists=!/var/lib/wrainrock/hostname-seeded" "$unit"
+grep -qx "WantedBy=sysinit.target" "$unit"
+test -L "$want"
+test "$(readlink -f "$want")" = "$(readlink -f "$unit")"
+fixture=$(mktemp -d)
+mkdir -p "$fixture/state"
+printf "%s\n" "NAME=\"Wrainrock Linux\"" "DEFAULT_HOSTNAME=\"wrainrock\"" > "$fixture/os-release"
+printf "fedora\n" > "$fixture/hostname"
+sed -e "s|/usr/lib/os-release|$fixture/os-release|" \
+    -e "s|/etc/hostname|$fixture/hostname|" \
+    -e "s|/var/lib/wrainrock|$fixture/state|" \
+    /usr/libexec/wrainrock-hostname-seed > "$fixture/seed"
+chmod +x "$fixture/seed"
+"$fixture/seed"
+test "$(cat "$fixture/hostname")" = wrainrock
+test -f "$fixture/state/hostname-seeded"
+printf "myhost\n" > "$fixture/hostname"
+rm -f "$fixture/state/hostname-seeded"
+"$fixture/seed"
+test "$(cat "$fixture/hostname")" = myhost'
+if in_image "${IMAGE}" "${seed_test_script}"; then
+    pass "hostname seed unit is wired and only replaces the base default"
+else
+    fail "hostname seed unit is missing or behaves destructively"
 fi
 
 # --- Provenance -------------------------------------------------------------

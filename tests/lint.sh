@@ -19,6 +19,8 @@ while IFS= read -r file; do shell_files+=("$file"); done < <(
 )
 # The GRUB theme helper is a bash script without a .sh suffix.
 shell_files+=("build_files/grub-theme/wrainrock-grub-theme")
+# Same for the first-boot hostname seeder.
+shell_files+=("build_files/hostname/wrainrock-hostname-seed")
 for file in "${shell_files[@]}"; do
     if bash -n "${file}"; then
         pass "${file}"
@@ -226,10 +228,30 @@ else
     fail "GRUB theme background is not a 1920x1080 PNG"
 fi
 
+echo "first-boot hostname seeding"
+for needle in 'DEFAULT_HOSTNAME' 'state_dir=/var/lib/wrainrock' \
+              'hostname-seeded' 'hostname "${default}"'; do
+    if grep -Fq -e "${needle}" build_files/hostname/wrainrock-hostname-seed; then
+        pass "hostname seeder handles ${needle}"
+    else
+        fail "hostname seeder is missing ${needle}"
+    fi
+done
+for needle in 'ConditionPathExists=!/var/lib/wrainrock/hostname-seeded' \
+              'ExecStart=/usr/libexec/wrainrock-hostname-seed' \
+              'WantedBy=sysinit.target'; do
+    if grep -Fqx -e "${needle}" build_files/hostname/wrainrock-hostname-seed.service; then
+        pass "hostname unit contains ${needle}"
+    else
+        fail "hostname unit is missing ${needle}"
+    fi
+done
+
 echo "build invariants"
 for needle in 'base-os-release' 'delta.json' 'zz-wrainrock.gschema.override' \
               'wrainrock-wallpaper.png' 'Theme=wrainrock' \
-              'plymouth/animation-' 'grub/theme.txt' 'wrainrock-grub-theme'; do
+              'plymouth/animation-' 'grub/theme.txt' 'wrainrock-grub-theme' \
+              'wrainrock-hostname-seed'; do
     if grep -Fq "${needle}" build_files/build.sh; then
         pass "build.sh handles ${needle}"
     else
