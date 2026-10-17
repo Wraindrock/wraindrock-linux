@@ -9,7 +9,8 @@
 #   * /usr/lib/os-release may differ only in the identity keys listed in the
 #     image's own delta manifest, with exactly the recorded values;
 #   * every added file is one the delta manifest declares;
-#   * the GDM logo override is actually compiled into the schema cache.
+#   * the GDM logo and wallpaper overrides are compiled into the schema cache;
+#   * the Plymouth boot splash is installed, selected, and complete.
 #
 #   tests/parity.sh quay.io/fedora/fedora-silverblue:44 \
 #                   localhost/wrainrock-linux:44
@@ -186,6 +187,7 @@ assert image["ID_LIKE"] == "fedora", image
 assert delta["files"]["modified"] == [
     "/usr/lib/os-release",
     "/usr/share/glib-2.0/schemas/gschemas.compiled",
+    "/etc/plymouth/plymouthd.conf",
 ], delta["files"]
 expected_added = {
     "/usr/share/icons/hicolor/scalable/apps/wrainrock-logo-icon.svg",
@@ -196,6 +198,12 @@ expected_added = {
     "/usr/share/wrainrock/base-os-release",
     "/usr/share/wrainrock/build-info.json",
     "/usr/share/wrainrock/delta.json",
+    "/usr/share/plymouth/themes/wrainrock/wrainrock.plymouth",
+    "/usr/share/plymouth/themes/wrainrock/background.png",
+}
+expected_added |= {
+    f"/usr/share/plymouth/themes/wrainrock/animation-{i:04d}.png"
+    for i in range(1, 31)
 }
 assert set(delta["files"]["added"]) == expected_added, delta["files"]["added"]
 PY
@@ -299,6 +307,89 @@ for key in picture-uri picture-uri-dark; do
         fail "default ${key} is ${got:-<unset>}, want ${want}"
     fi
 done
+
+# --- Plymouth boot splash ---------------------------------------------------
+plymouth_dir=/usr/share/plymouth/themes/wrainrock
+theme_file=${plymouth_dir}/wrainrock.plymouth
+
+if in_image "${IMAGE}" "test -s ${theme_file}"; then
+    pass "Plymouth theme file is installed"
+else
+    fail "Plymouth theme file is missing"
+fi
+
+if in_image "${IMAGE}" "grep -qx 'ModuleName=two-step' ${theme_file}"; then
+    pass "Plymouth theme uses the two-step plugin (shipped by the base)"
+else
+    fail "Plymouth theme does not use the two-step plugin"
+fi
+
+if in_image "${IMAGE}" "grep -qx 'ImageDir=${plymouth_dir}' ${theme_file}"; then
+    pass "Plymouth theme points at its own asset directory"
+else
+    fail "Plymouth theme ImageDir is missing or wrong"
+fi
+
+if in_image "${IMAGE}" "grep -qx 'UseProgressBar=true' ${theme_file}"; then
+    pass "Plymouth theme keeps progress bars for offline updates"
+else
+    fail "Plymouth theme dropped the update progress bar"
+fi
+
+if in_image "${IMAGE}" "grep -qx 'Theme=wrainrock' /etc/plymouth/plymouthd.conf"; then
+    pass "Plymouth daemon config selects the Wrainrock theme"
+else
+    fail "Plymouth daemon config does not select the Wrainrock theme"
+fi
+
+if in_image "${IMAGE}" "test -s ${plymouth_dir}/background.png"; then
+    pass "Plymouth background is installed"
+else
+    fail "Plymouth background is missing"
+fi
+
+plymouth_bg_dims="$(in_image "${IMAGE}" \
+    "od -An -tu4 --endian=big -j16 -N8 ${plymouth_dir}/background.png 2>/dev/null || true")"
+read -r plymouth_bg_w plymouth_bg_h <<<"${plymouth_bg_dims}"
+if [[ ${plymouth_bg_w:-0} -eq 1920 && ${plymouth_bg_h:-0} -eq 1080 ]]; then
+    pass "Plymouth background is 1920x1080"
+else
+    fail "Plymouth background is ${plymouth_bg_w:-?}x${plymouth_bg_h:-?}, want 1920x1080"
+fi
+
+plymouth_frames="$(in_image "${IMAGE}" \
+    "ls ${plymouth_dir}/animation-*.png 2>/dev/null | wc -l" 2>/dev/null || true)"
+if [[ ${plymouth_frames:-0} -eq 30 ]]; then
+    pass "Plymouth animation has 30 frames"
+else
+    fail "Plymouth animation has ${plymouth_frames:-0} frames, want 30"
+fi
+
+if in_image "${IMAGE}" 'set -e
+    for f in /usr/share/plymouth/themes/wrainrock/animation-*.png; do
+        sig=$(head -c 8 "$f" | od -An -tx1 | tr -d " \n")
+        [ "$sig" = 89504e470d0a1a0a ] || exit 1
+    done'; then
+    pass "every Plymouth animation frame is a valid PNG"
+else
+    fail "a Plymouth animation frame is not a valid PNG"
+fi
+
+plymouth_frame_dims="$(in_image "${IMAGE}" \
+    "od -An -tu4 --endian=big -j16 -N8 ${plymouth_dir}/animation-0001.png 2>/dev/null || true")"
+read -r plymouth_frame_w plymouth_frame_h <<<"${plymouth_frame_dims}"
+if [[ ${plymouth_frame_w:-0} -eq 256 && ${plymouth_frame_h:-0} -eq 256 ]]; then
+    pass "Plymouth animation frames are 256x256"
+else
+    fail "Plymouth animation frame is ${plymouth_frame_w:-?}x${plymouth_frame_h:-?}, want 256x256"
+fi
+
+plymouth_themes="$(in_image "${IMAGE}" 'plymouth-set-default-theme -l 2>/dev/null || true')"
+if grep -qx 'wrainrock' <<<"${plymouth_themes}"; then
+    pass "plymouth-set-default-theme lists the Wrainrock theme"
+else
+    fail "plymouth-set-default-theme does not list wrainrock: ${plymouth_themes:-<none>}"
+fi
 
 # rpm must agree that the only tracked file we changed is os-release.
 # On Fedora 44, /usr/lib/os-release belongs to the variant identity package

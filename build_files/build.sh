@@ -9,8 +9,8 @@
 #   2. record provenance at /usr/share/wrainrock/build-info.json and preserve
 #      the untouched base os-release next to it;
 #   3. apply the Wrainrock identity: os-release display fields, the Wrainrock
-#      logo icon, the GDM login logo and (v0.3) the default desktop/GDM
-#      wallpaper, then record every applied difference in
+#      logo icon, the GDM login logo, the default desktop/GDM wallpaper and
+#      the Plymouth boot splash, then record every applied difference in
 #      /usr/share/wrainrock/delta.json.
 #
 # The delta manifest is the contract the parity test enforces: the image may
@@ -83,7 +83,9 @@ rm -rf "${rpm_db_tmp}"
 
 # --- 3. identity ------------------------------------------------------------
 for asset in wrainrock-logo-icon.svg wrainrock-gdm-logo.svg \
-    wrainrock-gdm-logo.png wrainrock-wallpaper.png; do
+    wrainrock-gdm-logo.png wrainrock-wallpaper.png \
+    plymouth/wrainrock.plymouth plymouth/background.png \
+    plymouth/animation-0001.png plymouth/animation-0030.png; do
     [[ -r ${branding_dir}/${asset} ]] || die "branding asset ${asset} is missing"
 done
 
@@ -157,6 +159,29 @@ command -v glib-compile-schemas >/dev/null 2>&1 \
     || die "glib-compile-schemas is required to apply the GDM logo"
 glib-compile-schemas "${gschema_dir}"
 
+# 3e. Plymouth boot splash. Fedora's theme plugins are all shipped in the base
+# image, so the splash needs no package change: a two-step theme plus the
+# daemon config is enough. plymouth's /usr/lib/plymouth/plymouth-populate-initrd
+# reads this config when a deployment regenerates its initramfs and copies the
+# selected theme into it.
+plymouth_dir=/usr/share/plymouth/themes/wrainrock
+install -d -m 0755 "${plymouth_dir}"
+install -m 0644 "${branding_dir}/plymouth/wrainrock.plymouth" "${plymouth_dir}/"
+install -m 0644 "${branding_dir}/plymouth/background.png" "${plymouth_dir}/"
+install -m 0644 "${branding_dir}"/plymouth/animation-????.png "${plymouth_dir}/"
+[[ -f ${plymouth_dir}/animation-0001.png && -f ${plymouth_dir}/animation-0030.png ]] \
+    || die "Plymouth animation frames not installed"
+
+cat > /etc/plymouth/plymouthd.conf <<'PLYMOUTHD'
+# Wrainrock Linux boot splash. The theme itself is shipped in
+# /usr/share/plymouth/themes/wrainrock; this file only selects it.
+[Daemon]
+Theme=wrainrock
+PLYMOUTHD
+chmod 0644 /etc/plymouth/plymouthd.conf
+grep -qx 'Theme=wrainrock' /etc/plymouth/plymouthd.conf \
+    || die "failed to select the Plymouth theme"
+
 # --- 4. delta manifest ------------------------------------------------------
 # Every intended difference from the base, machine-readable. tests/parity.sh
 # fails the build if the real image differs in any other way.
@@ -203,7 +228,8 @@ cat > /usr/share/wrainrock/delta.json <<EOF
   "files": {
     "modified": [
       "/usr/lib/os-release",
-      "/usr/share/glib-2.0/schemas/gschemas.compiled"
+      "/usr/share/glib-2.0/schemas/gschemas.compiled",
+      "/etc/plymouth/plymouthd.conf"
     ],
     "added": [
       "/usr/share/icons/hicolor/scalable/apps/wrainrock-logo-icon.svg",
@@ -211,6 +237,38 @@ cat > /usr/share/wrainrock/delta.json <<EOF
       "/usr/share/pixmaps/wrainrock-gdm-logo.png",
       "/usr/share/glib-2.0/schemas/zz-wrainrock.gschema.override",
       "/usr/share/backgrounds/wrainrock/wrainrock-wallpaper.png",
+      "/usr/share/plymouth/themes/wrainrock/wrainrock.plymouth",
+      "/usr/share/plymouth/themes/wrainrock/background.png",
+      "/usr/share/plymouth/themes/wrainrock/animation-0001.png",
+      "/usr/share/plymouth/themes/wrainrock/animation-0002.png",
+      "/usr/share/plymouth/themes/wrainrock/animation-0003.png",
+      "/usr/share/plymouth/themes/wrainrock/animation-0004.png",
+      "/usr/share/plymouth/themes/wrainrock/animation-0005.png",
+      "/usr/share/plymouth/themes/wrainrock/animation-0006.png",
+      "/usr/share/plymouth/themes/wrainrock/animation-0007.png",
+      "/usr/share/plymouth/themes/wrainrock/animation-0008.png",
+      "/usr/share/plymouth/themes/wrainrock/animation-0009.png",
+      "/usr/share/plymouth/themes/wrainrock/animation-0010.png",
+      "/usr/share/plymouth/themes/wrainrock/animation-0011.png",
+      "/usr/share/plymouth/themes/wrainrock/animation-0012.png",
+      "/usr/share/plymouth/themes/wrainrock/animation-0013.png",
+      "/usr/share/plymouth/themes/wrainrock/animation-0014.png",
+      "/usr/share/plymouth/themes/wrainrock/animation-0015.png",
+      "/usr/share/plymouth/themes/wrainrock/animation-0016.png",
+      "/usr/share/plymouth/themes/wrainrock/animation-0017.png",
+      "/usr/share/plymouth/themes/wrainrock/animation-0018.png",
+      "/usr/share/plymouth/themes/wrainrock/animation-0019.png",
+      "/usr/share/plymouth/themes/wrainrock/animation-0020.png",
+      "/usr/share/plymouth/themes/wrainrock/animation-0021.png",
+      "/usr/share/plymouth/themes/wrainrock/animation-0022.png",
+      "/usr/share/plymouth/themes/wrainrock/animation-0023.png",
+      "/usr/share/plymouth/themes/wrainrock/animation-0024.png",
+      "/usr/share/plymouth/themes/wrainrock/animation-0025.png",
+      "/usr/share/plymouth/themes/wrainrock/animation-0026.png",
+      "/usr/share/plymouth/themes/wrainrock/animation-0027.png",
+      "/usr/share/plymouth/themes/wrainrock/animation-0028.png",
+      "/usr/share/plymouth/themes/wrainrock/animation-0029.png",
+      "/usr/share/plymouth/themes/wrainrock/animation-0030.png",
       "/usr/share/wrainrock/base-os-release",
       "/usr/share/wrainrock/build-info.json",
       "/usr/share/wrainrock/delta.json"
@@ -242,5 +300,6 @@ chmod 0644 /usr/share/wrainrock/build-info.json
 say "provenance written for ${IMAGE_NAME:-unknown} (${rpm_count} packages)"
 say "base os-release preserved at /usr/share/wrainrock/base-os-release"
 say "identity applied: $(unquote "$(field PRETTY_NAME)")"
+say "boot splash installed: ${plymouth_dir} (theme: wrainrock)"
 say "delta manifest written to /usr/share/wrainrock/delta.json"
 say "rpm database left byte-identical to the base"

@@ -5,6 +5,30 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 image versions are the Fedora channel plus an immutable build tag, see
 [docs/architecture.md](docs/architecture.md).
 
+## [0.4.0] - 2026-10-17
+
+### Added
+
+- Plymouth boot splash: a `two-step` theme at
+  `/usr/share/plymouth/themes/wrainrock/` (1920x1080 gradient background plus 30
+  animation frames, an outlined `W` with a rotating blue arc), selected by
+  `/etc/plymouth/plymouthd.conf` (`[Daemon] Theme=wrainrock`). Uses the plugin
+  the base image already ships; no package changes.
+- Parity checks: theme file and plugin, `ImageDir`, update progress-bar blocks,
+  the daemon config, background dimensions, 30 valid 256x256 frames, and
+  `plymouth-set-default-theme -l` listing `wrainrock`.
+- Lint checks: Plymouth assets exist, the source SVGs are font-independent, the
+  background/frame PNG headers have the expected dimensions, and the docs
+  describe the splash.
+
+### Changed
+
+- `delta.json` `files.added` now declares the Plymouth theme, background and
+  animation frames; `files.modified` now includes
+  `/etc/plymouth/plymouthd.conf`.
+- Docs and roadmap: v0.3 step 2 is closed; the next step is the GRUB theme,
+  then the installable ISO.
+
 ## [0.3.0] - 2026-10-17
 
 ### Added

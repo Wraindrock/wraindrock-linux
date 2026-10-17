@@ -121,6 +121,15 @@ with `gsettings reset org.gnome.desktop.background picture-uri` to see the
 Wrainrock default.
 
 ```bash
+plymouth-set-default-theme
+# wrainrock
+```
+
+The splash is drawn from the initramfs and handed over to the root filesystem,
+so it only changes after the new deployment regenerates its initrd. `bootc`
+does that on deploy; if you ever need to force it, `sudo dracut -f`.
+
+```bash
 hostnamectl
 ```
 

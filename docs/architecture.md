@@ -98,7 +98,7 @@ path is not something a `RUN` step can change).
 ### Branding
 
 The delta is identity and presentation only on purpose (identity in v0.2,
-wallpaper in v0.3):
+wallpaper and boot splash in v0.3):
 
 | Change | Mechanism |
 | --- | --- |
@@ -106,6 +106,7 @@ wallpaper in v0.3):
 | logo icon (`Settings` → `About`) | `/usr/share/icons/hicolor/scalable/apps/wrainrock-logo-icon.svg` |
 | GDM login logo | `/usr/share/pixmaps/wrainrock-gdm-logo.{svg,png}` + `zz-wrainrock.gschema.override` |
 | default desktop + GDM wallpaper | `/usr/share/backgrounds/wrainrock/wrainrock-wallpaper.png` + `[org.gnome.desktop.background]` in `zz-wrainrock.gschema.override` |
+| Plymouth boot splash | `/usr/share/plymouth/themes/wrainrock/` (two-step theme) + `Theme=wrainrock` in `/etc/plymouth/plymouthd.conf` |
 | default hostname | `DEFAULT_HOSTNAME` (the booted hostname is still set by the installer/`/etc/hostname`) |
 
 The logo assets are generated outlines, not `<text>`: rendering does not depend
@@ -119,6 +120,18 @@ day/night JXLs, and our later-sorted `zz-` file replaces both `picture-uri` and
 without a separate mechanism. Known caveat: the wordmark is black, so it has
 low contrast on the dark login wallpaper; a light login-screen variant is a
 follow-up, not part of this step.
+
+The boot splash uses Plymouth's `two-step` plugin, which the base image already
+ships; there is no `script.so`, so a script theme would mean a package change
+and is deliberately not done. The theme is
+`/usr/share/plymouth/themes/wrainrock/`: a 1920x1080 gradient background, 30
+animation frames (256x256 PNGs, thin outlined `W` plus a rotating blue arc) and
+`wrainrock.plymouth`. `/etc/plymouth/plymouthd.conf` selects it. When a
+deployment regenerates its initramfs, plymouth's
+`/usr/lib/plymouth/plymouth-populate-initrd` reads that config and copies the
+theme and its plugin into the initrd. CI asserts the files, the config and that
+`plymouth-set-default-theme -l` lists the theme; it cannot assert the rendered
+splash or the initrd contents — verify those by rebooting after `bootc switch`.
 
 `gtk-update-icon-cache` is deliberately not run: the hicolor theme resolves
 scalable SVGs without a cache, and skipping it avoids a generated
@@ -220,7 +233,7 @@ These are design decisions, not backlog items:
 2. **A package manager that mutates the live root.** `rpm-ostree install` layers
    are a user escape hatch on the installed system, not a Wrainrock feature. The
    image is the unit of change.
-3. **Forking Fedora packages or the kernel through v0.2.** There is nothing
+3. **Forking Fedora packages or the kernel through v0.3.** There is nothing
    Wrainrock can meaningfully test about a forked glibc or kernel yet. Build-time
    patches, when they arrive, must assert a single match and be recorded in
    `PATCHES.md`.

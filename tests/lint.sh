@@ -101,7 +101,11 @@ for asset in \
     build_files/branding/wrainrock-gdm-logo.svg \
     build_files/branding/wrainrock-gdm-logo.png \
     build_files/branding/wrainrock-wallpaper.svg \
-    build_files/branding/wrainrock-wallpaper.png; do
+    build_files/branding/wrainrock-wallpaper.png \
+    build_files/branding/plymouth/wrainrock.plymouth \
+    build_files/branding/plymouth/background.png \
+    build_files/branding/plymouth/wrainrock-boot-background.svg \
+    build_files/branding/plymouth/wrainrock-boot-frame.svg; do
     if [[ -s ${asset} ]]; then
         pass "${asset} exists"
     else
@@ -111,7 +115,9 @@ done
 for svg in \
     build_files/branding/wrainrock-logo-icon.svg \
     build_files/branding/wrainrock-gdm-logo.svg \
-    build_files/branding/wrainrock-wallpaper.svg; do
+    build_files/branding/wrainrock-wallpaper.svg \
+    build_files/branding/plymouth/wrainrock-boot-background.svg \
+    build_files/branding/plymouth/wrainrock-boot-frame.svg; do
     if grep -q '<text' "${svg}"; then
         fail "${svg} renders text at runtime (use outlines instead)"
     else
@@ -120,7 +126,9 @@ for svg in \
 done
 if grep -Fiq '#3C6EB4' build_files/branding/wrainrock-logo-icon.svg &&
    grep -Fiq '#3C6EB4' build_files/branding/wrainrock-gdm-logo.svg &&
-   grep -Fiq '#3C6EB4' build_files/branding/wrainrock-wallpaper.svg; then
+   grep -Fiq '#3C6EB4' build_files/branding/wrainrock-wallpaper.svg &&
+   grep -Fiq '3c6eb4' build_files/branding/plymouth/wrainrock-boot-frame.svg &&
+   grep -Fiq '3c6eb4' build_files/branding/plymouth/wrainrock.plymouth; then
     pass "branding assets use the documented Wrainrock blue"
 else
     fail "branding assets lost the Wrainrock blue outline"
@@ -140,9 +148,46 @@ else
     fail "wallpaper is not a 3840x2160 PNG"
 fi
 
+plymouth_frames=$(find build_files/branding/plymouth -name 'animation-*.png' | wc -l)
+if [[ ${plymouth_frames} -eq 30 ]]; then
+    pass "Plymouth theme ships 30 animation frames"
+else
+    fail "Plymouth theme ships ${plymouth_frames} animation frames, want 30"
+fi
+if [[ -s build_files/branding/plymouth/animation-0001.png &&
+      -s build_files/branding/plymouth/animation-0030.png ]]; then
+    pass "Plymouth animation frames are numbered from 0001 to 0030"
+else
+    fail "Plymouth animation frames are missing or misnumbered"
+fi
+if python3 - <<'PY'
+import glob
+import struct
+
+
+def dims(path):
+    with open(path, "rb") as handle:
+        data = handle.read(24)
+    assert data[:8] == b"\x89PNG\r\n\x1a\n", path
+    return struct.unpack(">II", data[16:24])
+
+
+assert dims("build_files/branding/plymouth/background.png") == (1920, 1080)
+frames = sorted(glob.glob("build_files/branding/plymouth/animation-*.png"))
+assert len(frames) == 30, len(frames)
+assert dims(frames[0]) == (256, 256), dims(frames[0])
+assert dims(frames[-1]) == (256, 256), dims(frames[-1])
+PY
+then
+    pass "Plymouth assets are 1920x1080 background + 256x256 frames"
+else
+    fail "Plymouth assets have unexpected dimensions"
+fi
+
 echo "build invariants"
 for needle in 'base-os-release' 'delta.json' 'zz-wrainrock.gschema.override' \
-              'wrainrock-wallpaper.png'; do
+              'wrainrock-wallpaper.png' 'Theme=wrainrock' \
+              'plymouth/animation-'; do
     if grep -Fq "${needle}" build_files/build.sh; then
         pass "build.sh handles ${needle}"
     else
@@ -186,6 +231,11 @@ if grep -Fq 'wrainrock-wallpaper' docs/architecture.md; then
     pass "architecture doc describes the wallpaper override"
 else
     fail "docs/architecture.md does not describe the wallpaper"
+fi
+if grep -Fq 'plymouth' docs/architecture.md; then
+    pass "architecture doc describes the Plymouth theme"
+else
+    fail "docs/architecture.md does not describe the Plymouth theme"
 fi
 
 echo "workflow"

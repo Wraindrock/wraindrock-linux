@@ -4,7 +4,7 @@
 #
 # v0.3 is a *branded parity build*: the RPM set is still exactly Fedora
 # Silverblue 44, plus a presentation delta (os-release display fields, logo
-# icon, GDM logo, default wallpaper) recorded in
+# icon, GDM logo, default wallpaper, Plymouth boot splash) recorded in
 # /usr/share/wrainrock/delta.json. Any difference outside that manifest is a
 # pipeline bug, not a customization bug. docs/roadmap.md turns on real
 # customization one reviewed step at a time.

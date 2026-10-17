@@ -60,7 +60,12 @@ below ships as its own immutable release; no step relaxes the delta invariant.
       `picture-uri` and `picture-uri-dark` through
       `zz-wrainrock.gschema.override`, recorded in `delta.json`, and asserted by
       parity via the compiled schema cache and `gsettings get`
-- [ ] Step 2 — Plymouth splash (boot logo), with a test that the theme is active
+- [x] Step 2 — Plymouth splash (boot logo): a `two-step` theme using the base's
+      shipped plugin (no package change), 1920x1080 gradient background, 30
+      animation frames (outlined `W` + rotating blue arc), and
+      `/etc/plymouth/plymouthd.conf` selecting `wrainrock`; parity asserts the
+      theme file, the daemon config, frame count/format/dimensions and
+      `plymouth-set-default-theme -l`
 - [ ] Step 3 — GRUB theme (boot menu), with a test that it is installed and
       referenced by the bootloader configuration
 - [ ] Step 4 — `bootc-image-builder` produces an Anaconda ISO in CI; automated
@@ -71,6 +76,10 @@ below ships as its own immutable release; no step relaxes the delta invariant.
 **Test that must fail first (step 1):** `tests/parity.sh` runs `gsettings get
 org.gnome.desktop.background picture-uri`; it returns Fedora's f44 JXL on the
 v0.2 image and the Wrainrock PNG on v0.3.
+
+**Test that must fail first (step 2):** `tests/parity.sh` asserts the
+`wrainrock` theme file and `Theme=wrainrock` in `/etc/plymouth/plymouthd.conf`;
+both fail on the step-1 image and pass once the splash is installed.
 
 **Non-goals:** custom partitioning UX, encryption UI, dual-boot UX.
 
