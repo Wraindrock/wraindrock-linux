@@ -5,6 +5,19 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 image versions are the Fedora channel plus an immutable build tag, see
 [docs/architecture.md](docs/architecture.md).
 
+## [0.6.2] - 2026-10-18
+
+### Added
+
+- The disk workflow publishes verified qcow2 + ISO + `SHA256SUMS` as an
+  immutable OCI artifact set on GHCR
+  (`ghcr.io/wraindrock/wrainrock-linux-disk:<image version>`), using a pinned
+  `oras` release with a verified tarball checksum. The publish step refuses to
+  overwrite an existing version tag, checks the stored manifest's layer digests
+  and sizes against the local files, and proves the package is anonymously
+  pullable. GitHub Release assets are not used: GitHub caps them at 2 GiB and
+  both artifacts are larger.
+
 ## [0.6.1] - 2026-10-17
 
 ### Added

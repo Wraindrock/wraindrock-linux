@@ -18,9 +18,10 @@ reboots. There is no disk picker and no confirmation prompt.
 > the first one. Test in a VM, or physically detach everything you want to keep.
 
 ```bash
-# Get the artifact from the Actions run, then verify it
+# Pull the immutable artifact set for the image version, then verify it
+oras pull ghcr.io/wraindrock/wrainrock-linux-disk:<version>
 sha256sum -c SHA256SUMS
-sudo dd if=wrainrock-*.iso of=/dev/sdX bs=8M status=progress oflag=direct conv=fsync
+sudo dd if=install.iso of=/dev/sdX bs=8M status=progress oflag=direct conv=fsync
 ```
 
 Boot the USB on a UEFI machine (Secure Boot: enrol Fedora's key if prompted, as

@@ -27,7 +27,7 @@ on:
 
 permissions:
   contents: read
-  packages: read
+  packages: write
 
 concurrency:
   group: disk
@@ -68,6 +68,19 @@ jobs:
           fi
           podman --version
           xorriso --version | head -1
+
+      - name: Install pinned oras
+        # oras is not packaged on the runner; pin the release and verify the
+        # tarball so a compromised upstream tag cannot silently replace it.
+        run: |
+          set -euo pipefail
+          version=1.3.4
+          sha256=f27adb935022d94df8dc77719c322dda592c78a0d57a6f7dcdd8d900b248c454
+          curl -fsSL -o /tmp/oras.tgz \
+            "https://github.com/oras-project/oras/releases/download/v${version}/oras_${version}_linux_amd64.tar.gz"
+          echo "${sha256}  /tmp/oras.tgz" | sha256sum -c -
+          sudo tar -xzf /tmp/oras.tgz -C /usr/local/bin oras
+          oras version
 
       - name: Mount podman storage on a loopback btrfs
         # The runner's root filesystem is too small for image build tree +
@@ -194,6 +207,72 @@ jobs:
           qcow2=$(find output/qcow2 -name '*.qcow2' -print -quit)
           tests/vm-test.sh qcow2 "${qcow2}" --timeout 900 --out "${RUNNER_TEMP}/vm-qcow2"
           echo "screenshots: ${RUNNER_TEMP}/vm-qcow2"
+
+      - name: Publish disk artifacts to GHCR
+        id: publish
+        run: |
+          set -euo pipefail
+          version="${{ steps.image.outputs.version }}"
+          revision="${{ steps.image.outputs.revision }}"
+          digest="${{ steps.image.outputs.digest }}"
+          ref="ghcr.io/${GITHUB_REPOSITORY_OWNER}/wrainrock-linux-disk:${version}"
+          iso=$(find output/bootiso -name '*.iso' -print -quit)
+          qcow2=$(find output/qcow2 -name '*.qcow2' -print -quit)
+          [ -n "${iso}" ] && [ -n "${qcow2}" ]
+
+          echo "${{ github.token }}" | oras login ghcr.io -u "${{ github.actor }}" --password-stdin
+
+          # Immutable: one version maps to exactly one artifact set. Rerunning
+          # the workflow for an already published version is a red flag, not a
+          # silent overwrite.
+          if oras manifest fetch "${ref}" >/dev/null 2>&1; then
+            echo "::error::${ref} already exists; immutable artifact tags are never overwritten"
+            exit 1
+          fi
+
+          oras push "${ref}" \
+            --artifact-type application/vnd.wrainrock.disk.v1+json \
+            --annotation "org.opencontainers.image.version=${version}" \
+            --annotation "org.opencontainers.image.revision=${revision}" \
+            --annotation "org.wrainrock.image.digest=${digest}" \
+            "${qcow2}:application/vnd.wrainrock.qcow2" \
+            "${iso}:application/vnd.wrainrock.iso" \
+            "output/SHA256SUMS:text/plain"
+          echo "ref=${ref}" >> "$GITHUB_OUTPUT"
+
+          # Verify what the registry stored, not just what was uploaded.
+          oras manifest fetch "${ref}" > /tmp/artifact-manifest.json
+          python3 - /tmp/artifact-manifest.json "${qcow2}" "${iso}" output/SHA256SUMS <<'PY'
+          import hashlib
+          import json
+          import os
+          import sys
+
+          with open(sys.argv[1], encoding="utf-8") as handle:
+              manifest = json.load(handle)
+          assert manifest["artifactType"] == "application/vnd.wrainrock.disk.v1+json", manifest.get("artifactType")
+          layers = {layer["annotations"]["org.opencontainers.image.title"]: layer for layer in manifest["layers"]}
+          assert set(layers) == {"disk.qcow2", "install.iso", "SHA256SUMS"}, layers
+          for path in sys.argv[2:]:
+              digest = hashlib.sha256()
+              with open(path, "rb") as handle:
+                  for chunk in iter(lambda: handle.read(1 << 20), b""):
+                      digest.update(chunk)
+              layer = layers[os.path.basename(path)]
+              assert layer["digest"] == "sha256:" + digest.hexdigest(), (path, layer["digest"])
+              assert layer["size"] == os.path.getsize(path), (path, layer["size"])
+          print("artifact manifest matches the local files")
+          PY
+
+          # Anonymous fetch proves the package is public, like build.yml's
+          # anonymous image pull check.
+          token=$(curl -fsS "https://ghcr.io/token?service=ghcr.io&scope=repository:${GITHUB_REPOSITORY_OWNER}/wrainrock-linux-disk:pull" \
+            | python3 -c 'import json,sys; print(json.load(sys.stdin)["token"])')
+          code=$(curl -sS -o /dev/null -w '%{http_code}' -H "Authorization: Bearer ${token}" \
+            -H 'Accept: application/vnd.oci.image.manifest.v1+json' \
+            "https://ghcr.io/v2/${GITHUB_REPOSITORY_OWNER}/wrainrock-linux-disk/manifests/${version}")
+          [ "${code}" = 200 ] || { echo "::error::anonymous manifest fetch returned ${code}; is the package public?"; exit 1; }
+          echo "anonymous manifest fetch: ${code}"
 
       - name: Upload VM evidence
         if: always() && inputs.vm_test

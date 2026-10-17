@@ -337,7 +337,10 @@ fi
 if [[ -r .github/workflows/disk.yml ]]; then
     pass "disk workflow exists"
     for needle in 'bootc-image-builder' '--type anaconda-iso' '--type qcow2' \
-                  'SHA256SUMS' 'sha256sum' 'BIB_IMAGE'; do
+                  'SHA256SUMS' 'sha256sum' 'BIB_IMAGE' \
+                  'wrainrock-linux-disk' 'oras push' 'oras manifest fetch' \
+                  'immutable artifact tags are never overwritten' \
+                  'f27adb935022d94df8dc77719c322dda592c78a0d57a6f7dcdd8d900b248c454'; do
         if grep -Fq -e "${needle}" .github/workflows/disk.yml; then
             pass "disk workflow contains ${needle}"
         else
@@ -347,6 +350,14 @@ if [[ -r .github/workflows/disk.yml ]]; then
 else
     fail ".github/workflows/disk.yml is missing"
 fi
+for needle in 'ghcr.io/wraindrock/wrainrock-linux-disk' 'oras pull' \
+              'immutable OCI artifact'; do
+    if grep -Fq -e "${needle}" README.md docs/install.md docs/roadmap.md; then
+        pass "docs mention ${needle}"
+    else
+        fail "docs are missing ${needle}"
+    fi
+done
 if [[ -r disk_config/disk.toml ]]; then
     if grep -Fq 'minsize = "20 GiB"' disk_config/disk.toml; then
         pass "qcow2 disk config sizes the root filesystem"

@@ -79,9 +79,11 @@ below ships as its own immutable release; no step relaxes the delta invariant.
       the ISO is unattended by construction (BIB baked kickstart: autopart,
       btrfs, reboot). The workflow also boots the ISO under KVM, installs it
       once, and requires the installed system to reach the GNOME welcome/login
-      screen (`vm_test`, default on). Attaching the artifacts to a GitHub
-      release is a follow-up; `bootc switch` remains the upgrade path for
-      existing systems.
+      screen (`vm_test`, default on). Verified artifact sets are published as
+      immutable OCI artifacts on GHCR
+      (`ghcr.io/wraindrock/wrainrock-linux-disk:<version>`, three blobs plus
+      `SHA256SUMS`); GitHub Release assets are not used because they cap at
+      2 GiB. `bootc switch` remains the upgrade path for existing systems.
 
 **Test that must fail first (step 1):** `tests/parity.sh` runs `gsettings get
 org.gnome.desktop.background picture-uri`; it returns Fedora's f44 JXL on the

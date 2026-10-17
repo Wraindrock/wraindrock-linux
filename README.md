@@ -87,9 +87,11 @@ The image is the source of truth; disk artifacts are derived from a published
 image and built on demand, never on every push:
 
 ```bash
+# Build (CI; also boots the ISO under KVM before publishing)
 gh workflow run disk.yml -f image_ref=ghcr.io/wraindrock/wrainrock-linux:44
-gh run download <run-id> -n wrainrock-<version>-qcow2
-gh run download <run-id> -n wrainrock-<version>-iso
+
+# Consume the immutable artifact set for that image version
+oras pull ghcr.io/wraindrock/wrainrock-linux-disk:<version>
 sha256sum -c SHA256SUMS
 ```
 
@@ -105,8 +107,15 @@ Both artifacts are built from a pinned `bootc-image-builder` digest and record
 the source image version, revision and resolved digest in the run summary. The
 workflow also boots the ISO under KVM (`vm_test`, on by default), installs it to
 a scratch disk, and requires the installed system to reach its graphical
-welcome/login screen before the run turns green. They are CI artifacts today;
-attaching them to a GitHub release is a later step.
+welcome/login screen before the run turns green.
+
+Verified artifacts are published as an immutable OCI artifact set on GHCR:
+`ghcr.io/wraindrock/wrainrock-linux-disk:<image version>`, three blobs
+(`disk.qcow2`, `install.iso`, `SHA256SUMS`). The workflow refuses to overwrite
+an existing version tag, verifies the stored manifest against the local
+digests, and fetches the manifest anonymously to prove the package is public.
+GitHub Release assets cannot carry these files — GitHub caps release assets at
+2 GiB, while the qcow2/ISO are larger — so GHCR is the distribution channel.
 
 ## Verify what you booted
 
