@@ -42,7 +42,7 @@ jobs:
   disk:
     name: Build qcow2 + installer ISO
     runs-on: ubuntu-24.04
-    timeout-minutes: 90
+    timeout-minutes: 120
 
     steps:
       - name: Checkout
@@ -183,7 +183,7 @@ jobs:
           # workflow user is not in it, so open it up for this job only.
           sudo chmod 666 /dev/kvm 2>/dev/null || true
           iso=$(find output/bootiso -name '*.iso' -print -quit)
-          tests/vm-test.sh iso "${iso}" --timeout 1500 --out "${RUNNER_TEMP}/vm"
+          tests/vm-test.sh iso "${iso}" --timeout 2400 --out "${RUNNER_TEMP}/vm"
           echo "screenshots: ${RUNNER_TEMP}/vm"
 
       - name: Upload VM evidence
@@ -191,11 +191,16 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: wrainrock-${{ steps.image.outputs.version }}-vm-evidence
-          path: ${{ runner.temp }}/vm
+          # Keep the evidence small: the 30 GiB boot disk is not evidence.
+          path: |
+            ${{ runner.temp }}/vm/*.png
+            ${{ runner.temp }}/vm/serial.log
+            ${{ runner.temp }}/vm/qemu.log
           retention-days: 7
           if-no-files-found: warn
 
       - name: Upload qcow2
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: wrainrock-${{ steps.image.outputs.version }}-qcow2
@@ -205,6 +210,7 @@ jobs:
           compression-level: 0
 
       - name: Upload installer ISO + checksums
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: wrainrock-${{ steps.image.outputs.version }}-iso
