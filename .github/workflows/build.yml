@@ -103,7 +103,11 @@ jobs:
           set -euo pipefail
           # FROM is digest-pinned, so the base cannot move between the digest
           # resolution above and this build.
+          # No /etc/hostname: with the file absent the installed system falls
+          # back to DEFAULT_HOSTNAME from os-release (wrainrock). Buildah would
+          # otherwise inject an empty placeholder.
           podman build \
+            --no-hostname \
             --build-arg "BASE_REF=${BASE_REF}" \
             --build-arg "BASE_IMAGE=${BASE_IMAGE}" \
             --build-arg "BASE_DIGEST=${BASE_DIGEST}" \

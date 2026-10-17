@@ -53,9 +53,25 @@ fi
 mkdir -p "${out_dir}"
 out_dir="$(cd "${out_dir}" && pwd)"
 
+# The device node can be mode 0666 while the container's device cgroup still
+# denies the O_RDWR open KVM needs, so probe by actually starting QEMU. A stale
+# QMP socket from a failed KVM attempt would otherwise send the poll loop to
+# sleep until the timeout.
 accel=tcg
 if [[ -r /dev/kvm && -w /dev/kvm ]]; then
-    accel=kvm
+    probe_qmp="${out_dir}/kvm-probe.sock"
+    qemu-system-x86_64 -accel kvm -M none -display none -nodefaults -S \
+        -qmp "unix:${probe_qmp},server=on,wait=off" >/dev/null 2>&1 &
+    probe_pid=$!
+    sleep 1
+    if kill -0 "${probe_pid}" 2>/dev/null; then
+        accel=kvm
+    else
+        echo "KVM is present but unusable (device cgroup?); using TCG"
+    fi
+    kill "${probe_pid}" 2>/dev/null || true
+    wait "${probe_pid}" 2>/dev/null || true
+    rm -f "${probe_qmp}"
 fi
 cpu=host
 [[ "${accel}" == tcg ]] && cpu=max
@@ -120,7 +136,7 @@ def recv():
 recv()  # greeting
 f.write(b'{"execute":"qmp_capabilities"}\n'); f.flush()
 recv()
-f.write((json.dumps({'execute': 'screendump', 'arguments': {'filename': out}}) + '\n').encode())
+f.write((json.dumps({'execute': 'screendump', 'arguments': {'filename': out, 'format': 'png'}}) + '\n').encode())
 f.flush()
 msg = recv()
 if 'error' in msg:
@@ -134,6 +150,11 @@ for _ in $(seq 1 100); do
     sleep 0.2
 done
 [[ -S "${qmp}" ]] || { echo "error: QMP socket never appeared" >&2; exit 1; }
+kill -0 "${qemu_pid}" 2>/dev/null || {
+    echo "error: QEMU exited during startup" >&2
+    cat "${qemu_log}" >&2
+    exit 1
+}
 
 # Give firmware and the bootloader time to hand over before the first frame.
 sleep 20
@@ -147,8 +168,19 @@ while :; do
     [[ "${elapsed}" -ge "${timeout}" ]] && break
     count=$((count + 1))
     frame="${out_dir}/frame-$(printf '%03d' "${count}").png"
+    rm -f "${frame}"
     if screendump "${frame}" 2>/dev/null; then
-        size=$(stat -c %s "${frame}" 2>/dev/null || echo 0)
+        # QEMU's PNG writer is asynchronous; wait for the file to appear and
+        # stop growing before sizing it.
+        size=0
+        for _ in $(seq 1 50); do
+            now_size=$(stat -c %s "${frame}" 2>/dev/null || echo 0)
+            if [[ "${now_size}" -gt 0 && "${now_size}" == "${size}" ]]; then
+                break
+            fi
+            size=${now_size}
+            sleep 0.1
+        done
         if [[ "${size}" -gt "${best_size}" ]]; then
             best_size=${size}
             best_file=${frame}

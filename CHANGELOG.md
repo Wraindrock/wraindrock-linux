@@ -17,6 +17,13 @@ image versions are the Fedora channel plus an immutable build tag, see
   `SHA256SUMS`, and uploads both artifacts.
 - `disk_config/disk.toml`: qcow2 root filesystem sized at 20 GiB.
 
+### Fixed
+
+- The image no longer contains the builder's empty `/etc/hostname` placeholder:
+  `podman build --no-hostname` keeps the file out and parity asserts its
+  absence, so a fresh install uses `DEFAULT_HOSTNAME` (`wrainrock`) instead of
+  the kernel default `fedora`.
+
 ### Documented
 
 - The ISO is unattended by construction (bootc-image-builder's baked kickstart

@@ -90,10 +90,11 @@ The manifest also covers the files the build itself adds: the three
 from a throwaway copy of the database, so the image's rpmdb and sqlite's
 `-wal`/`-shm`/`.rpm.lock` sidecars stay byte-identical to the base (the build
 checks this before and after the query, and parity compares the sidecar
-checksums). The builder records an empty `/etc/hostname` placeholder in the
-layer; the build never writes a hostname there, and systemd reads an empty file
-as "unset", so `DEFAULT_HOSTNAME` still applies (how the builder mounts that
-path is not something a `RUN` step can change).
+checksums). The build passes `--no-hostname` to `podman build`, so the image
+ships no `/etc/hostname` at all: systemd then applies `DEFAULT_HOSTNAME`
+(`wrainrock`) on first boot, and an installer or user that writes the file still
+wins. Leaving buildah's empty placeholder in place would make the kernel default
+(`fedora`) win, which parity now rejects.
 
 ### Branding
 
@@ -108,7 +109,7 @@ wallpaper and boot splash in v0.3):
 | default desktop + GDM wallpaper | `/usr/share/backgrounds/wrainrock/wrainrock-wallpaper.png` + `[org.gnome.desktop.background]` in `zz-wrainrock.gschema.override` |
 | Plymouth boot splash | `/usr/share/plymouth/themes/wrainrock/` (two-step theme) + `Theme=wrainrock` in `/etc/plymouth/plymouthd.conf` |
 | GRUB boot menu theme | `/usr/share/grub/themes/wrainrock/` assets + `/usr/bin/wrainrock-grub-theme`, which copies them to `/boot/grub2/themes/wrainrock/` and writes a marked `/boot/grub2/custom.cfg` (opt-in) |
-| default hostname | `DEFAULT_HOSTNAME` (the booted hostname is still set by the installer/`/etc/hostname`) |
+| default hostname | `DEFAULT_HOSTNAME` (no `/etc/hostname` is shipped; an installer or user file still wins) |
 
 The logo assets are generated outlines, not `<text>`: rendering does not depend
 on Cantarell or any other font being present. GDM merges gschema overrides in

@@ -2,6 +2,7 @@
 _build/
 out/
 artifacts/
+.dl/
 *.iso
 *.qcow2
 *.raw
