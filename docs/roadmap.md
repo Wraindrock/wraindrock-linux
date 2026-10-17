@@ -21,7 +21,7 @@ Silverblue 44.
 
 **Non-goals:** branding, package changes, installer ISO, automatic updates.
 
-## v0.2 — branded identity (current)
+## v0.2 — branded identity (done)
 
 **Goal:** make Wrainrock *Wrainrock*, without touching the OS machinery.
 
@@ -44,23 +44,35 @@ Silverblue 44.
 **Test that must fail first:** `tests/parity.sh` asserts `NAME="Wrainrock Linux"`
 in `/usr/lib/os-release`; that assertion fails on v0.1 and passes on v0.2.
 
-**Known limit:** the black wordmark has low contrast on a dark GDM background.
-The background is Fedora's until the wallpaper/GDM work in v0.3.
+**Known limit:** the black wordmark has low contrast on the dark wallpaper used
+by the login screen. A light login-screen variant is a follow-up.
 
 **Non-goals:** package changes, wallpapers, Plymouth, GRUB theme, installer ISO,
 automatic updates. The identity delta is deliberately the only delta.
 
-## v0.3 — installable ISO
+## v0.3 — visual identity and installable ISO (current)
 
-**Goal:** a fresh machine can be installed without an existing Fedora system.
+**Goal:** Wrainrock looks like Wrainrock from firmware hand-off to login, and a
+fresh machine can be installed without an existing Fedora system. Each step
+below ships as its own immutable release; no step relaxes the delta invariant.
 
-- Branding package: wallpapers, GDM background, Plymouth splash, GRUB theme
-- `bootc-image-builder` produces an Anaconda ISO in CI
-- Automated VM install test (qemu + kickstart) boots to GDM
-- ISO artifact uploaded to the GitHub release with checksums
-- Install docs rewritten around the ISO; `bootc switch` remains the upgrade path
+- [x] Step 1 — default wallpaper (desktop + GDM): 3840x2160 PNG, set for both
+      `picture-uri` and `picture-uri-dark` through
+      `zz-wrainrock.gschema.override`, recorded in `delta.json`, and asserted by
+      parity via the compiled schema cache and `gsettings get`
+- [ ] Step 2 — Plymouth splash (boot logo), with a test that the theme is active
+- [ ] Step 3 — GRUB theme (boot menu), with a test that it is installed and
+      referenced by the bootloader configuration
+- [ ] Step 4 — `bootc-image-builder` produces an Anaconda ISO in CI; automated
+      VM install test (qemu + kickstart) boots to GDM; ISO artifact uploaded to
+      the GitHub release with checksums; install docs rewritten around the ISO
+      (`bootc switch` remains the upgrade path)
 
-**Non-goal:** custom partitioning UX, encryption UI, dual-boot UX.
+**Test that must fail first (step 1):** `tests/parity.sh` runs `gsettings get
+org.gnome.desktop.background picture-uri`; it returns Fedora's f44 JXL on the
+v0.2 image and the Wrainrock PNG on v0.3.
+
+**Non-goals:** custom partitioning UX, encryption UI, dual-boot UX.
 
 ## v0.4 — update policy and channels
 

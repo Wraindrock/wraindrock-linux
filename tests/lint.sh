@@ -99,7 +99,9 @@ echo "branding"
 for asset in \
     build_files/branding/wrainrock-logo-icon.svg \
     build_files/branding/wrainrock-gdm-logo.svg \
-    build_files/branding/wrainrock-gdm-logo.png; do
+    build_files/branding/wrainrock-gdm-logo.png \
+    build_files/branding/wrainrock-wallpaper.svg \
+    build_files/branding/wrainrock-wallpaper.png; do
     if [[ -s ${asset} ]]; then
         pass "${asset} exists"
     else
@@ -108,22 +110,39 @@ for asset in \
 done
 for svg in \
     build_files/branding/wrainrock-logo-icon.svg \
-    build_files/branding/wrainrock-gdm-logo.svg; do
+    build_files/branding/wrainrock-gdm-logo.svg \
+    build_files/branding/wrainrock-wallpaper.svg; do
     if grep -q '<text' "${svg}"; then
         fail "${svg} renders text at runtime (use outlines instead)"
     else
         pass "${svg} is font-independent"
     fi
 done
-if grep -Fq '#3C6EB4' build_files/branding/wrainrock-logo-icon.svg &&
-   grep -Fq '#3C6EB4' build_files/branding/wrainrock-gdm-logo.svg; then
+if grep -Fiq '#3C6EB4' build_files/branding/wrainrock-logo-icon.svg &&
+   grep -Fiq '#3C6EB4' build_files/branding/wrainrock-gdm-logo.svg &&
+   grep -Fiq '#3C6EB4' build_files/branding/wrainrock-wallpaper.svg; then
     pass "branding assets use the documented Wrainrock blue"
 else
     fail "branding assets lost the Wrainrock blue outline"
 fi
+if python3 - <<'PY'
+import struct
+
+with open("build_files/branding/wrainrock-wallpaper.png", "rb") as handle:
+    data = handle.read(24)
+assert data[:8] == b"\x89PNG\r\n\x1a\n", "not a PNG"
+width, height = struct.unpack(">II", data[16:24])
+assert (width, height) == (3840, 2160), f"wallpaper is {width}x{height}"
+PY
+then
+    pass "wallpaper is a 3840x2160 PNG"
+else
+    fail "wallpaper is not a 3840x2160 PNG"
+fi
 
 echo "build invariants"
-for needle in 'base-os-release' 'delta.json' 'zz-wrainrock.gschema.override'; do
+for needle in 'base-os-release' 'delta.json' 'zz-wrainrock.gschema.override' \
+              'wrainrock-wallpaper.png'; do
     if grep -Fq "${needle}" build_files/build.sh; then
         pass "build.sh handles ${needle}"
     else
@@ -162,6 +181,11 @@ if grep -Fq 'delta.json' docs/architecture.md &&
     pass "docs document the delta manifest"
 else
     fail "docs do not describe /usr/share/wrainrock/delta.json"
+fi
+if grep -Fq 'wrainrock-wallpaper' docs/architecture.md; then
+    pass "architecture doc describes the wallpaper override"
+else
+    fail "docs/architecture.md does not describe the wallpaper"
 fi
 
 echo "workflow"

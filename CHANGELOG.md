@@ -5,6 +5,29 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 image versions are the Fedora channel plus an immutable build tag, see
 [docs/architecture.md](docs/architecture.md).
 
+## [0.3.0] - 2026-10-17
+
+### Added
+
+- Default wallpaper (desktop and GDM login): `wrainrock-wallpaper.svg` source
+  plus a 3840x2160 PNG (dark blue gradient with a thin blue outlined `W`),
+  installed at `/usr/share/backgrounds/wrainrock/wrainrock-wallpaper.png` and
+  selected for both `picture-uri` and `picture-uri-dark` through
+  `zz-wrainrock.gschema.override`. Fedora's f44 day/night JXLs stay installed
+  and untouched.
+- Parity checks for the wallpaper: the declared file exists, the PNG is
+  3840x2160 and non-trivial, both override keys point at it, the compiled schema
+  cache contains it, and `gsettings get` resolves both defaults to it.
+- Lint checks: the wallpaper source is font-independent, uses the Wrainrock
+  blue, and the PNG header is 3840x2160.
+
+### Changed
+
+- `delta.json` `files.added` now includes the wallpaper, so the delta stays
+  "base plus exactly the recorded difference".
+- Docs and roadmap: v0.2 is closed; v0.3 is split into wallpaper → Plymouth →
+  GRUB theme → installable ISO, one immutable release per step.
+
 ## [0.2.0] - 2026-10-17
 
 ### Added

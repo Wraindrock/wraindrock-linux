@@ -2,11 +2,12 @@
 #
 # Wrainrock Linux - a Fedora Silverblue based atomic desktop.
 #
-# v0.2 is a *branded parity build*: the RPM set is still exactly Fedora
-# Silverblue 44, plus an identity delta (os-release display fields, logo icon,
-# GDM login logo) recorded in /usr/share/wrainrock/delta.json. Any difference
-# outside that manifest is a pipeline bug, not a customization bug.
-# docs/roadmap.md turns on real customization one reviewed step at a time.
+# v0.3 is a *branded parity build*: the RPM set is still exactly Fedora
+# Silverblue 44, plus a presentation delta (os-release display fields, logo
+# icon, GDM logo, default wallpaper) recorded in
+# /usr/share/wrainrock/delta.json. Any difference outside that manifest is a
+# pipeline bug, not a customization bug. docs/roadmap.md turns on real
+# customization one reviewed step at a time.
 #
 # Build contract: image.env -> build args -> build_files/build.sh -> bootc lint.
 # The build inputs are bind-mounted, never COPYed, so the image does not ship

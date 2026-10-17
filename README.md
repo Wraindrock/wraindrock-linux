@@ -11,14 +11,15 @@ installed on top of an existing Fedora Atomic system with `bootc switch`. There
 is no package manager mutation of the running root and no "partially upgraded"
 state: an update either becomes the next boot entry or it does not happen.
 
-> **Status: v0.2 — branded identity.** The package set is still Fedora
-> Silverblue 44, unchanged. What differs is identity: `NAME`, `PRETTY_NAME`,
-> `ID=wrainrock` (with `ID_LIKE=fedora`), the logo icon, the GDM login logo and
-> the default hostname. Every difference is recorded in
+> **Status: v0.3 in progress — Wrainrock wallpaper.** The package set is still
+> Fedora Silverblue 44, unchanged. What differs is presentation and identity:
+> `NAME`, `PRETTY_NAME`, `ID=wrainrock` (with `ID_LIKE=fedora`), the logo icon,
+> the GDM login logo, the default hostname and (new) the default desktop and
+> GDM login wallpaper. Every difference is recorded in
 > `/usr/share/wrainrock/delta.json`, and `tests/parity.sh` fails if the image
-> differs from the base in any way that is not in that manifest. Wallpapers,
-> Plymouth, GRUB themes and an installer ISO are still Fedora's on purpose —
-> see [docs/roadmap.md](docs/roadmap.md).
+> differs from the base in any way that is not in that manifest. Plymouth, the
+> GRUB theme and an installer ISO are still Fedora's on purpose — see
+> [docs/roadmap.md](docs/roadmap.md).
 
 ## Why
 
@@ -29,10 +30,10 @@ state: an update either becomes the next boot entry or it does not happen.
 - **Boring to operate.** The desktop, drivers, GNOME stack and update cadence
   are Fedora's. Wrainrock only owns what it can test.
 - **No surprise state.** The image ships no custom system services, and the
-  only system files it changes are the recorded v0.2 identity delta. If the
-  pipeline is wrong, the parity test fails before anything is published.
+  only system files it changes are the recorded identity/wallpaper delta. If
+  the pipeline is wrong, the parity test fails before anything is published.
 
-## What v0.2 changes
+## What the Wrainrock delta changes
 
 | Field | Fedora Silverblue 44 | Wrainrock Linux 44 |
 | --- | --- | --- |
@@ -43,6 +44,8 @@ state: an update either becomes the next boot entry or it does not happen.
 | `DEFAULT_HOSTNAME` | `fedora` | `wrainrock` |
 | URLs / `CPE_NAME` | fedoraproject.org | this repository / `cpe:/o:wraindrock:wrainrock_linux:44` |
 | GDM logo | Fedora logo | Wrainrock wordmark |
+| Wallpaper (light + dark) | Fedora 44 day/night JXL | `wrainrock-wallpaper.png` (4K, dark blue + outlined W) |
+| GDM background | Fedora 44 day wallpaper | the same Wrainrock wallpaper |
 
 `VERSION`, `VERSION_ID`, `OSTREE_VERSION` and `SUPPORT_END` stay Fedora's: the
 update cadence and support window are not ours to rewrite yet.
@@ -81,6 +84,7 @@ cat /usr/lib/os-release
 cat /usr/share/wrainrock/build-info.json
 cat /usr/share/wrainrock/delta.json     # every difference from the base
 hostnamectl                             # static hostname: wrainrock
+gsettings get org.gnome.desktop.background picture-uri
 ```
 
 ```bash
@@ -95,8 +99,8 @@ cosign verify \
 SHA, build date, RPM count and RPM-set hash. Two builds from the same commit and
 base digest produce the same RPM set. `delta.json` is the machine-readable
 contract the parity test enforces: os-release keys that changed, the single
-package-owned file that changed (`/usr/lib/os-release`), and the four files the
-branding step added.
+package-owned file that changed (`/usr/lib/os-release`), and the branding files
+the build added (logo, GDM wordmark, schema override, wallpaper).
 
 ## How the build works
 
@@ -134,7 +138,7 @@ No personal access token is stored anywhere: the workflow uses the short-lived
 | Gate | Assertion |
 | --- | --- |
 | `tests/lint.sh` | Shell syntax, executable bits, `image.env` consistency, required docs, workflow permissions, no credential-shaped strings |
-| `tests/parity.sh` | RPM set **identical**; os-release differs only in the branded keys, with exactly the values in `delta.json`; added files match the manifest; GDM override compiled; `rpm -V` shows one modified file; bootc labels and `CMD /sbin/init` intact |
+| `tests/parity.sh` | RPM set **identical**; os-release differs only in the branded keys, with exactly the values in `delta.json`; added files match the manifest; GDM logo + wallpaper overrides compiled, and the schema defaults resolve to the Wrainrock wallpaper; `rpm -V` shows one modified file; bootc labels and `CMD /sbin/init` intact |
 | `tests/smoke.sh` | The image boots under systemd (`systemctl is-system-running` = running/degraded), journald is alive |
 
 A green build means "this is the Silverblue 44 package set with exactly the
@@ -164,7 +168,7 @@ are plain podman commands.
 Containerfile              image definition (FROM Silverblue, provenance, bootc lint)
 image.env                  single source of truth: name, base, channel
 build_files/build.sh       base checks, branding, delta + build manifests
-build_files/branding/      logo icon and GDM wordmark (SVG outlines + PNG)
+build_files/branding/      logo, GDM wordmark, wallpaper (SVG sources + PNG)
 tests/lint.sh              static repository checks
 tests/parity.sh            "is this still Silverblue, plus only the delta?" test
 tests/smoke.sh             "does it boot?" test

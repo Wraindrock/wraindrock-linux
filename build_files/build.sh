@@ -8,8 +8,9 @@
 #   1. prove the base is the Fedora Silverblue bootc image this project claims;
 #   2. record provenance at /usr/share/wrainrock/build-info.json and preserve
 #      the untouched base os-release next to it;
-#   3. apply the v0.2 identity: os-release display fields, the Wrainrock logo
-#      icon and the GDM login logo, then record every applied difference in
+#   3. apply the Wrainrock identity: os-release display fields, the Wrainrock
+#      logo icon, the GDM login logo and (v0.3) the default desktop/GDM
+#      wallpaper, then record every applied difference in
 #      /usr/share/wrainrock/delta.json.
 #
 # The delta manifest is the contract the parity test enforces: the image may
@@ -81,7 +82,8 @@ rm -rf "${rpm_db_tmp}"
     || die "the RPM database changed during the build"
 
 # --- 3. identity ------------------------------------------------------------
-for asset in wrainrock-logo-icon.svg wrainrock-gdm-logo.svg wrainrock-gdm-logo.png; do
+for asset in wrainrock-logo-icon.svg wrainrock-gdm-logo.svg \
+    wrainrock-gdm-logo.png wrainrock-wallpaper.png; do
     [[ -r ${branding_dir}/${asset} ]] || die "branding asset ${asset} is missing"
 done
 
@@ -129,15 +131,26 @@ install -D -m 0644 "${branding_dir}/wrainrock-gdm-logo.svg" \
 install -D -m 0644 "${branding_dir}/wrainrock-gdm-logo.png" \
     /usr/share/pixmaps/wrainrock-gdm-logo.png
 
-# 3c. GDM logo. Fedora's org.gnome.login-screen.gschema.override sets a Fedora
-# path; override files are merged in name order, so zz- wins. The login screen
-# stays legible on its own background - see docs/architecture.md for the known
-# dark-background contrast caveat.
+# 3c. Wallpaper. Fedora ships 10_org.gnome.desktop.background.fedora.gschema
+# override pointing at the f44 day/night images; our zz- override is merged
+# later and therefore wins for new users and for the GDM greeter, which reads
+# the same schema defaults.
+install -D -m 0644 "${branding_dir}/wrainrock-wallpaper.png" \
+    /usr/share/backgrounds/wrainrock/wrainrock-wallpaper.png
+
+# 3d. GDM logo and default wallpaper. Override files are merged in name order,
+# so zz- wins over Fedora's 10_* override. The login screen stays legible on
+# its own background - see docs/architecture.md for the known dark-background
+# contrast caveat.
 gschema_dir=/usr/share/glib-2.0/schemas
 override="${gschema_dir}/zz-wrainrock.gschema.override"
 cat > "${override}" <<'EOF'
 [org.gnome.login-screen]
 logo='/usr/share/pixmaps/wrainrock-gdm-logo.png'
+
+[org.gnome.desktop.background]
+picture-uri='file:///usr/share/backgrounds/wrainrock/wrainrock-wallpaper.png'
+picture-uri-dark='file:///usr/share/backgrounds/wrainrock/wrainrock-wallpaper.png'
 EOF
 chmod 0644 "${override}"
 command -v glib-compile-schemas >/dev/null 2>&1 \
@@ -197,6 +210,7 @@ cat > /usr/share/wrainrock/delta.json <<EOF
       "/usr/share/pixmaps/wrainrock-gdm-logo.svg",
       "/usr/share/pixmaps/wrainrock-gdm-logo.png",
       "/usr/share/glib-2.0/schemas/zz-wrainrock.gschema.override",
+      "/usr/share/backgrounds/wrainrock/wrainrock-wallpaper.png",
       "/usr/share/wrainrock/base-os-release",
       "/usr/share/wrainrock/build-info.json",
       "/usr/share/wrainrock/delta.json"

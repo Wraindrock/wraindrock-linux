@@ -60,7 +60,7 @@ image.env ──► workflow (lint) ──► pull base, resolve digest
 Everything is driven by `image.env`, so "which Fedora release is this?" is a
 one-line, reviewable change.
 
-### The delta invariant (v0.2)
+### The delta invariant (v0.2+)
 
 v0.1 enforced "identical to Fedora Silverblue". v0.2 keeps the falsifiable part
 and makes the allowed difference machine-checkable:
@@ -85,7 +85,7 @@ Adding a customization therefore means adding it to the manifest **and**
 teaching the test about it — never relaxing the diff.
 
 The manifest also covers the files the build itself adds: the three
-`/usr/share/wrainrock/` provenance files sit next to the four branding files in
+`/usr/share/wrainrock/` provenance files sit next to the five branding files in
 `files.added`, and parity requires that set to match exactly. RPM is queried
 from a throwaway copy of the database, so the image's rpmdb and sqlite's
 `-wal`/`-shm`/`.rpm.lock` sidecars stay byte-identical to the base (the build
@@ -97,21 +97,28 @@ path is not something a `RUN` step can change).
 
 ### Branding
 
-The v0.2 delta is identity-only on purpose:
+The delta is identity and presentation only on purpose (identity in v0.2,
+wallpaper in v0.3):
 
 | Change | Mechanism |
 | --- | --- |
 | display name, pretty name, ID, `ID_LIKE` | `sed` on `/usr/lib/os-release` |
 | logo icon (`Settings` → `About`) | `/usr/share/icons/hicolor/scalable/apps/wrainrock-logo-icon.svg` |
 | GDM login logo | `/usr/share/pixmaps/wrainrock-gdm-logo.{svg,png}` + `zz-wrainrock.gschema.override` |
+| default desktop + GDM wallpaper | `/usr/share/backgrounds/wrainrock/wrainrock-wallpaper.png` + `[org.gnome.desktop.background]` in `zz-wrainrock.gschema.override` |
 | default hostname | `DEFAULT_HOSTNAME` (the booted hostname is still set by the installer/`/etc/hostname`) |
 
 The logo assets are generated outlines, not `<text>`: rendering does not depend
 on Cantarell or any other font being present. GDM merges gschema overrides in
 name order, so a `zz-` file wins over Fedora's own; Fedora's file is left
-untouched. Known caveat: the wordmark is black, so on a dark GDM background it
-has low contrast. Fixing that belongs to the wallpaper/GDM-background work in
-v0.3, not to the identity patch.
+untouched. The wallpaper works the same way: Fedora's
+`10_org.gnome.desktop.background.fedora.gschema.override` points at the f44
+day/night JXLs, and our later-sorted `zz-` file replaces both `picture-uri` and
+`picture-uri-dark` with the Wrainrock PNG. GDM's login screen reads the same
+`org.gnome.desktop.background` defaults, so the greeter background follows
+without a separate mechanism. Known caveat: the wordmark is black, so it has
+low contrast on the dark login wallpaper; a light login-screen variant is a
+follow-up, not part of this step.
 
 `gtk-update-icon-cache` is deliberately not run: the hicolor theme resolves
 scalable SVGs without a cache, and skipping it avoids a generated

@@ -111,6 +111,16 @@ Every intended difference from the base is listed there. If the image differs
 from the base in any other way, that is a bug — report it.
 
 ```bash
+gsettings get org.gnome.desktop.background picture-uri
+# 'file:///usr/share/backgrounds/wrainrock/wrainrock-wallpaper.png'
+```
+
+If you had already changed your wallpaper, your personal setting wins — the
+image only changes the default for new users and for the login screen. Reset it
+with `gsettings reset org.gnome.desktop.background picture-uri` to see the
+Wrainrock default.
+
+```bash
 hostnamectl
 ```
 

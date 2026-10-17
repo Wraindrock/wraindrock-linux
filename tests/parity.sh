@@ -192,6 +192,7 @@ expected_added = {
     "/usr/share/pixmaps/wrainrock-gdm-logo.svg",
     "/usr/share/pixmaps/wrainrock-gdm-logo.png",
     "/usr/share/glib-2.0/schemas/zz-wrainrock.gschema.override",
+    "/usr/share/backgrounds/wrainrock/wrainrock-wallpaper.png",
     "/usr/share/wrainrock/base-os-release",
     "/usr/share/wrainrock/build-info.json",
     "/usr/share/wrainrock/delta.json",
@@ -246,6 +247,58 @@ if in_image "${IMAGE}" \
 else
     fail "compiled schema cache does not contain the GDM logo override"
 fi
+
+# --- default wallpaper ------------------------------------------------------
+wallpaper=/usr/share/backgrounds/wrainrock/wrainrock-wallpaper.png
+if in_image "${IMAGE}" "test -s ${wallpaper}"; then
+    pass "default wallpaper is installed"
+else
+    fail "default wallpaper is missing"
+fi
+
+png_size="$(in_image "${IMAGE}" "stat -c %s ${wallpaper} 2>/dev/null || true")"
+png_dims="$(in_image "${IMAGE}" "od -An -tu4 --endian=big -j16 -N8 ${wallpaper} 2>/dev/null || true")"
+read -r png_w png_h <<<"${png_dims}"
+if [[ ${png_size:-0} -ge 50000 ]]; then
+    pass "default wallpaper is a real image (${png_size} bytes)"
+else
+    fail "default wallpaper is suspiciously small (${png_size:-0} bytes)"
+fi
+if [[ ${png_w:-0} -eq 3840 && ${png_h:-0} -eq 2160 ]]; then
+    pass "default wallpaper is 3840x2160"
+else
+    fail "default wallpaper is ${png_w:-?}x${png_h:-?}, want 3840x2160"
+fi
+
+if in_image "${IMAGE}" \
+    "grep -qxF \"picture-uri='file://${wallpaper}'\" \
+        /usr/share/glib-2.0/schemas/zz-wrainrock.gschema.override" &&
+   in_image "${IMAGE}" \
+    "grep -qxF \"picture-uri-dark='file://${wallpaper}'\" \
+        /usr/share/glib-2.0/schemas/zz-wrainrock.gschema.override"; then
+    pass "wallpaper override sets both day and dark defaults"
+else
+    fail "wallpaper override is missing or wrong"
+fi
+
+if in_image "${IMAGE}" \
+    'grep -aq wrainrock-wallpaper /usr/share/glib-2.0/schemas/gschemas.compiled'; then
+    pass "wallpaper override is compiled into the schema cache"
+else
+    fail "compiled schema cache does not contain the wallpaper override"
+fi
+
+for key in picture-uri picture-uri-dark; do
+    want="'file://${wallpaper}'"
+    got="$(in_image "${IMAGE}" \
+        "GSETTINGS_BACKEND=memory gsettings get org.gnome.desktop.background ${key}" \
+        2>/dev/null || true)"
+    if [[ ${got} == "${want}" ]]; then
+        pass "default ${key} is the Wrainrock wallpaper"
+    else
+        fail "default ${key} is ${got:-<unset>}, want ${want}"
+    fi
+done
 
 # rpm must agree that the only tracked file we changed is os-release.
 # On Fedora 44, /usr/lib/os-release belongs to the variant identity package
