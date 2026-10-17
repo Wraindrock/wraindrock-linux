@@ -217,16 +217,18 @@ while IFS= read -r path; do
     fi
 done < "${tmpdir}/added-files"
 
-# Builder scratch must not ship. A fresh container has no process that would
-# create these, so their presence means the build leaked them into the layer.
-for stray in \
-    /usr/share/rpm/rpmdb.sqlite-wal \
-    /usr/share/rpm/rpmdb.sqlite-shm \
-    /usr/share/rpm/.rpm.lock; do
-    if in_image "${IMAGE}" "test ! -e ${stray}"; then
-        pass "no builder artifact: ${stray}"
+# The base ships sqlite's sidecar files next to the RPM database. The build
+# must not touch them: equal checksums prove the image inherited them instead
+# of copying them up with new content (or adding them where the base has none).
+for sidecar in .rpm.lock rpmdb.sqlite-wal rpmdb.sqlite-shm; do
+    base_sum="$(in_image "${BASE}" "sha256sum /usr/share/rpm/${sidecar} 2>/dev/null || true")"
+    image_sum="$(in_image "${IMAGE}" "sha256sum /usr/share/rpm/${sidecar} 2>/dev/null || true")"
+    if [[ -n ${base_sum} && ${base_sum} == "${image_sum}" ]]; then
+        pass "rpm database sidecar untouched: ${sidecar}"
+    elif [[ -z ${base_sum} && -z ${image_sum} ]]; then
+        pass "rpm database sidecar absent in base and image: ${sidecar}"
     else
-        fail "builder artifact leaked into the image: ${stray}"
+        fail "rpm database sidecar differs from the base: ${sidecar}"
     fi
 done
 

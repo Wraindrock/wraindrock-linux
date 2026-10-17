@@ -41,9 +41,10 @@ image versions are the Fedora channel plus an immutable build tag, see
 - `build-info.json` gains `"identity": "wrainrock"`.
 - Build provenance is now part of the declared delta: the three
   `/usr/share/wrainrock/` files are listed under `files.added`, RPM queries run
-  against a throwaway copy of the database, and parity rejects any `rpmdb`
-  `-wal`/`-shm`/`.rpm.lock` file that leaks into the layer. The builder's empty
-  `/etc/hostname` placeholder is documented as inert (systemd reads it as unset).
+  against a throwaway copy of the database, and parity compares the rpmdb's
+  sqlite sidecars (`-wal`/`-shm`/`.rpm.lock`) against the base, so the build
+  cannot modify them. The builder's empty `/etc/hostname` placeholder is
+  documented as inert (systemd reads it as unset).
 
 ### Notes
 

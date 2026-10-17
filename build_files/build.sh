@@ -51,9 +51,20 @@ grep -qx 'VARIANT_ID=silverblue' "${os_release}" \
 install -d -m 0755 /usr/share/wrainrock
 install -m 0644 "${os_release}" /usr/share/wrainrock/base-os-release
 
-# Query a throwaway copy of the RPM database. Opening the image's database
-# directly leaves rpmdb.sqlite-wal, rpmdb.sqlite-shm and .rpm.lock behind, and
-# buildah would commit those into the image as undeclared files.
+# Query a throwaway copy of the RPM database. The base image ships the database
+# together with sqlite's sidecar files (.rpm.lock, -wal, -shm); opening the
+# image's copies directly (even read-only) can copy them up into our layer, so
+# the build must leave every byte of /usr/share/rpm alone.
+rpm_db_signature() {
+    local dir=/usr/share/rpm name
+    (cd "${dir}" && LC_ALL=C ls -A) | while IFS= read -r name; do
+        [[ -f ${dir}/${name} ]] || continue
+        printf '%s %s %s\n' "${name}" "$(stat -c '%s %Y' "${dir}/${name}")" \
+            "$(sha256sum "${dir}/${name}" | cut -d' ' -f1)"
+    done
+}
+rpm_db_before="$(rpm_db_signature)"
+
 rpm_db_tmp="$(mktemp -d /tmp/wrainrock-rpmdb.XXXXXX)"
 cp -a /usr/share/rpm/rpmdb.sqlite "${rpm_db_tmp}/rpmdb.sqlite"
 rpm_query() { rpm --dbpath "${rpm_db_tmp}" "$@"; }
@@ -65,6 +76,9 @@ rpm_set_sha256="$(
         | cut -d' ' -f1
 )"
 rm -rf "${rpm_db_tmp}"
+
+[[ $(rpm_db_signature) == "${rpm_db_before}" ]] \
+    || die "the RPM database changed during the build"
 
 # --- 3. identity ------------------------------------------------------------
 for asset in wrainrock-logo-icon.svg wrainrock-gdm-logo.svg wrainrock-gdm-logo.png; do
@@ -215,17 +229,4 @@ say "provenance written for ${IMAGE_NAME:-unknown} (${rpm_count} packages)"
 say "base os-release preserved at /usr/share/wrainrock/base-os-release"
 say "identity applied: $(unquote "$(field PRETTY_NAME)")"
 say "delta manifest written to /usr/share/wrainrock/delta.json"
-
-# --- 5. builder-only artifacts ---------------------------------------------
-# RPM was queried from a throwaway copy of the database, so sqlite's -wal/-shm
-# and .rpm.lock must not exist here. The builder also records an empty
-# /etc/hostname placeholder in the layer; the build never writes a hostname
-# there, and systemd reads an empty file as "unset", so DEFAULT_HOSTNAME still
-# applies (see docs/architecture.md).
-for stray in \
-    /usr/share/rpm/rpmdb.sqlite-wal \
-    /usr/share/rpm/rpmdb.sqlite-shm \
-    /usr/share/rpm/.rpm.lock; do
-    [[ ! -e ${stray} ]] || die "transient rpm file leaked into the image: ${stray}"
-done
-say "no transient rpm files in the image"
+say "rpm database left byte-identical to the base"
