@@ -27,7 +27,10 @@ trap cleanup EXIT
 cleanup
 
 echo "smoke test: ${IMAGE}"
-"${ENGINE}" run --systemd=always --name "${NAME}" -d "${IMAGE}" >/dev/null
+# --systemd=always needs a permissive seccomp profile inside rootless podman:
+# the default profile blocks a few syscalls journald/dbus rely on and the
+# resulting EPERM is a container artifact, not an image defect.
+"${ENGINE}" run --systemd=always --security-opt seccomp=unconfined --name "${NAME}" -d "${IMAGE}" >/dev/null
 
 status="unknown"
 deadline=$((SECONDS + TIMEOUT))
