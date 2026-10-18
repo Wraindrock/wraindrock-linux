@@ -70,6 +70,22 @@ else
         echo "  -- filesystem and account state --"
         "${ENGINE}" exec "${NAME}" ls -ld /etc/machine-id /run/log /run/log/journal /var/log/journal 2>&1 || true
         "${ENGINE}" exec "${NAME}" sh -c 'grep -v "^#" /etc/systemd/journald.conf 2>/dev/null; id systemd-journal 2>&1; id dbus 2>&1' || true
+        echo "  -- journald stderr (transient drop-in) --"
+        "${ENGINE}" exec "${NAME}" sh -c '
+            mkdir -p /etc/systemd/system/systemd-journald.service.d
+            printf "[Service]\nStandardOutput=file:/tmp/journald.out\nStandardError=file:/tmp/journald.err\n" > /etc/systemd/system/systemd-journald.service.d/zz-debug.conf
+            systemctl daemon-reload
+            systemctl restart systemd-journald 2>/dev/null || true
+            sleep 2
+            echo "--- status after restart ---"
+            systemctl is-active systemd-journald 2>&1 || true
+            echo "--- stderr ---"
+            cat /tmp/journald.err 2>&1 || true
+            echo "--- stdout ---"
+            cat /tmp/journald.out 2>&1 || true
+            echo "--- pid1 capabilities ---"
+            grep -E "^(CapEff|NoNewPrivs|Seccomp):" /proc/1/status 2>&1 || true
+        ' 2>&1 || true
     } >&2
     exit 1
 fi
