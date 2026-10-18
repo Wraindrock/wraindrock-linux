@@ -327,7 +327,7 @@ if [[ -x tests/iso-menu.sh ]]; then
 else
     fail "tests/iso-menu.sh is missing or not executable"
 fi
-for shot in boot-menu gdm-login installer first-boot; do
+for shot in boot-menu gdm-login installer-hub installer-destination installer-partitioning first-boot; do
     if [[ -s "docs/screenshots/${shot}.png" ]]; then
         pass "screenshot ${shot}.png exists"
     else

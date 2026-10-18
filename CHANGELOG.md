@@ -24,6 +24,8 @@ image versions are the upstream channel plus an immutable build tag, see
 
 - Docs describe the interactive entry as a partial kickstart; language is
   picked at first boot.
+- README screenshots now come from CI runs and show the interactive path: the
+  boot menu, Anaconda's summary, the disk layout dialog and manual partitioning.
 
 ## [0.8.2] - 2026-10-18
 

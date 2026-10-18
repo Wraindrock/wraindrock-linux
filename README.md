@@ -21,20 +21,20 @@ build if the image carries anything that is not in that manifest.
 
 ## Screenshots
 
-Real QEMU frames. The boot menu is from a local boot of the patched ISO; the
-other three are from the CI virtual-machine run of a published disk artifact.
+Real QEMU frames from CI runs of the published ISO.
 
-| Boot menu | GDM login |
-| --- | --- |
-| ![GRUB boot menu](docs/screenshots/boot-menu.png) | ![GDM login](docs/screenshots/gdm-login.png) |
+| Boot menu | Interactive install | Disk layout |
+| --- | --- | --- |
+| ![GRUB boot menu](docs/screenshots/boot-menu.png) | ![Anaconda summary](docs/screenshots/installer-hub.png) | ![Installation destination](docs/screenshots/installer-destination.png) |
 
-| Installer | First boot |
-| --- | --- |
-| ![Anaconda installer](docs/screenshots/installer.png) | ![First boot](docs/screenshots/first-boot.png) |
+| Manual partitioning | GDM login | First boot |
+| --- | --- | --- |
+| ![Manual partitioning](docs/screenshots/installer-partitioning.png) | ![GDM login](docs/screenshots/gdm-login.png) | ![First boot](docs/screenshots/first-boot.png) |
 
-The first menu entry is the default interactive install; the second erases the
-first disk without asking. After login the desktop runs on the Wraindrock
-wallpaper, and a fresh install lands on GNOME Initial Setup over it.
+The first menu entry installs interactively: choose Automatic, Custom or
+Blivet-GUI partitioning, then set up the user. Language is picked at GNOME
+Initial Setup on first boot. The second entry erases the first disk without
+asking.
 
 ## Install
 
