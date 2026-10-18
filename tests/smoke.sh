@@ -27,10 +27,12 @@ trap cleanup EXIT
 cleanup
 
 echo "smoke test: ${IMAGE}"
-# --systemd=always needs a permissive seccomp profile inside rootless podman:
-# the default profile blocks a few syscalls journald/dbus rely on and the
-# resulting EPERM is a container artifact, not an image defect.
-"${ENGINE}" run --systemd=always --security-opt seccomp=unconfined --name "${NAME}" -d "${IMAGE}" >/dev/null
+# Booting a real systemd inside a container needs the full capability set of
+# the sandbox user namespace: journald, dbus and logind set up mount
+# namespaces, and without CAP_SYS_ADMIN they exit with EPERM. This is a
+# property of the harness, not of the image; the disk VM tests boot the same
+# image on real (virtual) hardware.
+"${ENGINE}" run --systemd=always --privileged --name "${NAME}" -d "${IMAGE}" >/dev/null
 
 status="unknown"
 deadline=$((SECONDS + TIMEOUT))
