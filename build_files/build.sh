@@ -247,6 +247,13 @@ while IFS=$'\t' read -r rpm_name rpm_version rpm_url rpm_sha256; do
         || die "${rpm_name}: expected ${rpm_version}, got ${rpm_got_version}"
 done < "${rpm_pins_file}"
 
+# Bluefin ships /opt as a symlink to /var/opt, and a bootc deployment does not
+# carry /var, so that symlink dangles inside the build container. Both SFL and
+# Helium unpack into /opt, so make it a real directory first.
+if [[ -L /opt ]]; then
+    rm -f /opt
+fi
+install -d -m 0755 /opt
 rpm -i "${rpm_dir}"/*.rpm
 rm -rf "${rpm_dir}"
 [[ -x /opt/sing-box/sing-box ]] || die "SFL did not land under /opt/sing-box"

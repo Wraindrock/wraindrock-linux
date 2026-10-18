@@ -307,7 +307,7 @@ echo "build invariants"
 for needle in 'base-os-release' 'delta.json' 'zzzz-wraindrock.gschema.override' \
               'wraindrock-wallpaper.png' 'Theme=wraindrock' \
               'plymouth/animation-' 'grub/theme.txt' 'wraindrock-grub-theme' \
-              'wraindrock-hostname-seed'; do
+              'wraindrock-hostname-seed' 'install -d -m 0755 /opt'; do
     if grep -Fq "${needle}" build_files/build.sh; then
         pass "build.sh handles ${needle}"
     else
