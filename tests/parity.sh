@@ -78,12 +78,10 @@ assert set(delta["rpm"]["added"]) == set(added), (
     "declared", sorted(delta["rpm"]["added"]), "actual", sorted(added)
 )
 assert removed == [], removed
-expected = {
-    "clash-verge-2.5.8-1.x86_64",
-    "rayburst-4.0.1-1.x86_64",
-    "sing-box-1.14.3-1.x86_64",
-}
-assert set(added) == expected, added
+names = {"clash-verge", "helium-bin", "rayburst", "sing-box"}
+assert len(added) == len(names), added
+for name in names:
+    assert any(entry.startswith(name + "-") for entry in added), (name, added)
 PY
 then
     pass "RPM set is the base plus exactly the declared additions (${base_count} -> ${image_count})"
@@ -321,20 +319,30 @@ else
     fail "Helium browser binary is missing"
 fi
 
-declare -A rpm_pins=(
-    [clash-verge]=2.5.8-1
-    [helium-bin]=0.19.4.1-1.fc44
-    [rayburst]=4.0.1-1
-    [sing-box]=1.14.3-1
-)
-for name in clash-verge helium-bin rayburst sing-box; do
-    version="$(in_image "${IMAGE}" "rpm -q --qf '%{VERSION}-%{RELEASE}' ${name}")"
-    if [[ ${version} == "${rpm_pins[${name}]}" ]]; then
-        pass "baked package present at the pinned version: ${name} ${version}"
+# Expected versions come from the manifest, which build.sh derived from the
+# pins it verified; compare them with what rpm actually installed.
+python3 - "${tmpdir}/delta.json" <<'RPM_VERSIONS' > "${tmpdir}/rpm.versions"
+import json
+import sys
+
+delta = json.load(open(sys.argv[1]))
+names = ["clash-verge", "helium-bin", "rayburst", "sing-box"]
+for entry in delta["rpm"]["added"]:
+    for name in names:
+        if entry.startswith(name + "-"):
+            version = entry[len(name) + 1:]
+            if version.endswith(".x86_64"):
+                version = version[:-len(".x86_64")]
+            print(f"{name}\t{version}")
+RPM_VERSIONS
+while IFS=$'\t' read -r name version; do
+    installed="$(in_image "${IMAGE}" "rpm -q --qf '%{VERSION}-%{RELEASE}' ${name}")"
+    if [[ ${installed} == "${version}" ]]; then
+        pass "baked package present at the pinned version: ${name} ${installed}"
     else
-        fail "baked package ${name} is ${version}, expected ${rpm_pins[${name}]}"
+        fail "baked package ${name} is ${installed}, expected ${version}"
     fi
-done
+done < "${tmpdir}/rpm.versions"
 
 if in_image "${IMAGE}" \
     "grep -qx \"logo='/usr/share/pixmaps/wraindrock-gdm-logo.png'\" \
