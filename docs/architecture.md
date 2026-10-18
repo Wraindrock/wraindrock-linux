@@ -125,9 +125,9 @@ wallpaper and boot splash in v0.3):
 | default hostname | `DEFAULT_HOSTNAME` (no `/etc/hostname` is shipped; an installer or user file still wins) |
 
 The logo assets are generated outlines, not `<text>`: rendering does not depend
-on Cantarell or any other font being present. GDM merges gschema overrides in
-name order, so a `zz-` file wins over Fedora's own; Fedora's file is left
-untouched. The wallpaper works the same way: Fedora's
+on Cantarell or any other font being present. GDM merges gschema overrides in name order, and Bluefin ships its own
+`zz0-`/`zz1-` overrides, so ours is named `zzzz-` to sort last; upstream
+files are left untouched. The wallpaper works the same way: Fedora's
 `10_org.gnome.desktop.background.fedora.gschema.override` points at its own
 day/night images, and our later-sorted `zz-` file replaces both `picture-uri` and
 `picture-uri-dark` with the Wraindrock PNG. GDM's login screen reads the same

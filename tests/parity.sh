@@ -176,7 +176,7 @@ assert delta["base_image"], delta
 assert delta["base_digest"], delta
 
 changed = delta["os_release"]["changed"]
-added = delta["os_release"]["added"]
+added = delta["os_release"].get("added", {})
 assert set(changed) == {
     "NAME", "PRETTY_NAME", "LOGO", "DEFAULT_HOSTNAME", "HOME_URL",
     "DOCUMENTATION_URL", "SUPPORT_URL", "BUG_REPORT_URL",
