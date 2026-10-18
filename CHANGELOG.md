@@ -27,6 +27,17 @@ image versions are the upstream channel plus an immutable build tag, see
 - Documentation, install/rollback paths and security boundaries now describe
   Bluefin DX as the feedstock and stock Bluefin DX as the way back.
 
+### Fixed
+
+- Our gschema override is named `zzzz-wraindrock` because Bluefin ships
+  `zz0-`/`zz1-` overrides that would otherwise sort after it and keep their
+  wallpaper keys.
+- The container smoke test boots systemd with the full capability set of its
+  user namespace: journald and dbus set up mount namespaces and exit with EPERM
+  without it.
+- Parity accepts a `delta.json` without an `os_release.added` block (the rebase
+  no longer adds `ID_LIKE`), still asserting that the added set is empty.
+
 ## [0.7.0] - 2026-10-18
 
 ### Changed

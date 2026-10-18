@@ -32,7 +32,7 @@ a fresh machine can be installed without an existing system.
 - [x] qcow2 + unattended Anaconda ISO in CI; KVM install + boot tests
 - [x] Verified disk artifacts published as immutable OCI artifacts on GHCR
 
-## v0.4 — rebase onto Bluefin DX (current)
+## v0.4 — rebase onto Bluefin DX (done)
 
 **Goal:** stop maintaining a Fedora derivative and become a Bluefin DX remix.
 Upstream already ships the desktop, the uBlue tooling and the kernel modules;
@@ -50,6 +50,12 @@ Wraindrock should only own its identity and its preferences.
 **Test that must fail first:** `tests/parity.sh` asserts the base is
 `ID=bluefin`/`VARIANT_ID=bluefin-dx*` and that the image's `NAME` is
 `Wraindrock Linux`; on the Silverblue-based v0.3 image the base assertion fails.
+
+**Delivered:** image `sha256:d9a3209f…` (version `44.20261018T031309Z.29`,
+revision `ce6df12`), base digest `sha256:a41cf1eb…`, bluefin-dx RPM set
+(2,237 packages), cosign-verified. The container smoke test now gives the
+throwaway systemd container the full capability set of its user namespace;
+journald and dbus cannot build their mount namespaces without it.
 
 ## v0.5 — out-of-the-box preferences
 
