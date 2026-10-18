@@ -65,13 +65,15 @@ upstream already provides.
 
 - [x] Flatpak preinstalls through uBlue's supported mechanism
       (`/usr/share/flatpak/preinstall.d/wraindrock.preinstall`): Bluefin DX's six
-      developer apps plus Zen Browser, WeChat, Rnote and Gear Lever; Zen is the
-      default browser via `/etc/xdg/mimeapps.list`; Firefox stays installed.
+      developer apps plus WeChat, Rnote and Gear Lever; Helium (pinned RPM from
+      the official COPR) is the default browser via `/etc/xdg/mimeapps.list`;
+      Firefox stays installed.
       The other 36 Bluefin Flatpaks remain `ujust install-system-flatpaks`.
-- [x] Three GitHub RPMs baked at pinned versions with sha256 checks:
-      Clash Verge Rev 2.5.8, Rayburst 4.0.1, sing-box (SFL) 1.14.3; declared in
-      delta.json schema 2 under `rpm.added`, updates via image or
-      `rpm-ostree override replace`
+- [x] Four RPMs baked at pinned versions with sha256 checks: Helium 0.19.4.1
+      (official `imput/helium` COPR), Clash Verge Rev 2.5.8, Rayburst 4.0.1,
+      sing-box (SFL) 1.14.3; declared in delta.json schema 2 under `rpm.added`.
+      The daily `upstream-watch` workflow refreshes `rpms.tsv` and dispatches a
+      build per upstream release, so apps track their own cadence
 - [ ] Homebrew bundle for CLI tooling (uBlue ships Brew; we only list formulae)
 - [ ] GNOME defaults via `gschema.override` (theme, fonts, clock, input method)
 - [ ] CJK fonts + input method (fcitx5) as declared, documented additions

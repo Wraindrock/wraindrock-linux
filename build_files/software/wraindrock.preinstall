@@ -26,12 +26,8 @@ IsRuntime=false
 Branch=stable
 IsRuntime=false
 
-# Wraindrock personal preferences. Zen is the default browser; the others are
-# ordinary applications the user can remove like any Flatpak.
-[Flatpak Preinstall app.zen_browser.zen]
-Branch=stable
-IsRuntime=false
-
+# Wraindrock personal preferences. Helium ships as a pinned RPM and is the
+# default browser; the others are ordinary applications the user can remove.
 [Flatpak Preinstall com.tencent.WeChat]
 Branch=stable
 IsRuntime=false

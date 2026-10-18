@@ -66,9 +66,9 @@ The boot menu offers two entries:
 
 Boot the stick on a UEFI machine, pick an entry and let Anaconda install; the
 system reboots into GDM. On the first boot the network must be up: the system
-installs ten Flatpaks in the background (Podman Desktop, GNOME Builder,
-DevToolbox, Clapgrep, Embellish, Tavern, Zen Browser, WeChat, Rnote, Gear
-Lever). Zen Browser is the default browser; Firefox remains installed. The
+installs nine Flatpaks in the background (Podman Desktop, GNOME Builder,
+DevToolbox, Clapgrep, Embellish, Tavern, WeChat, Rnote, Gear
+Lever). Helium is the default browser; Firefox remains installed. The
 GRUB menu theme stays opt-in: `sudo wraindrock-grub-theme enable`.
 
 ## Verify after reboot

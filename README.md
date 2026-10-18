@@ -15,25 +15,27 @@ owns the identity, the presentation and a short list of personal defaults.
   theme replace upstream's presentation.
 - A fresh install seeds the hostname to `wraindrock`.
 
-Everything else matches Bluefin DX package for package, except the three
+Everything else matches Bluefin DX package for package, except the four
 software packages listed below. `/usr/share/wraindrock/delta.json` records every
 difference, and CI fails the build if the image carries anything that is not in
 that manifest.
 
 ## Software
 
-The first boot installs ten Flatpaks from Flathub (needs the network):
+The first boot installs nine Flatpaks from Flathub (needs the network):
 
 | Bluefin DX | Wraindrock |
 | --- | --- |
-| Podman Desktop, GNOME Builder, DevToolbox, Clapgrep, Embellish, Tavern | Zen Browser, WeChat, Rnote, Gear Lever |
+| Podman Desktop, GNOME Builder, DevToolbox, Clapgrep, Embellish, Tavern | WeChat, Rnote, Gear Lever |
 
-**Zen Browser is the default browser** for links and HTML; Firefox stays
-installed and selectable. Three programs have no Flatpak, so their upstream
-GitHub RPMs are baked into the image at pinned versions: Clash Verge Rev
-2.5.8, Rayburst 4.0.1 and sing-box (SFL) 1.14.3. They update with the image;
-use `rpm-ostree override replace` for a single package before then. Bluefin's
-other 36 Flatpaks stay one command away: `ujust install-system-flatpaks`.
+**Helium is the default browser** for links and HTML; Firefox stays installed
+and selectable. Four programs have no Flatpak, so their upstream RPMs are baked
+in at pinned versions: Helium 0.19.4.1 (from the official `imput/helium` COPR),
+Clash Verge Rev 2.5.8, Rayburst 4.0.1 and sing-box (SFL) 1.14.3. Each upstream
+release is caught by the daily upstream-watch workflow, which bumps the pin and
+publishes a new signed image tag — the apps do not wait for a Fedora major
+release. Bluefin's other 36 Flatpaks stay one command away:
+`ujust install-system-flatpaks`.
 
 ## Screenshots
 

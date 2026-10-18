@@ -224,39 +224,33 @@ install -m 0644 "${script_dir}/software/wraindrock.preinstall" \
     /usr/share/flatpak/preinstall.d/wraindrock.preinstall
 install -m 0644 "${script_dir}/software/mimeapps.list" /etc/xdg/mimeapps.list
 
-# name|version-release|url|sha256. Bump a pin and its checksum together.
-rpm_pins=(
-    "clash-verge|2.5.8-1|https://github.com/clash-verge-rev/clash-verge-rev/releases/download/v2.5.8/Clash.Verge-2.5.8-1.x86_64.rpm|ad378ea9fb12ebae49500fcddb0435fd67abef79d828b654368e0f67b5785c2e"
-    "rayburst|4.0.1-1|https://github.com/AnInsomniacy/rayburst/releases/download/v4.0.1/Rayburst-4.0.1-1.x86_64.rpm|06b08d124fa1f487c7450a2cc720eb9b9299f621ebb3db4213b77fb3e99b6633"
-    "sing-box|1.14.3-1|https://github.com/SagerNet/sing-box/releases/download/v1.14.3/SFL-1.14.3-x86_64.rpm|979bfdeb419525ff5603a2edc30602e56953abba983eabda4dda2877a23f31f4"
-)
+# Pins live in software/rpms.tsv so the upstream-watch workflow can refresh
+# them without rewriting this script. The column order is:
+#   name <TAB> version-release <TAB> url <TAB> sha256
+rpm_pins_file="${script_dir}/software/rpms.tsv"
+rpm_expected_added="$(awk 'NF && $1 !~ /^#/' "${rpm_pins_file}" | wc -l)"
 
 say "installing pinned software RPMs"
 rpm_dir="$(mktemp -d /tmp/wraindrock-rpms.XXXXXX)"
-for pin in "${rpm_pins[@]}"; do
-    IFS='|' read -r rpm_name rpm_version rpm_url rpm_sha256 <<<"${pin}"
+while IFS=$'\t' read -r rpm_name rpm_version rpm_url rpm_sha256; do
+    [[ -n ${rpm_name} && ${rpm_name} != \#* ]] || continue
     rpm_file="${rpm_dir}/${rpm_name}.rpm"
     curl -fsSL --retry 3 --retry-delay 2 -o "${rpm_file}" "${rpm_url}" \
         || die "could not download ${rpm_name} from ${rpm_url}"
     printf '%s  %s\n' "${rpm_sha256}" "${rpm_file}" | sha256sum -c - >/dev/null \
         || die "sha256 mismatch for ${rpm_name}"
+    rpm_got_name="$(rpm -qp --qf '%{NAME}' "${rpm_file}")"
+    [[ ${rpm_got_name} == "${rpm_name}" ]] \
+        || die "${rpm_name}: archive contains ${rpm_got_name}"
     rpm_got_version="$(rpm -qp --qf '%{VERSION}-%{RELEASE}' "${rpm_file}")"
     [[ ${rpm_got_version} == "${rpm_version}" ]] \
         || die "${rpm_name}: expected ${rpm_version}, got ${rpm_got_version}"
-done
-# Upstream ships SFL only under /opt. Bluefin makes /opt a symlink into /var,
-# and a bootc deployment does not carry /var, so the payload would vanish on
-# install. Turn /opt into a real directory that is part of the image instead.
-# Nothing else in the base installs there, so the practical blast radius is
-# "the two apps that need it become read-only image content".
-if [[ -L /opt ]]; then
-    rm -f /opt
-fi
-install -d -m 0755 /opt
+done < "${rpm_pins_file}"
 
 rpm -i "${rpm_dir}"/*.rpm
 rm -rf "${rpm_dir}"
 [[ -x /opt/sing-box/sing-box ]] || die "SFL did not land under /opt/sing-box"
+[[ -x /opt/helium/helium ]] || die "Helium did not land under /opt/helium"
 
 rpm_current_set_file="$(mktemp /tmp/wraindrock-current-rpm-set.XXXXXX)"
 rpm_added_file="$(mktemp /tmp/wraindrock-rpm-added.XXXXXX)"
@@ -266,8 +260,8 @@ rpm -qa --qf '%{NAME}-%{VERSION}-%{RELEASE}.%{ARCH}\n' \
 comm -13 "${rpm_base_set_file}" "${rpm_current_set_file}" > "${rpm_added_file}"
 comm -23 "${rpm_base_set_file}" "${rpm_current_set_file}" > "${rpm_removed_file}"
 rpm_count="$(wc -l < "${rpm_current_set_file}")"
-[[ $(wc -l < "${rpm_added_file}") -eq 3 ]] \
-    || die "expected exactly 3 added packages, found $(wc -l < "${rpm_added_file}")"
+[[ $(wc -l < "${rpm_added_file}") -eq ${rpm_expected_added} ]] \
+    || die "expected exactly ${rpm_expected_added} added packages, found $(wc -l < "${rpm_added_file}")"
 [[ ! -s "${rpm_removed_file}" ]] || die "the software step removed base packages"
 
 # sqlite checkpoints the WAL when the last connection closes. Never ship a
@@ -412,7 +406,7 @@ cat > /usr/share/wraindrock/build-info.json <<EOF
   "parity": "bluefin-dx-${FEDORA_VERSION:-unknown}",
   "rpm_count": ${rpm_count},
   "rpm_base_count": ${rpm_base_count},
-  "rpm_added_count": 3,
+  "rpm_added_count": ${rpm_expected_added},
   "rpm_set_sha256": "${rpm_set_sha256}"
 }
 EOF

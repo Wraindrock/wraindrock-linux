@@ -1,0 +1,141 @@
+name: Upstream app watch
+
+# Baked RPMs must not wait for a Fedora major release. This job checks the four
+# upstream projects every day; when one cuts a release it refreshes the pin and
+# its sha256, commits, and dispatches a build, which publishes a new immutable
+# signed image tag for that app version.
+on:
+  schedule:
+    - cron: "41 3 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  actions: write
+
+concurrency:
+  group: upstream-watch
+  cancel-in-progress: false
+
+jobs:
+  watch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Check out the default branch
+        uses: actions/checkout@v4
+
+      - name: Resolve upstream releases and refresh pins
+        id: pins
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          python3 - <<'PY'
+          import hashlib
+          import json
+          import os
+          import re
+          import urllib.request
+
+          TSV = "build_files/software/rpms.tsv"
+          token = os.environ["GITHUB_TOKEN"]
+
+          def get(url, headers=None, raw=False):
+              req = urllib.request.Request(url, headers=headers or {})
+              with urllib.request.urlopen(req, timeout=180) as response:
+                  data = response.read()
+              return data if raw else json.loads(data)
+
+          def gh(path):
+              return get(
+                  f"https://api.github.com/repos/{path}",
+                  {"Authorization": f"Bearer {token}", "Accept": "application/vnd.github+json"},
+              )
+
+          def latest_asset(repo, pattern):
+              release = gh(f"{repo}/releases/latest")
+              for asset in release["assets"]:
+                  match = re.fullmatch(pattern, asset["name"])
+                  if match:
+                      return match.group(1), asset["browser_download_url"]
+              raise SystemExit(f"{repo} {release['tag_name']}: no asset matches {pattern}")
+
+          def helium():
+              builds = get(
+                  "https://copr.fedorainfracloud.org/api_3/build/list"
+                  "?ownername=imput&projectname=helium&limit=20&order=id&desc=true"
+              )["items"]
+              for build in builds:
+                  if build.get("state") != "succeeded":
+                      continue
+                  if "fedora-44-x86_64" not in build.get("chroots", []):
+                      continue
+                  chroots = get(
+                      f"https://copr.fedorainfracloud.org/api_3/build-chroot/list?build_id={build['id']}"
+                  )["items"]
+                  url = next(item["result_url"] for item in chroots if item["name"] == "fedora-44-x86_64")
+                  listing = get(url, raw=True).decode()
+                  match = re.search(r'href="(helium-bin-([^"]+?)\.fc44\.x86_64\.rpm)"', listing)
+                  if match:
+                      return match.group(2), url + match.group(1)
+              raise SystemExit("Helium: no succeeded fedora-44-x86_64 build found")
+
+          clash_version, clash_url = latest_asset(
+              "clash-verge-rev/clash-verge-rev", r"Clash\.Verge-(.+?)\.x86_64\.rpm"
+          )
+          ray_version, ray_url = latest_asset(
+              "AnInsomniacy/rayburst", r"Rayburst-(.+?)\.x86_64\.rpm"
+          )
+          sfl_version, sfl_url = latest_asset(
+              "SagerNet/sing-box", r"SFL-(.+?)-x86_64\.rpm"
+          )
+          resolved = {
+              "helium-bin": helium(),
+              "clash-verge": (clash_version, clash_url),
+              "rayburst": (ray_version, ray_url),
+              # SFL's asset name has no release field; its RPM release is 1.
+              "sing-box": (f"{sfl_version}-1", sfl_url),
+          }
+
+          lines = open(TSV).read().splitlines()
+          changed = []
+          output = []
+          for line in lines:
+              if not line or line.startswith("#"):
+                  output.append(line)
+                  continue
+              name, version, url, digest = line.split("\t")
+              new_version, new_url = resolved[name]
+              if new_version != version or new_url != url:
+                  data = get(new_url, raw=True)
+                  new_digest = hashlib.sha256(data).hexdigest()
+                  if new_digest != digest or new_version != version:
+                      changed.append(f"{name} {version} -> {new_version}")
+                      line = "\t".join([name, new_version, new_url, new_digest])
+              output.append(line)
+
+          if changed:
+              open(TSV, "w").write("\n".join(output) + "\n")
+              print("\n".join(changed))
+              with open(os.environ["GITHUB_OUTPUT"], "a") as handle:
+                  handle.write("changed=true\n")
+          else:
+              print("all pins are current")
+              with open(os.environ["GITHUB_OUTPUT"], "a") as handle:
+                  handle.write("changed=false\n")
+          PY
+
+      - name: Commit the refreshed pins
+        if: steps.pins.outputs.changed == 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add build_files/software/rpms.tsv
+          git commit -m "software: track new upstream releases"
+          git push
+
+      - name: Dispatch a build for the new pins
+        if: steps.pins.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh workflow run build.yml --ref "${GITHUB_REF_NAME}"

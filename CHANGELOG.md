@@ -5,6 +5,27 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 image versions are the upstream channel plus an immutable build tag, see
 [docs/architecture.md](docs/architecture.md).
 
+## [0.10.0] - 2026-10-18
+
+### Changed
+
+- Helium Browser replaces Zen Browser as the default browser. It is installed
+  at build time as a pinned RPM from Helium's official Fedora COPR
+  (`imput/helium`, package `helium-bin` 0.19.4.1), so `/etc/xdg/mimeapps.list`
+  now points at `helium.desktop`; Firefox stays installed and selectable.
+- The Flatpak preinstall list drops Zen Browser and now declares nine apps.
+- RPM pins moved out of `build_files/build.sh` into
+  `build_files/software/rpms.tsv` (name, version-release, URL, sha256), so a
+  workflow can refresh them without touching the build script.
+
+### Added
+
+- `.github/workflows/upstream-watch.yml` checks Helium (COPR), Clash Verge Rev,
+  Rayburst and SagerNet/sing-box daily; when an upstream release lands it
+  recomputes the sha256, updates `rpms.tsv`, commits, and dispatches a build.
+  Every app release therefore becomes its own signed immutable image tag
+  instead of waiting for a Fedora major release.
+
 ## [0.9.0] - 2026-10-18
 
 ### Added

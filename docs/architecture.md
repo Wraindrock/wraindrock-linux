@@ -74,7 +74,7 @@ Bluefin DX and keeps the falsifiable part machine-checkable:
 > added file is declared there.
 
 The parity test diffs `rpm -qa` with `comm` and requires the actual additions to
-equal `rpm.added`, the removals to be empty, and the additions to be the three
+equal `rpm.added`, the removals to be empty, and the additions to be the four
 known packages. For os-release it parses both files and allows only the changed
 keys `NAME`, `PRETTY_NAME`, `LOGO`, `DEFAULT_HOSTNAME` and the four URLs. A removed, added or changed key outside that set fails the build;
 each declared value is then cross-checked against the actual file, so the
@@ -92,7 +92,7 @@ teaching the test about it — never relaxing the diff.
 The manifest also covers the files the build itself adds: the branding,
 boot-splash, hostname-seeding, GRUB-helper and software files sit next to the
 `/usr/share/wraindrock/` provenance files in `files.added`, and parity requires
-that set to match exactly. Because three RPMs are baked, the image's RPM
+that set to match exactly. Because four RPMs are baked, the image's RPM
 database *is* written by design; the build asserts the sqlite WAL is
 checkpointed (0 bytes) after the last `rpm` call and keeps the sidecars the base
 ships, since `rpm` on a read-only `/usr` relies on the pre-created `-shm`/`-wal`.
@@ -177,11 +177,12 @@ Two delivery mechanisms keep the out-of-box set small and updatable:
 
 - **Flatpaks install on first boot.** `/usr/share/flatpak/preinstall.d/wraindrock.preinstall`
   declares ten apps and Bluefin's `flatpak-preinstall.service` runs
-  `flatpak preinstall -y` once the network is up. Zen Browser is the default
+  `flatpak preinstall -y` once the network is up. Helium is the default
   handler in `/etc/xdg/mimeapps.list`; Firefox stays installed and selectable.
   The other 36 Bluefin apps remain a one-liner (`ujust install-system-flatpaks`)
   because Bluefin itself does not bake them.
-- **Three RPMs are baked** (Clash Verge Rev, Rayburst, sing-box/SFL) because
+- **Four RPMs are baked** (Helium from the official `imput/helium` COPR,
+  Clash Verge Rev, Rayburst, sing-box/SFL) because
   they have no Flatpak. They are downloaded at build time from pinned upstream
   URLs, checked against a pinned sha256 and expected version, and installed with
   `rpm -i`; the dependency closure already exists in the base, so nothing is

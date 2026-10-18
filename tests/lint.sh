@@ -248,7 +248,7 @@ for needle in 'ConditionPathExists=!/var/lib/wraindrock/hostname-seeded' \
 done
 
 echo "software defaults"
-for asset in build_files/software/wraindrock.preinstall build_files/software/mimeapps.list; do
+for asset in build_files/software/wraindrock.preinstall build_files/software/mimeapps.list build_files/software/rpms.tsv; do
     if [[ -s ${asset} ]]; then
         pass "${asset} exists"
     else
@@ -256,12 +256,12 @@ for asset in build_files/software/wraindrock.preinstall build_files/software/mim
     fi
 done
 preinstall_count=$(grep -c '^\[Flatpak Preinstall ' build_files/software/wraindrock.preinstall || true)
-if [[ ${preinstall_count} == 10 ]]; then
-    pass "preinstall file declares 10 Flatpaks"
+if [[ ${preinstall_count} == 9 ]]; then
+    pass "preinstall file declares 9 Flatpaks"
 else
-    fail "preinstall file declares ${preinstall_count} Flatpaks, want 10"
+    fail "preinstall file declares ${preinstall_count} Flatpaks, want 9"
 fi
-for app in io.podman_desktop.PodmanDesktop app.zen_browser.zen com.tencent.WeChat \
+for app in io.podman_desktop.PodmanDesktop com.tencent.WeChat \
     com.github.flxzt.rnote it.mijorus.gearlever org.gnome.Builder; do
     if grep -Fxq "[Flatpak Preinstall ${app}]" build_files/software/wraindrock.preinstall; then
         pass "preinstall file lists ${app}"
@@ -270,13 +270,26 @@ for app in io.podman_desktop.PodmanDesktop app.zen_browser.zen com.tencent.WeCha
     fi
 done
 for scheme in text/html application/xhtml+xml x-scheme-handler/http x-scheme-handler/https; do
-    if grep -Fxq "${scheme}=app.zen_browser.zen.desktop" build_files/software/mimeapps.list; then
-        pass "Zen Browser is the default for ${scheme}"
+    if grep -Fxq "${scheme}=helium.desktop" build_files/software/mimeapps.list; then
+        pass "Helium is the default for ${scheme}"
     else
-        fail "Zen Browser is not the default for ${scheme}"
+        fail "Helium is not the default for ${scheme}"
     fi
 done
-for needle in "wraindrock.preinstall" "mimeapps.list" "rpm -i" "sha256sum -c" \
+rpm_rows=$(awk 'NF && $1 !~ /^#/' build_files/software/rpms.tsv | wc -l)
+if [[ ${rpm_rows} == 4 ]]; then
+    pass "rpms.tsv pins 4 upstream packages"
+else
+    fail "rpms.tsv pins ${rpm_rows} packages, want 4"
+fi
+for name in helium-bin clash-verge rayburst sing-box; do
+    if awk -F'\t' -v n="${name}" 'NF && $1 == n && $2 != "" && $3 ~ /^https:\/\// && $4 ~ /^[0-9a-f]{64}$/' build_files/software/rpms.tsv | grep -q .; then
+        pass "rpms.tsv has a complete pin for ${name}"
+    else
+        fail "rpms.tsv pin for ${name} is incomplete"
+    fi
+done
+for needle in "wraindrock.preinstall" "mimeapps.list" "rpms.tsv" "rpm -i" "sha256sum -c" \
     "rpm_base_set_file" "rpmdb.sqlite-wal"; do
     if grep -Fq -- "${needle}" build_files/build.sh; then
         pass "build.sh handles ${needle}"
@@ -406,6 +419,19 @@ if [[ -r .github/workflows/build.yml ]]; then
     done
 else
     fail ".github/workflows/build.yml is missing"
+fi
+if [[ -r .github/workflows/upstream-watch.yml ]]; then
+    pass "upstream watch workflow exists"
+    for needle in 'rpms.tsv' 'copr.fedorainfracloud.org' 'clash-verge-rev' \
+                  'rayburst' 'SagerNet/sing-box' 'workflow run build.yml'; do
+        if grep -Fq -e "${needle}" .github/workflows/upstream-watch.yml; then
+            pass "upstream watch workflow contains ${needle}"
+        else
+            fail "upstream watch workflow is missing ${needle}"
+        fi
+    done
+else
+    fail ".github/workflows/upstream-watch.yml is missing"
 fi
 if [[ -r .github/workflows/disk.yml ]]; then
     pass "disk workflow exists"

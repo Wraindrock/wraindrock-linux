@@ -268,7 +268,7 @@ while IFS= read -r path; do
     fi
 done < "${tmpdir}/added-files"
 
-# The build writes the RPM database (three packages are added), so the sqlite
+# The build writes the RPM database (the pinned packages are added), so the sqlite
 # sidecars cannot stay byte-identical to the base. A clean rpm exit checkpoints
 # the WAL; require an empty WAL and keep the sidecars the base ships, because
 # rpm on a read-only /usr relies on the pre-created -shm and -wal files.
@@ -292,14 +292,14 @@ else
     fail "first-boot Flatpak preinstall file is missing"
 fi
 preinstall_count="$(in_image "${IMAGE}" "grep -c '^\[Flatpak Preinstall ' ${preinstall}")"
-if [[ ${preinstall_count} == 10 ]]; then
-    pass "preinstall file declares 10 Flatpaks"
+if [[ ${preinstall_count} == 9 ]]; then
+    pass "preinstall file declares 9 Flatpaks"
 else
-    fail "preinstall file declares ${preinstall_count} Flatpaks (expected 10)"
+    fail "preinstall file declares ${preinstall_count} Flatpaks (expected 9)"
 fi
 for app in de.leopoldluley.Clapgrep io.github.getnf.embellish \
     io.podman_desktop.PodmanDesktop me.iepure.devtoolbox org.gnome.Builder \
-    com.github.tuna_os.Tavern app.zen_browser.zen com.tencent.WeChat \
+    com.github.tuna_os.Tavern com.tencent.WeChat \
     com.github.flxzt.rnote it.mijorus.gearlever; do
     if in_image "${IMAGE}" "grep -Fxq '[Flatpak Preinstall ${app}]' ${preinstall}"; then
         :
@@ -310,18 +310,24 @@ done
 pass "preinstall file lists the Bluefin DX and Wraindrock app IDs"
 
 if in_image "${IMAGE}" \
-    "grep -Fxq 'x-scheme-handler/https=app.zen_browser.zen.desktop' /etc/xdg/mimeapps.list"; then
-    pass "Zen Browser is the default for https"
+    "grep -Fxq 'x-scheme-handler/https=helium.desktop' /etc/xdg/mimeapps.list"; then
+    pass "Helium is the default for https"
 else
-    fail "Zen Browser is not the default for https"
+    fail "Helium is not the default for https"
+fi
+if in_image "${IMAGE}" "test -x /usr/bin/helium && test -x /opt/helium/helium"; then
+    pass "Helium browser binary is installed"
+else
+    fail "Helium browser binary is missing"
 fi
 
 declare -A rpm_pins=(
     [clash-verge]=2.5.8-1
+    [helium-bin]=0.19.4.1-1.fc44
     [rayburst]=4.0.1-1
     [sing-box]=1.14.3-1
 )
-for name in clash-verge rayburst sing-box; do
+for name in clash-verge helium-bin rayburst sing-box; do
     version="$(in_image "${IMAGE}" "rpm -q --qf '%{VERSION}-%{RELEASE}' ${name}")"
     if [[ ${version} == "${rpm_pins[${name}]}" ]]; then
         pass "baked package present at the pinned version: ${name} ${version}"
