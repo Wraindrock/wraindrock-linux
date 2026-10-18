@@ -59,6 +59,15 @@ if "${ENGINE}" exec "${NAME}" systemctl is-active --quiet systemd-journald; then
     printf '  ok   systemd-journald is active\n'
 else
     echo "  fail systemd-journald is not active" >&2
+    {
+        echo "  -- journald diagnostics --"
+        "${ENGINE}" exec "${NAME}" systemctl status systemd-journald --no-pager -l 2>&1 | tail -20 || true
+        echo "  -- dbus-broker diagnostics --"
+        "${ENGINE}" exec "${NAME}" systemctl status dbus-broker --no-pager -l 2>&1 | tail -20 || true
+        echo "  -- filesystem and account state --"
+        "${ENGINE}" exec "${NAME}" ls -ld /etc/machine-id /run/log /run/log/journal /var/log/journal 2>&1 || true
+        "${ENGINE}" exec "${NAME}" sh -c 'grep -v "^#" /etc/systemd/journald.conf 2>/dev/null; id systemd-journal 2>&1; id dbus 2>&1' || true
+    } >&2
     exit 1
 fi
 
