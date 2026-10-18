@@ -28,6 +28,10 @@ image versions are the upstream channel plus an immutable build tag, see
 - The build no longer keeps the RPM database byte-identical to the base (it must
   write it); it asserts the sqlite WAL is checkpointed to 0 bytes instead and
   keeps the sidecars a read-only `/usr` needs.
+- `/opt` is a real directory in the image instead of Bluefin's symlink into
+  `/var`, so packages that only install under `/opt` (SFL) survive a bootc
+  install. The base installs nothing else there; the directory is read-only at
+  runtime and listed under `files.modified`.
 
 ## [0.8.3] - 2026-10-18
 

@@ -187,7 +187,10 @@ Two delivery mechanisms keep the out-of-box set small and updatable:
   `rpm -i`; the dependency closure already exists in the base, so nothing is
   resolved from a repository. Their `%post` scriptlets run as root inside the
   build container. They update with the image; `rpm-ostree override replace`
-  gives a per-package escape hatch between image releases.
+  gives a per-package escape hatch between image releases. SFL installs only
+  under `/opt`; because Bluefin's `/opt` is a symlink into `/var` and a bootc
+  deployment does not carry `/var`, the build replaces it with a real directory
+  so the payload is part of the image (and therefore read-only at runtime).
 
 Backend caveats are deliberate and documented rather than patched: Clash Verge
 and SFL both want TUN/network control and should not run at the same time;

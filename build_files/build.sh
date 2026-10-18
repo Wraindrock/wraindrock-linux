@@ -244,8 +244,19 @@ for pin in "${rpm_pins[@]}"; do
     [[ ${rpm_got_version} == "${rpm_version}" ]] \
         || die "${rpm_name}: expected ${rpm_version}, got ${rpm_got_version}"
 done
+# Upstream ships SFL only under /opt. Bluefin makes /opt a symlink into /var,
+# and a bootc deployment does not carry /var, so the payload would vanish on
+# install. Turn /opt into a real directory that is part of the image instead.
+# Nothing else in the base installs there, so the practical blast radius is
+# "the two apps that need it become read-only image content".
+if [[ -L /opt ]]; then
+    rm -f /opt
+fi
+install -d -m 0755 /opt
+
 rpm -i "${rpm_dir}"/*.rpm
 rm -rf "${rpm_dir}"
+[[ -x /opt/sing-box/sing-box ]] || die "SFL did not land under /opt/sing-box"
 
 rpm_current_set_file="$(mktemp /tmp/wraindrock-current-rpm-set.XXXXXX)"
 rpm_added_file="$(mktemp /tmp/wraindrock-rpm-added.XXXXXX)"
@@ -327,7 +338,8 @@ cat > /usr/share/wraindrock/delta.json <<EOF
       "/usr/lib/os-release",
       "/usr/share/glib-2.0/schemas/gschemas.compiled",
       "/etc/plymouth/plymouthd.conf",
-      "/usr/share/rpm/rpmdb.sqlite"
+      "/usr/share/rpm/rpmdb.sqlite",
+      "/opt"
     ],
     "added": [
       "/usr/share/icons/hicolor/scalable/apps/wraindrock-logo-icon.svg",
