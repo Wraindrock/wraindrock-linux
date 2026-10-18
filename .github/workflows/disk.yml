@@ -1,11 +1,11 @@
 ---
 # Build installable disk artifacts (qcow2 + Anaconda installer ISO) from a
-# published Wrainrock image. This workflow is deliberately separate from
+# published Wraindrock image. This workflow is deliberately separate from
 # build.yml: the OCI image is the source of truth, and disk artifacts are
 # derived, expensive, and versioned by the image they were built from.
 #
 # Usage:
-#   gh workflow run disk.yml -f image_ref=ghcr.io/wraindrock/wrainrock-linux:44
+#   gh workflow run disk.yml -f image_ref=ghcr.io/wraindrock/wraindrock-linux:44
 #
 # Pin image_ref to a digest for reproducible artifacts; a moving tag is
 # accepted for convenience and the resolved digest is recorded in the summary.
@@ -16,7 +16,7 @@ on:
     inputs:
       image_ref:
         description: "Container image reference to build from (tag or digest)"
-        default: "ghcr.io/wraindrock/wrainrock-linux:44"
+        default: "ghcr.io/wraindrock/wraindrock-linux:44"
         required: true
         type: string
       vm_test:
@@ -199,7 +199,7 @@ jobs:
           tests/vm-test.sh iso "${iso}" --timeout 2400 --out "${RUNNER_TEMP}/vm-iso"
           echo "screenshots: ${RUNNER_TEMP}/vm-iso"
 
-      - name: Boot the qcow2 under KVM and require the Wrainrock hostname
+      - name: Boot the qcow2 under KVM and require the Wraindrock hostname
         if: inputs.vm_test
         run: |
           set -euo pipefail
@@ -218,7 +218,7 @@ jobs:
           # GHCR repository paths are lowercase; GITHUB_REPOSITORY_OWNER keeps
           # the account's casing ("Wraindrock"), which oras rejects.
           owner=$(printf '%s' "${GITHUB_REPOSITORY_OWNER}" | tr '[:upper:]' '[:lower:]')
-          ref="ghcr.io/${owner}/wrainrock-linux-disk:${version}"
+          ref="ghcr.io/${owner}/wraindrock-linux-disk:${version}"
           iso=$(find output/bootiso -name '*.iso' -print -quit)
           qcow2=$(find output/qcow2 -name '*.qcow2' -print -quit)
           [ -n "${iso}" ] && [ -n "${qcow2}" ]
@@ -240,12 +240,12 @@ jobs:
           fi
 
           oras push "${ref}" \
-            --artifact-type application/vnd.wrainrock.disk.v1+json \
+            --artifact-type application/vnd.wraindrock.disk.v1+json \
             --annotation "org.opencontainers.image.version=${version}" \
             --annotation "org.opencontainers.image.revision=${revision}" \
-            --annotation "org.wrainrock.image.digest=${digest}" \
-            "${qcow2}:application/vnd.wrainrock.qcow2" \
-            "${iso}:application/vnd.wrainrock.iso" \
+            --annotation "org.wraindrock.image.digest=${digest}" \
+            "${qcow2}:application/vnd.wraindrock.qcow2" \
+            "${iso}:application/vnd.wraindrock.iso" \
             "output/SHA256SUMS:text/plain"
           echo "ref=${ref}" >> "$GITHUB_OUTPUT"
 
@@ -259,7 +259,7 @@ jobs:
 
           with open(sys.argv[1], encoding="utf-8") as handle:
               manifest = json.load(handle)
-          assert manifest["artifactType"] == "application/vnd.wrainrock.disk.v1+json", manifest.get("artifactType")
+          assert manifest["artifactType"] == "application/vnd.wraindrock.disk.v1+json", manifest.get("artifactType")
           # oras records the pushed path (`output/qcow2/disk.qcow2`) as the
           # title; compare by basename.
           layers = {
@@ -287,11 +287,11 @@ jobs:
 
           # Anonymous fetch proves the package is public, like build.yml's
           # anonymous image pull check.
-          token=$(curl -fsS "https://ghcr.io/token?service=ghcr.io&scope=repository:${owner}/wrainrock-linux-disk:pull" \
+          token=$(curl -fsS "https://ghcr.io/token?service=ghcr.io&scope=repository:${owner}/wraindrock-linux-disk:pull" \
             | python3 -c 'import json,sys; print(json.load(sys.stdin)["token"])')
           code=$(curl -sS -o /dev/null -w '%{http_code}' -H "Authorization: Bearer ${token}" \
             -H 'Accept: application/vnd.oci.image.manifest.v1+json' \
-            "https://ghcr.io/v2/${owner}/wrainrock-linux-disk/manifests/${version}")
+            "https://ghcr.io/v2/${owner}/wraindrock-linux-disk/manifests/${version}")
           [ -n "${token}" ] || { echo "::error::cannot obtain an anonymous ghcr token; is the package public?"; exit 1; }
           [ "${code}" = 200 ] || { echo "::error::anonymous manifest fetch returned ${code}; is the package public?"; exit 1; }
           echo "anonymous manifest fetch: ${code}"
@@ -300,7 +300,7 @@ jobs:
         if: always() && inputs.vm_test
         uses: actions/upload-artifact@v4
         with:
-          name: wrainrock-${{ steps.image.outputs.version }}-vm-evidence
+          name: wraindrock-${{ steps.image.outputs.version }}-vm-evidence
           # Keep the evidence small: the 30 GiB boot disk is not evidence.
           path: |
             ${{ runner.temp }}/vm-iso/*.png
@@ -316,7 +316,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: wrainrock-${{ steps.image.outputs.version }}-qcow2
+          name: wraindrock-${{ steps.image.outputs.version }}-qcow2
           path: output/qcow2
           retention-days: 7
           if-no-files-found: error
@@ -326,7 +326,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: wrainrock-${{ steps.image.outputs.version }}-iso
+          name: wraindrock-${{ steps.image.outputs.version }}-iso
           path: |
             output/bootiso
             output/SHA256SUMS
@@ -337,7 +337,7 @@ jobs:
       - name: Summary
         run: |
           {
-            echo "## Wrainrock disk artifacts"
+            echo "## Wraindrock disk artifacts"
             echo
             echo "| Field | Value |"
             echo "| --- | --- |"

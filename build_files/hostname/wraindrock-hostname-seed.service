@@ -1,0 +1,14 @@
+[Unit]
+Description=Seed the Wraindrock hostname on first boot
+Documentation=https://github.com/Wraindrock/wraindrock-linux
+ConditionPathExists=!/var/lib/wraindrock/hostname-seeded
+After=local-fs.target
+Before=systemd-user-sessions.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/libexec/wraindrock-hostname-seed
+RemainAfterExit=yes
+
+[Install]
+WantedBy=sysinit.target

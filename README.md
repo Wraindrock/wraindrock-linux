@@ -1,11 +1,11 @@
-# Wrainrock Linux
+# Wraindrock Linux
 
 An atomic desktop Linux distribution built on **Fedora Silverblue** and delivered as a
 **bootc container image**.
 
-[![build](https://github.com/Wraindrock/wrainrock-linux/actions/workflows/build.yml/badge.svg)](https://github.com/Wraindrock/wrainrock-linux/actions/workflows/build.yml)
+[![build](https://github.com/Wraindrock/wraindrock-linux/actions/workflows/build.yml/badge.svg)](https://github.com/Wraindrock/wraindrock-linux/actions/workflows/build.yml)
 
-Wrainrock Linux is a bootable operating system image: the whole OS is an OCI
+Wraindrock Linux is a bootable operating system image: the whole OS is an OCI
 image, updated with `bootc update`, rolled back with `bootc rollback`, and
 installed on top of an existing Fedora Atomic system with `bootc switch`. There
 is no package manager mutation of the running root and no "partially upgraded"
@@ -13,12 +13,12 @@ state: an update either becomes the next boot entry or it does not happen.
 
 > **Status: v0.3 in progress — branded boot menu (opt-in).** The package set is
 > still Fedora Silverblue 44, unchanged. What differs is presentation and
-> identity: `NAME`, `PRETTY_NAME`, `ID=wrainrock` (with `ID_LIKE=fedora`), the
+> identity: `NAME`, `PRETTY_NAME`, `ID=wraindrock` (with `ID_LIKE=fedora`), the
 > logo icon, the GDM login logo, the default hostname, the default desktop and
 > GDM wallpaper, the Plymouth boot splash, and (new) a GRUB menu theme that is
 > opt-in because bootc images cannot rewrite a bootloader config that bootupd
 > generated at install time. Every difference is recorded in
-> `/usr/share/wrainrock/delta.json`, and `tests/parity.sh` fails if the image
+> `/usr/share/wraindrock/delta.json`, and `tests/parity.sh` fails if the image
 > differs from the base in any way that is not in that manifest. An installable
 > qcow2/ISO pair is built from the same image by
 > `.github/workflows/disk.yml`; the installer is unattended and installs to the
@@ -31,26 +31,26 @@ state: an update either becomes the next boot entry or it does not happen.
 - **Reproducible.** Every image is built from a pinned Fedora base digest by a
   public GitHub Actions workflow, tagged immutably, and signed with Sigstore.
 - **Boring to operate.** The desktop, drivers, GNOME stack and update cadence
-  are Fedora's. Wrainrock only owns what it can test.
+  are Fedora's. Wraindrock only owns what it can test.
 - **No surprise state.** The image ships no custom system services, and the
   only system files it changes are the recorded identity/wallpaper delta. If
   the pipeline is wrong, the parity test fails before anything is published.
 
-## What the Wrainrock delta changes
+## What the Wraindrock delta changes
 
-| Field | Fedora Silverblue 44 | Wrainrock Linux 44 |
+| Field | Fedora Silverblue 44 | Wraindrock Linux 44 |
 | --- | --- | --- |
-| `NAME` | `Fedora Linux` | `Wrainrock Linux` |
-| `PRETTY_NAME` | `Fedora Linux 44.20261017.0 (Silverblue)` | `Wrainrock Linux 44.20261017.0 (Silverblue)` |
-| `ID` / `ID_LIKE` | `fedora` / — | `wrainrock` / `fedora` |
-| `LOGO` | `fedora-logo-icon` | `wrainrock-logo-icon` |
-| `DEFAULT_HOSTNAME` | `fedora` | `wrainrock` |
-| URLs / `CPE_NAME` | fedoraproject.org | this repository / `cpe:/o:wraindrock:wrainrock_linux:44` |
-| GDM logo | Fedora logo | Wrainrock wordmark |
-| Wallpaper (light + dark) | Fedora 44 day/night JXL | `wrainrock-wallpaper.png` (4K, dark blue + outlined W) |
-| GDM background | Fedora 44 day wallpaper | the same Wrainrock wallpaper |
-| Boot splash | Fedora BGRT spinner on the firmware logo | `wrainrock` two-step theme: dark blue gradient, animated outlined W |
-| Boot menu (GRUB) | Fedora's plain menu | `/usr/bin/wrainrock-grub-theme enable` copies a themed menu to `/boot/grub2/themes/wrainrock/` and hooks it into bootupd's `custom.cfg`. Opt-in: the image cannot edit an installed GRUB config. |
+| `NAME` | `Fedora Linux` | `Wraindrock Linux` |
+| `PRETTY_NAME` | `Fedora Linux 44.20261017.0 (Silverblue)` | `Wraindrock Linux 44.20261017.0 (Silverblue)` |
+| `ID` / `ID_LIKE` | `fedora` / — | `wraindrock` / `fedora` |
+| `LOGO` | `fedora-logo-icon` | `wraindrock-logo-icon` |
+| `DEFAULT_HOSTNAME` | `fedora` | `wraindrock` |
+| URLs / `CPE_NAME` | fedoraproject.org | this repository / `cpe:/o:wraindrock:wraindrock_linux:44` |
+| GDM logo | Fedora logo | Wraindrock wordmark |
+| Wallpaper (light + dark) | Fedora 44 day/night JXL | `wraindrock-wallpaper.png` (4K, dark blue + outlined W) |
+| GDM background | Fedora 44 day wallpaper | the same Wraindrock wallpaper |
+| Boot splash | Fedora BGRT spinner on the firmware logo | `wraindrock` two-step theme: dark blue gradient, animated outlined W |
+| Boot menu (GRUB) | Fedora's plain menu | `/usr/bin/wraindrock-grub-theme enable` copies a themed menu to `/boot/grub2/themes/wraindrock/` and hooks it into bootupd's `custom.cfg`. Opt-in: the image cannot edit an installed GRUB config. |
 
 `VERSION`, `VERSION_ID`, `OSTREE_VERSION` and `SUPPORT_END` stay Fedora's: the
 update cadence and support window are not ours to rewrite yet.
@@ -60,7 +60,7 @@ update cadence and support window are not ours to rewrite yet.
 On a Fedora Atomic Desktop (Silverblue/Kinoite/Bluefin/Aurora, Fedora 44+):
 
 ```bash
-sudo bootc switch ghcr.io/wraindrock/wrainrock-linux:44
+sudo bootc switch ghcr.io/wraindrock/wraindrock-linux:44
 sudo systemctl reboot
 ```
 
@@ -88,10 +88,10 @@ image and built on demand, never on every push:
 
 ```bash
 # Build (CI; also boots the ISO under KVM before publishing)
-gh workflow run disk.yml -f image_ref=ghcr.io/wraindrock/wrainrock-linux:44
+gh workflow run disk.yml -f image_ref=ghcr.io/wraindrock/wraindrock-linux:44
 
 # Consume the immutable artifact set for that image version
-oras pull ghcr.io/wraindrock/wrainrock-linux-disk:<version>
+oras pull ghcr.io/wraindrock/wraindrock-linux-disk:<version>
 sha256sum -c SHA256SUMS
 ```
 
@@ -110,7 +110,7 @@ a scratch disk, and requires the installed system to reach its graphical
 welcome/login screen before the run turns green.
 
 Verified artifacts are published as an immutable OCI artifact set on GHCR:
-`ghcr.io/wraindrock/wrainrock-linux-disk:<image version>`, three blobs
+`ghcr.io/wraindrock/wraindrock-linux-disk:<image version>`, three blobs
 (`disk.qcow2`, `install.iso`, `SHA256SUMS`). The workflow refuses to overwrite
 an existing version tag, verifies the stored manifest against the local
 digests, and fetches the manifest anonymously to prove the package is public.
@@ -122,20 +122,20 @@ GitHub Release assets cannot carry these files — GitHub caps release assets at
 ```bash
 bootc status
 cat /usr/lib/os-release
-cat /usr/share/wrainrock/build-info.json
-cat /usr/share/wrainrock/delta.json     # every difference from the base
-hostnamectl                             # static hostname: wrainrock
+cat /usr/share/wraindrock/build-info.json
+cat /usr/share/wraindrock/delta.json     # every difference from the base
+hostnamectl                             # static hostname: wraindrock
 gsettings get org.gnome.desktop.background picture-uri
-plymouth-set-default-theme                 # wrainrock
-sudo wrainrock-grub-theme status           # opt-in; reports the /boot state
+plymouth-set-default-theme                 # wraindrock
+sudo wraindrock-grub-theme status           # opt-in; reports the /boot state
 ```
 
 ```bash
 # Keyless Sigstore signature, made by this repository's workflow.
 cosign verify \
-  --certificate-identity-regexp '^https://github.com/Wraindrock/wrainrock-linux/' \
+  --certificate-identity-regexp '^https://github.com/Wraindrock/wraindrock-linux/' \
   --certificate-oidc-issuer https://token.actions.githubusercontent.com \
-  ghcr.io/wraindrock/wrainrock-linux:44
+  ghcr.io/wraindrock/wraindrock-linux:44
 ```
 
 `build-info.json` records the base image **digest**, base Fedora version, git
@@ -160,7 +160,7 @@ feedstock:  quay.io/fedora/fedora-silverblue:44  (digest-pinned)
         tests/lint.sh → tests/parity.sh → tests/smoke.sh
                     │
                     ▼
-   ghcr.io/wraindrock/wrainrock-linux:44.<date>.<run>  (immutable, signed)
+   ghcr.io/wraindrock/wraindrock-linux:44.<date>.<run>  (immutable, signed)
                     │
                     ├── :44       (moving channel)
                     ├── :latest
@@ -171,7 +171,7 @@ feedstock:  quay.io/fedora/fedora-silverblue:44  (digest-pinned)
 - **Push to `main`:** the same gates, then publish immutable + channel tags and
   sign the published digest keyless with cosign.
 - **Nightly:** rebuilds against the freshest Fedora base so security updates
-  arrive without waiting for a Wrainrock commit.
+  arrive without waiting for a Wraindrock commit.
 
 No personal access token is stored anywhere: the workflow uses the short-lived
 `GITHUB_TOKEN`, and signing uses the workflow's OIDC identity.
@@ -181,7 +181,7 @@ No personal access token is stored anywhere: the workflow uses the short-lived
 | Gate | Assertion |
 | --- | --- |
 | `tests/lint.sh` | Shell syntax, executable bits, `image.env` consistency, required docs, workflow permissions, no credential-shaped strings |
-| `tests/parity.sh` | RPM set **identical**; os-release differs only in the branded keys, with exactly the values in `delta.json`; added files match the manifest; GDM logo + wallpaper overrides compiled, and the schema defaults resolve to the Wrainrock wallpaper; Plymouth theme, config, background and all 30 animation frames present and listed; `rpm -V` shows one modified file; bootc labels and `CMD /sbin/init` intact |
+| `tests/parity.sh` | RPM set **identical**; os-release differs only in the branded keys, with exactly the values in `delta.json`; added files match the manifest; GDM logo + wallpaper overrides compiled, and the schema defaults resolve to the Wraindrock wallpaper; Plymouth theme, config, background and all 30 animation frames present and listed; `rpm -V` shows one modified file; bootc labels and `CMD /sbin/init` intact |
 | `tests/smoke.sh` | The image boots under systemd (`systemctl is-system-running` = running/degraded), journald is alive |
 
 A green build means "this is the Silverblue 44 package set with exactly the
@@ -193,11 +193,11 @@ Building needs a real host with working rootless podman — a nested,
 capability-less container cannot build images. On Silverblue/Bluefin:
 
 ```bash
-git clone https://github.com/Wraindrock/wrainrock-linux.git
-cd wrainrock-linux
+git clone https://github.com/Wraindrock/wraindrock-linux.git
+cd wraindrock-linux
 
 just check           # fast, no container needed
-just build           # podman build, tags localhost/wrainrock-linux:dev
+just build           # podman build, tags localhost/wraindrock-linux:dev
 just parity          # compare local image against the pinned base
 just smoke           # boot it with systemd
 ```
@@ -212,7 +212,7 @@ Containerfile              image definition (FROM Silverblue, provenance, bootc 
 image.env                  single source of truth: name, base, channel
 build_files/build.sh       base checks, branding, delta + build manifests
 build_files/branding/      logo, GDM wordmark, wallpaper, Plymouth + GRUB themes
-build_files/grub-theme/    wrainrock-grub-theme (opt-in boot-menu helper)
+build_files/grub-theme/    wraindrock-grub-theme (opt-in boot-menu helper)
 tests/lint.sh              static repository checks
 tests/parity.sh            "is this still Silverblue, plus only the delta?" test
 tests/smoke.sh             "does it boot?" test
@@ -238,4 +238,4 @@ SECURITY.md                trust model and how to report a vulnerability
 ## License
 
 MIT. Fedora, Silverblue and GNOME are upstream projects with their own licenses;
-Wrainrock claims no ownership over them.
+Wraindrock claims no ownership over them.

@@ -1,5 +1,5 @@
 # ---------------------------------------------------------------------------
-# Build, test and publish Wrainrock Linux.
+# Build, test and publish Wraindrock Linux.
 #
 #   pull request  -> lint + build + parity + smoke (never pushes)
 #   push to main  -> the above, then push immutable + channel tags and sign
@@ -104,7 +104,7 @@ jobs:
           # FROM is digest-pinned, so the base cannot move between the digest
           # resolution above and this build.
           # No /etc/hostname: with the file absent the installed system falls
-          # back to DEFAULT_HOSTNAME from os-release (wrainrock). Buildah would
+          # back to DEFAULT_HOSTNAME from os-release (wraindrock). Buildah would
           # otherwise inject an empty placeholder.
           podman build \
             --no-hostname \
@@ -338,7 +338,7 @@ jobs:
           DIGEST: ${{ steps.published.outputs.digest }}
         run: |
           {
-            echo "### Wrainrock Linux \`${TAG}\`"
+            echo "### Wraindrock Linux \`${TAG}\`"
             echo
             echo "- image: \`${IMAGE}\`"
             echo "- immutable: \`${IMAGE}:${TAG}\`"

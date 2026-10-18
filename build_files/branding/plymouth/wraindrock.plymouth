@@ -1,12 +1,12 @@
 [Plymouth Theme]
-Name=Wrainrock
-Description=Wrainrock Linux boot splash
+Name=Wraindrock
+Description=Wraindrock Linux boot splash
 ModuleName=two-step
 
 [two-step]
 Font=Cantarell 12
 TitleFont=Cantarell Light 30
-ImageDir=/usr/share/plymouth/themes/wrainrock
+ImageDir=/usr/share/plymouth/themes/wraindrock
 DialogHorizontalAlignment=.5
 DialogVerticalAlignment=.382
 TitleHorizontalAlignment=.5

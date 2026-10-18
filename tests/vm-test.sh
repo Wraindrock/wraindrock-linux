@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Boot a Wrainrock disk artifact under QEMU and capture screenshots.
+# Boot a Wraindrock disk artifact under QEMU and capture screenshots.
 #
 # This is the local half of the v0.3 disk verification: the CI workflow proves
 # the artifacts are well-formed; this script proves the operating system inside
@@ -12,7 +12,7 @@
 # disk. The ISO mode does not trust serial output (Anaconda installs a system
 # whose kernel may keep console=tty0), so it instead requires the installed
 # system's graphical screen: the GNOME welcome screen (compared against
-# tests/fixtures/gnome-initial-setup.png) or the Wrainrock GDM wallpaper.
+# tests/fixtures/gnome-initial-setup.png) or the Wraindrock GDM wallpaper.
 #
 # KVM is used when /dev/kvm is usable; otherwise QEMU falls back to TCG (slow,
 # but enough for a smoke test). Screenshots land in a temp directory unless
@@ -29,7 +29,7 @@ shift 2 2>/dev/null || true
 timeout=0
 out_dir=""
 disk_size="30G"
-expect_hostname="wrainrock"
+expect_hostname="wraindrock"
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 screen_ref="${script_dir}/fixtures/gnome-initial-setup.png"
 while [[ $# -gt 0 ]]; do
@@ -59,7 +59,7 @@ if [[ -z "${timeout}" || "${timeout}" == 0 ]]; then
     if [[ "${mode}" == iso ]]; then timeout=1800; else timeout=300; fi
 fi
 if [[ -z "${out_dir}" ]]; then
-    out_dir="$(mktemp -d "${TMPDIR:-/tmp}/wrainrock-vm.XXXXXX")"
+    out_dir="$(mktemp -d "${TMPDIR:-/tmp}/wraindrock-vm.XXXXXX")"
 fi
 mkdir -p "${out_dir}"
 out_dir="$(cd "${out_dir}" && pwd)"
@@ -219,7 +219,7 @@ while :; do
     fi
     if [[ "${mode}" == iso && "${install_finished}" != 0 && -s "${frame}" ]]; then
         # The installed system may show the GNOME welcome screen (white) or the
-        # GDM login screen (the Wrainrock wallpaper). Both prove that the
+        # GDM login screen (the Wraindrock wallpaper). Both prove that the
         # graphical stack came up; an Anaconda screen matches neither.
         blue=$(python3 "${script_dir}/png-stats.py" "${frame}" | sed 's/.*blue=//')
         diff=$(python3 "${script_dir}/png-stats.py" "${frame}" "${screen_ref}" | awk '{print $NF}')

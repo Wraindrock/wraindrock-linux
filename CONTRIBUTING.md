@@ -7,7 +7,7 @@
    `tests/parity.sh`, `tests/smoke.sh` or `tests/lint.sh` that is red on `main`
    and green with your change.
 2. **Do not weaken the parity test to make a build pass.** The image may differ
-   from its base only in ways listed in `/usr/share/wrainrock/delta.json`. A new
+   from its base only in ways listed in `/usr/share/wraindrock/delta.json`. A new
    customization means extending the manifest *and* the test's expected sets in
    the same PR, with the reason in the commit message — never deleting an
    assertion or widening the diff to "anything goes".
@@ -20,8 +20,8 @@
 ## Workflow
 
 ```bash
-git clone https://github.com/Wraindrock/wrainrock-linux.git
-cd wrainrock-linux
+git clone https://github.com/Wraindrock/wraindrock-linux.git
+cd wraindrock-linux
 
 bash tests/lint.sh          # always
 just build && just parity && just smoke   # on a real Silverblue/Bluefin host
@@ -38,8 +38,8 @@ the repository).
 it sees a non-trivial frame:
 
 ```bash
-tests/vm-test.sh qcow2 artifacts/wrainrock-*-qcow2/disk.qcow2 --timeout 300
-tests/vm-test.sh iso   artifacts/wrainrock-*-iso/disk.iso   --timeout 1800
+tests/vm-test.sh qcow2 artifacts/wraindrock-*-qcow2/disk.qcow2 --timeout 300
+tests/vm-test.sh iso   artifacts/wraindrock-*-iso/disk.iso   --timeout 1800
 ```
 
 It uses KVM when `/dev/kvm` is readable *and* writable, otherwise it falls back
@@ -47,9 +47,9 @@ to TCG (slow but usable). The script does not attach a network device: the
 qcow2 does not need one and the ISO carries its kickstart on the media.
 Screenshots are written next to the serial log. qcow2 mode waits for
 `gdm.service` and a `<hostname> login:` prompt on the serial console and checks
-that the hostname is `wrainrock`. ISO mode boots the installer once, then the
+that the hostname is `wraindrock`. ISO mode boots the installer once, then the
 installed disk, and accepts the GNOME welcome screen (compared with
-`tests/fixtures/gnome-initial-setup.png`) or the Wrainrock GDM wallpaper — it
+`tests/fixtures/gnome-initial-setup.png`) or the Wraindrock GDM wallpaper — it
 does not trust serial output, because Anaconda may install a kernel that keeps
 `console=tty0`. The same test runs in CI as the `disk` workflow's `vm_test`
 input; a human should still glance at the uploaded frames.

@@ -1,6 +1,6 @@
 # Architecture
 
-Wrainrock Linux is a **bootc system image**: an OCI container whose root
+Wraindrock Linux is a **bootc system image**: an OCI container whose root
 filesystem is the operating system. This document covers how the image is
 produced, what is invariant about it, how releases are identified and signed,
 and what the project deliberately does not do.
@@ -19,7 +19,7 @@ installed or switched to as an OS. We consume them as an OCI base layer, pin the
 resolved digest at build time, and record it in the image.
 
 The choice of Silverblue over `fedora-bootc` is deliberate: `fedora-bootc` is a
-minimal image with no desktop. Wrainrock wants exactly the GNOME desktop
+minimal image with no desktop. Wraindrock wants exactly the GNOME desktop
 that Fedora ships and maintains, with Fedora's kernel, firmware, driver and
 update cadence. Owning that stack ourselves is a v0.4+ decision, not a bootstrap
 one.
@@ -66,7 +66,7 @@ v0.1 enforced "identical to Fedora Silverblue". v0.2 keeps the falsifiable part
 and makes the allowed difference machine-checkable:
 
 > The image's RPM set is identical to the base's. `/usr/lib/os-release` differs
-> only in the identity keys listed in `/usr/share/wrainrock/delta.json`, and
+> only in the identity keys listed in `/usr/share/wraindrock/delta.json`, and
 > every added file is declared there.
 
 The parity test still diffs `rpm -qa`. For os-release it parses both files and
@@ -85,7 +85,7 @@ Adding a customization therefore means adding it to the manifest **and**
 teaching the test about it — never relaxing the diff.
 
 The manifest also covers the files the build itself adds: the three
-`/usr/share/wrainrock/` provenance files sit next to the five branding files in
+`/usr/share/wraindrock/` provenance files sit next to the five branding files in
 `files.added`, and parity requires that set to match exactly. RPM is queried
 from a throwaway copy of the database, so the image's rpmdb and sqlite's
 `-wal`/`-shm`/`.rpm.lock` sidecars stay byte-identical to the base (the build
@@ -97,10 +97,10 @@ count as a configured, empty hostname).
 `DEFAULT_HOSTNAME` alone is not enough on an installed system:
 `bootc-image-builder`'s install path inherits the base deployment's `/etc`, so a
 fresh install came up as `fedora` in the v0.3 VM test. The image therefore ships
-`wrainrock-hostname-seed.service` (wired into `sysinit.target.wants`), which runs
+`wraindrock-hostname-seed.service` (wired into `sysinit.target.wants`), which runs
 once before login. It reads `DEFAULT_HOSTNAME` from `/usr/lib/os-release` and
 replaces only an unconfigured value — empty, or the base's own `fedora` — then
-writes `/var/lib/wrainrock/hostname-seeded`. A hostname chosen by the user or
+writes `/var/lib/wraindrock/hostname-seeded`. A hostname chosen by the user or
 installer is never overwritten, and the marker makes later boots no-ops. The
 unit is exercised in parity against a fixture with a temporary root.
 
@@ -112,11 +112,11 @@ wallpaper and boot splash in v0.3):
 | Change | Mechanism |
 | --- | --- |
 | display name, pretty name, ID, `ID_LIKE` | `sed` on `/usr/lib/os-release` |
-| logo icon (`Settings` → `About`) | `/usr/share/icons/hicolor/scalable/apps/wrainrock-logo-icon.svg` |
-| GDM login logo | `/usr/share/pixmaps/wrainrock-gdm-logo.{svg,png}` + `zz-wrainrock.gschema.override` |
-| default desktop + GDM wallpaper | `/usr/share/backgrounds/wrainrock/wrainrock-wallpaper.png` + `[org.gnome.desktop.background]` in `zz-wrainrock.gschema.override` |
-| Plymouth boot splash | `/usr/share/plymouth/themes/wrainrock/` (two-step theme) + `Theme=wrainrock` in `/etc/plymouth/plymouthd.conf` |
-| GRUB boot menu theme | `/usr/share/grub/themes/wrainrock/` assets + `/usr/bin/wrainrock-grub-theme`, which copies them to `/boot/grub2/themes/wrainrock/` and writes a marked `/boot/grub2/custom.cfg` (opt-in) |
+| logo icon (`Settings` → `About`) | `/usr/share/icons/hicolor/scalable/apps/wraindrock-logo-icon.svg` |
+| GDM login logo | `/usr/share/pixmaps/wraindrock-gdm-logo.{svg,png}` + `zz-wraindrock.gschema.override` |
+| default desktop + GDM wallpaper | `/usr/share/backgrounds/wraindrock/wraindrock-wallpaper.png` + `[org.gnome.desktop.background]` in `zz-wraindrock.gschema.override` |
+| Plymouth boot splash | `/usr/share/plymouth/themes/wraindrock/` (two-step theme) + `Theme=wraindrock` in `/etc/plymouth/plymouthd.conf` |
+| GRUB boot menu theme | `/usr/share/grub/themes/wraindrock/` assets + `/usr/bin/wraindrock-grub-theme`, which copies them to `/boot/grub2/themes/wraindrock/` and writes a marked `/boot/grub2/custom.cfg` (opt-in) |
 | default hostname | `DEFAULT_HOSTNAME` (no `/etc/hostname` is shipped; an installer or user file still wins) |
 
 The logo assets are generated outlines, not `<text>`: rendering does not depend
@@ -125,7 +125,7 @@ name order, so a `zz-` file wins over Fedora's own; Fedora's file is left
 untouched. The wallpaper works the same way: Fedora's
 `10_org.gnome.desktop.background.fedora.gschema.override` points at the f44
 day/night JXLs, and our later-sorted `zz-` file replaces both `picture-uri` and
-`picture-uri-dark` with the Wrainrock PNG. GDM's login screen reads the same
+`picture-uri-dark` with the Wraindrock PNG. GDM's login screen reads the same
 `org.gnome.desktop.background` defaults, so the greeter background follows
 without a separate mechanism. Known caveat: the wordmark is black, so it has
 low contrast on the dark login wallpaper; a light login-screen variant is a
@@ -134,9 +134,9 @@ follow-up, not part of this step.
 The boot splash uses Plymouth's `two-step` plugin, which the base image already
 ships; there is no `script.so`, so a script theme would mean a package change
 and is deliberately not done. The theme is
-`/usr/share/plymouth/themes/wrainrock/`: a 1920x1080 gradient background, 30
+`/usr/share/plymouth/themes/wraindrock/`: a 1920x1080 gradient background, 30
 animation frames (256x256 PNGs, thin outlined `W` plus a rotating blue arc) and
-`wrainrock.plymouth`. `/etc/plymouth/plymouthd.conf` selects it. When a
+`wraindrock.plymouth`. `/etc/plymouth/plymouthd.conf` selects it. When a
 deployment regenerates its initramfs, plymouth's
 `/usr/lib/plymouth/plymouth-populate-initrd` reads that config and copies the
 theme and its plugin into the initrd. CI asserts the files, the config and that
@@ -147,8 +147,8 @@ GRUB is different: on bootc systems `/boot/grub2/grub.cfg` is a static config
 that bootupd writes at install time, and image updates do not regenerate it, so
 the image cannot theme an existing boot menu by itself. It ships the theme
 assets plus a helper that acts only when the user runs it.
-`wrainrock-grub-theme enable` copies the theme to
-`/boot/grub2/themes/wrainrock/` (the boot filesystem is readable even with an
+`wraindrock-grub-theme enable` copies the theme to
+`/boot/grub2/themes/wraindrock/` (the boot filesystem is readable even with an
 encrypted root) and writes `/boot/grub2/custom.cfg`, which bootupd's
 `configs.d/41_custom.cfg` sources. The helper refuses to overwrite a
 `custom.cfg` it did not write, refuses systems whose GRUB config has no
@@ -167,13 +167,13 @@ scalable SVGs without a cache, and skipping it avoids a generated
 
 `build_files/build.sh` writes three files:
 
-- `/usr/share/wrainrock/build-info.json` — schema, image/version, build
+- `/usr/share/wraindrock/build-info.json` — schema, image/version, build
   number, git SHA, build date, base image + digest, Fedora version, identity
   marker, RPM count, RPM-set SHA-256.
-- `/usr/share/wrainrock/delta.json` — every intended difference from the base:
+- `/usr/share/wraindrock/delta.json` — every intended difference from the base:
   changed/added os-release keys with their actual values, modified files and
   added files. This is the manifest the parity test enforces.
-- `/usr/share/wrainrock/base-os-release` — pristine copy of the base's
+- `/usr/share/wraindrock/base-os-release` — pristine copy of the base's
   `/usr/lib/os-release`, so "what was this built from?" survives even though
   the live file is now branded.
 
@@ -205,7 +205,7 @@ Rules, enforced in CI:
    broken channel push can be retried without reusing an artifact tag.
 
 Nightly rebuilds keep the channel current with Fedora security updates even when
-Wrainrock's own source doesn't change. A rebuild of the same base digest and
+Wraindrock's own source doesn't change. A rebuild of the same base digest and
 same commit yields the same RPM set; the `build-info.json` RPM hash is the cheap
 way to spot drift.
 
@@ -237,7 +237,7 @@ timer documented in [docs/install.md](install.md).
 - **Publish:** `ghcr.io`, immutable tags, keyless Sigstore signature whose
   certificate identity is bound to this repository's workflow.
 - **Verify:** `cosign verify` with
-  `--certificate-identity-regexp '^https://github.com/Wraindrock/wrainrock-linux/'`
+  `--certificate-identity-regexp '^https://github.com/Wraindrock/wraindrock-linux/'`
   and issuer `https://token.actions.githubusercontent.com`.
 
 What this does **not** protect against: a compromised Fedora base image, a
@@ -254,10 +254,10 @@ These are design decisions, not backlog items:
    unattended Anaconda ISO (it clears the first disk); a custom installer UX,
    partitioning UI and encryption flow stay out of scope.
 2. **A package manager that mutates the live root.** `rpm-ostree install` layers
-   are a user escape hatch on the installed system, not a Wrainrock feature. The
+   are a user escape hatch on the installed system, not a Wraindrock feature. The
    image is the unit of change.
 3. **Forking Fedora packages or the kernel through v0.3.** There is nothing
-   Wrainrock can meaningfully test about a forked glibc or kernel yet. Build-time
+   Wraindrock can meaningfully test about a forked glibc or kernel yet. Build-time
    patches, when they arrive, must assert a single match and be recorded in
    `PATCHES.md`.
 4. **KDE/XFCE/other spins.** One variant until one variant is reliable.

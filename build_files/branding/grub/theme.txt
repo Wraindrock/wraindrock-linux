@@ -1,14 +1,14 @@
-# Wrainrock Linux GRUB theme.
+# Wraindrock Linux GRUB theme.
 #
-# The theme is never read from this directory directly: `wrainrock-grub-theme`
-# copies it to /boot/grub2/themes/wrainrock/ and points GRUB at it from
+# The theme is never read from this directory directly: `wraindrock-grub-theme`
+# copies it to /boot/grub2/themes/wraindrock/ and points GRUB at it from
 # /boot/grub2/custom.cfg (the hook bootupd's static config sources).
 #
-# Fonts are loaded by custom.cfg from /boot/grub2/themes/wrainrock/unicode.pf2.
+# Fonts are loaded by custom.cfg from /boot/grub2/themes/wraindrock/unicode.pf2.
 
 desktop-image: "background.png"
 desktop-color: "#080d16"
-title-text: "Wrainrock Linux"
+title-text: "Wraindrock Linux"
 title-font: "Unifont Regular 16"
 title-color: "#eaf0fa"
 

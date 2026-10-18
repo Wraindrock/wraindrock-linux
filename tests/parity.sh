@@ -13,7 +13,7 @@
 #   * the Plymouth boot splash is installed, selected, and complete.
 #
 #   tests/parity.sh quay.io/fedora/fedora-silverblue:44 \
-#                   localhost/wrainrock-linux:44
+#                   localhost/wraindrock-linux:44
 #
 # Needs podman and python3; both images must be available locally.
 # ---------------------------------------------------------------------------
@@ -79,27 +79,27 @@ expect_line() {
     fi
 }
 
-expect_line "NAME is Wrainrock Linux" 'NAME="Wrainrock Linux"'
-if grep -Eq '^PRETTY_NAME="Wrainrock Linux [0-9][^"]* \(Silverblue\)"$' \
+expect_line "NAME is Wraindrock Linux" 'NAME="Wraindrock Linux"'
+if grep -Eq '^PRETTY_NAME="Wraindrock Linux [0-9][^"]* \(Silverblue\)"$' \
         "${tmpdir}/image-os-release"; then
     pass "PRETTY_NAME is branded and keeps the base version"
 else
     fail "PRETTY_NAME is not a branded Silverblue string"
 fi
-expect_line "ID is wrainrock" 'ID=wrainrock'
+expect_line "ID is wraindrock" 'ID=wraindrock'
 expect_line "ID_LIKE is fedora" 'ID_LIKE="fedora"'
-expect_line "LOGO points at the Wrainrock icon" 'LOGO=wrainrock-logo-icon'
-expect_line "DEFAULT_HOSTNAME is wrainrock" 'DEFAULT_HOSTNAME="wrainrock"'
+expect_line "LOGO points at the Wraindrock icon" 'LOGO=wraindrock-logo-icon'
+expect_line "DEFAULT_HOSTNAME is wraindrock" 'DEFAULT_HOSTNAME="wraindrock"'
 expect_line "HOME_URL points at the project" \
-    'HOME_URL="https://github.com/Wraindrock/wrainrock-linux"'
+    'HOME_URL="https://github.com/Wraindrock/wraindrock-linux"'
 expect_line "DOCUMENTATION_URL points at the install guide" \
-    'DOCUMENTATION_URL="https://github.com/Wraindrock/wrainrock-linux/blob/main/docs/install.md"'
+    'DOCUMENTATION_URL="https://github.com/Wraindrock/wraindrock-linux/blob/main/docs/install.md"'
 expect_line "SUPPORT_URL points at the issue tracker" \
-    'SUPPORT_URL="https://github.com/Wraindrock/wrainrock-linux/issues"'
+    'SUPPORT_URL="https://github.com/Wraindrock/wraindrock-linux/issues"'
 expect_line "BUG_REPORT_URL points at the issue tracker" \
-    'BUG_REPORT_URL="https://github.com/Wraindrock/wrainrock-linux/issues"'
-expect_line "CPE_NAME identifies Wrainrock" \
-    "CPE_NAME=\"cpe:/o:wraindrock:wrainrock_linux:${version_id}\""
+    'BUG_REPORT_URL="https://github.com/Wraindrock/wraindrock-linux/issues"'
+expect_line "CPE_NAME identifies Wraindrock" \
+    "CPE_NAME=\"cpe:/o:wraindrock:wraindrock_linux:${version_id}\""
 expect_line "VERSION_ID still tracks the base" "VERSION_ID=${version_id}"
 expect_line "VARIANT_ID still tracks Silverblue" 'VARIANT_ID=silverblue'
 
@@ -152,7 +152,7 @@ else
 fi
 
 # --- delta manifest ---------------------------------------------------------
-in_image "${IMAGE}" 'cat /usr/share/wrainrock/delta.json' > "${tmpdir}/delta.json"
+in_image "${IMAGE}" 'cat /usr/share/wraindrock/delta.json' > "${tmpdir}/delta.json"
 if python3 - "${tmpdir}/delta.json" "${tmpdir}/image-os-release" <<'PY'
 import json
 import sys
@@ -190,25 +190,25 @@ assert delta["files"]["modified"] == [
     "/etc/plymouth/plymouthd.conf",
 ], delta["files"]
 expected_added = {
-    "/usr/share/icons/hicolor/scalable/apps/wrainrock-logo-icon.svg",
-    "/usr/share/pixmaps/wrainrock-gdm-logo.svg",
-    "/usr/share/pixmaps/wrainrock-gdm-logo.png",
-    "/usr/share/glib-2.0/schemas/zz-wrainrock.gschema.override",
-    "/usr/share/backgrounds/wrainrock/wrainrock-wallpaper.png",
-    "/usr/share/wrainrock/base-os-release",
-    "/usr/share/wrainrock/build-info.json",
-    "/usr/share/wrainrock/delta.json",
-    "/usr/share/plymouth/themes/wrainrock/wrainrock.plymouth",
-    "/usr/share/plymouth/themes/wrainrock/background.png",
-    "/usr/share/grub/themes/wrainrock/theme.txt",
-    "/usr/share/grub/themes/wrainrock/background.png",
-    "/usr/bin/wrainrock-grub-theme",
-    "/usr/libexec/wrainrock-hostname-seed",
-    "/usr/lib/systemd/system/wrainrock-hostname-seed.service",
-    "/usr/lib/systemd/system/sysinit.target.wants/wrainrock-hostname-seed.service",
+    "/usr/share/icons/hicolor/scalable/apps/wraindrock-logo-icon.svg",
+    "/usr/share/pixmaps/wraindrock-gdm-logo.svg",
+    "/usr/share/pixmaps/wraindrock-gdm-logo.png",
+    "/usr/share/glib-2.0/schemas/zz-wraindrock.gschema.override",
+    "/usr/share/backgrounds/wraindrock/wraindrock-wallpaper.png",
+    "/usr/share/wraindrock/base-os-release",
+    "/usr/share/wraindrock/build-info.json",
+    "/usr/share/wraindrock/delta.json",
+    "/usr/share/plymouth/themes/wraindrock/wraindrock.plymouth",
+    "/usr/share/plymouth/themes/wraindrock/background.png",
+    "/usr/share/grub/themes/wraindrock/theme.txt",
+    "/usr/share/grub/themes/wraindrock/background.png",
+    "/usr/bin/wraindrock-grub-theme",
+    "/usr/libexec/wraindrock-hostname-seed",
+    "/usr/lib/systemd/system/wraindrock-hostname-seed.service",
+    "/usr/lib/systemd/system/sysinit.target.wants/wraindrock-hostname-seed.service",
 }
 expected_added |= {
-    f"/usr/share/plymouth/themes/wrainrock/animation-{i:04d}.png"
+    f"/usr/share/plymouth/themes/wraindrock/animation-{i:04d}.png"
     for i in range(1, 31)
 }
 assert set(delta["files"]["added"]) == expected_added, delta["files"]["added"]
@@ -248,22 +248,22 @@ for sidecar in .rpm.lock rpmdb.sqlite-wal rpmdb.sqlite-shm; do
 done
 
 if in_image "${IMAGE}" \
-    "grep -qx \"logo='/usr/share/pixmaps/wrainrock-gdm-logo.png'\" \
-        /usr/share/glib-2.0/schemas/zz-wrainrock.gschema.override"; then
-    pass "GDM logo override points at the Wrainrock wordmark"
+    "grep -qx \"logo='/usr/share/pixmaps/wraindrock-gdm-logo.png'\" \
+        /usr/share/glib-2.0/schemas/zz-wraindrock.gschema.override"; then
+    pass "GDM logo override points at the Wraindrock wordmark"
 else
     fail "GDM logo override is missing or wrong"
 fi
 
 if in_image "${IMAGE}" \
-    'grep -aq wrainrock-gdm-logo /usr/share/glib-2.0/schemas/gschemas.compiled'; then
+    'grep -aq wraindrock-gdm-logo /usr/share/glib-2.0/schemas/gschemas.compiled'; then
     pass "GDM logo override is compiled into the schema cache"
 else
     fail "compiled schema cache does not contain the GDM logo override"
 fi
 
 # --- default wallpaper ------------------------------------------------------
-wallpaper=/usr/share/backgrounds/wrainrock/wrainrock-wallpaper.png
+wallpaper=/usr/share/backgrounds/wraindrock/wraindrock-wallpaper.png
 if in_image "${IMAGE}" "test -s ${wallpaper}"; then
     pass "default wallpaper is installed"
 else
@@ -286,17 +286,17 @@ fi
 
 if in_image "${IMAGE}" \
     "grep -qxF \"picture-uri='file://${wallpaper}'\" \
-        /usr/share/glib-2.0/schemas/zz-wrainrock.gschema.override" &&
+        /usr/share/glib-2.0/schemas/zz-wraindrock.gschema.override" &&
    in_image "${IMAGE}" \
     "grep -qxF \"picture-uri-dark='file://${wallpaper}'\" \
-        /usr/share/glib-2.0/schemas/zz-wrainrock.gschema.override"; then
+        /usr/share/glib-2.0/schemas/zz-wraindrock.gschema.override"; then
     pass "wallpaper override sets both day and dark defaults"
 else
     fail "wallpaper override is missing or wrong"
 fi
 
 if in_image "${IMAGE}" \
-    'grep -aq wrainrock-wallpaper /usr/share/glib-2.0/schemas/gschemas.compiled'; then
+    'grep -aq wraindrock-wallpaper /usr/share/glib-2.0/schemas/gschemas.compiled'; then
     pass "wallpaper override is compiled into the schema cache"
 else
     fail "compiled schema cache does not contain the wallpaper override"
@@ -308,15 +308,15 @@ for key in picture-uri picture-uri-dark; do
         "GSETTINGS_BACKEND=memory gsettings get org.gnome.desktop.background ${key}" \
         2>/dev/null || true)"
     if [[ ${got} == "${want}" ]]; then
-        pass "default ${key} is the Wrainrock wallpaper"
+        pass "default ${key} is the Wraindrock wallpaper"
     else
         fail "default ${key} is ${got:-<unset>}, want ${want}"
     fi
 done
 
 # --- Plymouth boot splash ---------------------------------------------------
-plymouth_dir=/usr/share/plymouth/themes/wrainrock
-theme_file=${plymouth_dir}/wrainrock.plymouth
+plymouth_dir=/usr/share/plymouth/themes/wraindrock
+theme_file=${plymouth_dir}/wraindrock.plymouth
 
 if in_image "${IMAGE}" "test -s ${theme_file}"; then
     pass "Plymouth theme file is installed"
@@ -342,10 +342,10 @@ else
     fail "Plymouth theme dropped the update progress bar"
 fi
 
-if in_image "${IMAGE}" "grep -qx 'Theme=wrainrock' /etc/plymouth/plymouthd.conf"; then
-    pass "Plymouth daemon config selects the Wrainrock theme"
+if in_image "${IMAGE}" "grep -qx 'Theme=wraindrock' /etc/plymouth/plymouthd.conf"; then
+    pass "Plymouth daemon config selects the Wraindrock theme"
 else
-    fail "Plymouth daemon config does not select the Wrainrock theme"
+    fail "Plymouth daemon config does not select the Wraindrock theme"
 fi
 
 if in_image "${IMAGE}" "test -s ${plymouth_dir}/background.png"; then
@@ -372,7 +372,7 @@ else
 fi
 
 if in_image "${IMAGE}" 'set -e
-    for f in /usr/share/plymouth/themes/wrainrock/animation-*.png; do
+    for f in /usr/share/plymouth/themes/wraindrock/animation-*.png; do
         sig=$(head -c 8 "$f" | od -An -tx1 | tr -d " \n")
         [ "$sig" = 89504e470d0a1a0a ] || exit 1
     done'; then
@@ -391,10 +391,10 @@ else
 fi
 
 plymouth_themes="$(in_image "${IMAGE}" 'plymouth-set-default-theme -l 2>/dev/null || true')"
-if grep -qx 'wrainrock' <<<"${plymouth_themes}"; then
-    pass "plymouth-set-default-theme lists the Wrainrock theme"
+if grep -qx 'wraindrock' <<<"${plymouth_themes}"; then
+    pass "plymouth-set-default-theme lists the Wraindrock theme"
 else
-    fail "plymouth-set-default-theme does not list wrainrock: ${plymouth_themes:-<none>}"
+    fail "plymouth-set-default-theme does not list wraindrock: ${plymouth_themes:-<none>}"
 fi
 
 # rpm must agree that the only tracked file we changed is os-release.
@@ -433,13 +433,13 @@ fi
 # The image ships an opt-in helper because bootc images cannot rewrite
 # /boot/grub2/grub.cfg (bootupd installs it as a static config). Exercise the
 # helper against throwaway boot trees inside the image.
-if in_image "${IMAGE}" 'wrainrock-grub-theme status --boot-dir /nonexistent' > /dev/null; then
+if in_image "${IMAGE}" 'wraindrock-grub-theme status --boot-dir /nonexistent' > /dev/null; then
     pass "GRUB theme helper handles a missing GRUB directory"
 else
     fail "GRUB theme helper failed on a missing directory"
 fi
 
-if grub_dims="$(in_image "${IMAGE}" 'od -An -tu4 --endian=big -j16 -N8 /usr/share/grub/themes/wrainrock/background.png' 2>/dev/null || true)"; then
+if grub_dims="$(in_image "${IMAGE}" 'od -An -tu4 --endian=big -j16 -N8 /usr/share/grub/themes/wraindrock/background.png' 2>/dev/null || true)"; then
     read -r grub_w grub_h <<<"${grub_dims}"
     if [[ ${grub_w:-} == 1920 && ${grub_h:-} == 1080 ]]; then
         pass "GRUB theme background is 1920x1080"
@@ -454,29 +454,29 @@ grub_test_script='set -eu
 fixture=$(mktemp -d)
 mkdir -p "$fixture/grub2"
 printf "insmod blscfg\nblscfg\nif [ -f \$prefix/custom.cfg ]; then source \$prefix/custom.cfg; fi\n" > "$fixture/grub2/grub.cfg"
-wrainrock-grub-theme enable --boot-dir "$fixture" > /dev/null
-test -s "$fixture/grub2/themes/wrainrock/theme.txt"
-test -s "$fixture/grub2/themes/wrainrock/background.png"
-test -s "$fixture/grub2/themes/wrainrock/unicode.pf2"
-grep -q "loadfont \${prefix}/themes/wrainrock/unicode.pf2" "$fixture/grub2/custom.cfg"
-grep -q "set theme=\${prefix}/themes/wrainrock/theme.txt" "$fixture/grub2/custom.cfg"
-wrainrock-grub-theme status --boot-dir "$fixture" | grep -q "managed by wrainrock-grub-theme"
-wrainrock-grub-theme enable --boot-dir "$fixture" > /dev/null
+wraindrock-grub-theme enable --boot-dir "$fixture" > /dev/null
+test -s "$fixture/grub2/themes/wraindrock/theme.txt"
+test -s "$fixture/grub2/themes/wraindrock/background.png"
+test -s "$fixture/grub2/themes/wraindrock/unicode.pf2"
+grep -q "loadfont \${prefix}/themes/wraindrock/unicode.pf2" "$fixture/grub2/custom.cfg"
+grep -q "set theme=\${prefix}/themes/wraindrock/theme.txt" "$fixture/grub2/custom.cfg"
+wraindrock-grub-theme status --boot-dir "$fixture" | grep -q "managed by wraindrock-grub-theme"
+wraindrock-grub-theme enable --boot-dir "$fixture" > /dev/null
 printf "user snippet\n" > "$fixture/grub2/custom.cfg"
-if wrainrock-grub-theme enable --boot-dir "$fixture" > /dev/null 2>&1; then exit 1; fi
+if wraindrock-grub-theme enable --boot-dir "$fixture" > /dev/null 2>&1; then exit 1; fi
 grep -qx "user snippet" "$fixture/grub2/custom.cfg"
 fixture2=$(mktemp -d)
 mkdir -p "$fixture2/grub2"
 printf "blscfg\n" > "$fixture2/grub2/grub.cfg"
-if wrainrock-grub-theme enable --boot-dir "$fixture2" > /dev/null 2>&1; then exit 1; fi
+if wraindrock-grub-theme enable --boot-dir "$fixture2" > /dev/null 2>&1; then exit 1; fi
 fixture3=$(mktemp -d)
 mkdir -p "$fixture3/grub2"
 printf "if [ -f \$prefix/custom.cfg ]; then source \$prefix/custom.cfg; fi\n" > "$fixture3/grub2/grub.cfg"
-wrainrock-grub-theme enable --boot-dir "$fixture3" > /dev/null
-if wrainrock-grub-theme disable --boot-dir "$fixture3" < /dev/null > /dev/null 2>&1; then exit 1; fi
-wrainrock-grub-theme disable --yes --boot-dir "$fixture3" > /dev/null
+wraindrock-grub-theme enable --boot-dir "$fixture3" > /dev/null
+if wraindrock-grub-theme disable --boot-dir "$fixture3" < /dev/null > /dev/null 2>&1; then exit 1; fi
+wraindrock-grub-theme disable --yes --boot-dir "$fixture3" > /dev/null
 test ! -e "$fixture3/grub2/custom.cfg"
-test ! -e "$fixture3/grub2/themes/wrainrock"'
+test ! -e "$fixture3/grub2/themes/wraindrock"'
 if in_image "${IMAGE}" "${grub_test_script}"; then
     pass "GRUB theme helper: enable, idempotency, refusals, disable"
 else
@@ -488,25 +488,25 @@ fi
 # even though os-release carries DEFAULT_HOSTNAME. The image ships a one-shot
 # first-boot unit; test its file wiring and its behavior against a fixture.
 seed_test_script='set -eu
-unit=/usr/lib/systemd/system/wrainrock-hostname-seed.service
-want=/usr/lib/systemd/system/sysinit.target.wants/wrainrock-hostname-seed.service
-test -x /usr/libexec/wrainrock-hostname-seed
-grep -qx "ExecStart=/usr/libexec/wrainrock-hostname-seed" "$unit"
-grep -qx "ConditionPathExists=!/var/lib/wrainrock/hostname-seeded" "$unit"
+unit=/usr/lib/systemd/system/wraindrock-hostname-seed.service
+want=/usr/lib/systemd/system/sysinit.target.wants/wraindrock-hostname-seed.service
+test -x /usr/libexec/wraindrock-hostname-seed
+grep -qx "ExecStart=/usr/libexec/wraindrock-hostname-seed" "$unit"
+grep -qx "ConditionPathExists=!/var/lib/wraindrock/hostname-seeded" "$unit"
 grep -qx "WantedBy=sysinit.target" "$unit"
 test -L "$want"
 test "$(readlink -f "$want")" = "$(readlink -f "$unit")"
 fixture=$(mktemp -d)
 mkdir -p "$fixture/state"
-printf "%s\n" "NAME=\"Wrainrock Linux\"" "DEFAULT_HOSTNAME=\"wrainrock\"" > "$fixture/os-release"
+printf "%s\n" "NAME=\"Wraindrock Linux\"" "DEFAULT_HOSTNAME=\"wraindrock\"" > "$fixture/os-release"
 printf "fedora\n" > "$fixture/hostname"
 sed -e "s|/usr/lib/os-release|$fixture/os-release|" \
     -e "s|/etc/hostname|$fixture/hostname|" \
-    -e "s|/var/lib/wrainrock|$fixture/state|" \
-    /usr/libexec/wrainrock-hostname-seed > "$fixture/seed"
+    -e "s|/var/lib/wraindrock|$fixture/state|" \
+    /usr/libexec/wraindrock-hostname-seed > "$fixture/seed"
 chmod +x "$fixture/seed"
 "$fixture/seed"
-test "$(cat "$fixture/hostname")" = wrainrock
+test "$(cat "$fixture/hostname")" = wraindrock
 test -f "$fixture/state/hostname-seeded"
 printf "myhost\n" > "$fixture/hostname"
 rm -f "$fixture/state/hostname-seeded"
@@ -519,7 +519,7 @@ else
 fi
 
 # --- Provenance -------------------------------------------------------------
-in_image "${IMAGE}" 'cat /usr/share/wrainrock/base-os-release' \
+in_image "${IMAGE}" 'cat /usr/share/wraindrock/base-os-release' \
     > "${tmpdir}/image-base-os-release"
 if diff -u "${tmpdir}/base-os-release" "${tmpdir}/image-base-os-release" > /dev/null; then
     pass "pristine base os-release preserved"
@@ -527,7 +527,7 @@ else
     fail "the preserved base os-release does not match the real base"
 fi
 
-in_image "${IMAGE}" 'cat /usr/share/wrainrock/build-info.json' \
+in_image "${IMAGE}" 'cat /usr/share/wraindrock/build-info.json' \
     > "${tmpdir}/build-info.json"
 if python3 - "${tmpdir}/build-info.json" <<'PY'
 import json
@@ -537,7 +537,7 @@ with open(sys.argv[1], encoding="utf-8") as handle:
     info = json.load(handle)
 
 assert info["schema"] == 1, info
-assert info["identity"] == "wrainrock", info
+assert info["identity"] == "wraindrock", info
 assert info["parity"].startswith("fedora-silverblue-"), info
 assert info["rpm_count"] > 0, info
 assert len(info["rpm_set_sha256"]) == 64, info
@@ -557,7 +557,7 @@ import sys
 labels = json.loads(sys.argv[1]) or {}
 assert labels.get("containers.bootc") == "1", labels
 assert labels.get("ostree.bootable") == "true", labels
-assert labels.get("org.wrainrock.base.image"), labels
+assert labels.get("org.wraindrock.base.image"), labels
 PY
 then
     pass "inherited bootc labels are intact"

@@ -1,6 +1,6 @@
-# Installing Wrainrock Linux
+# Installing Wraindrock Linux
 
-Wrainrock v0.2 is installed **on top of an existing Fedora Atomic Desktop**. It
+Wraindrock v0.2 is installed **on top of an existing Fedora Atomic Desktop**. It
 is a `bootc switch`, not a repartition: your home directory, flatpaks, containers
 and user data are untouched. The switch adds a new boot deployment; your current
 system stays on disk as the rollback target.
@@ -19,16 +19,16 @@ reboots. There is no disk picker and no confirmation prompt.
 
 ```bash
 # Pull the immutable artifact set for the image version, then verify it
-oras pull ghcr.io/wraindrock/wrainrock-linux-disk:<version>
+oras pull ghcr.io/wraindrock/wraindrock-linux-disk:<version>
 sha256sum -c SHA256SUMS
 sudo dd if=install.iso of=/dev/sdX bs=8M status=progress oflag=direct conv=fsync
 ```
 
 Boot the USB on a UEFI machine (Secure Boot: enrol Fedora's key if prompted, as
 with any Fedora media). Anaconda runs in text mode on the console; when it
-finishes, the machine reboots into GDM. The first boot shows the Wrainrock
+finishes, the machine reboots into GDM. The first boot shows the Wraindrock
 wallpaper, Plymouth splash and GDM wordmark. The GRUB menu theme remains opt-in
-after install (`sudo wrainrock-grub-theme enable`).
+after install (`sudo wraindrock-grub-theme enable`).
 
 ## Supported starting points
 
@@ -36,8 +36,8 @@ after install (`sudo wrainrock-grub-theme enable`).
 | --- | --- |
 | Fedora Silverblue 44 | Primary target |
 | Fedora Kinoite 44 | bootc switch works; the new deployment is GNOME (Silverblue), not KDE |
-| Bluefin / Aurora 44 (`ublue-os` bootc images) | Works; Wrainrock owns the whole image, so Bluefin tooling is not carried over |
-| Fedora Silverblue 43 or older | Switch to 44 first; do not cross a release into Wrainrock |
+| Bluefin / Aurora 44 (`ublue-os` bootc images) | Works; Wraindrock owns the whole image, so Bluefin tooling is not carried over |
+| Fedora Silverblue 43 or older | Switch to 44 first; do not cross a release into Wraindrock |
 
 Check that the running system understands bootc:
 
@@ -47,7 +47,7 @@ bootc status
 ```
 
 You should see `Booted: ...` and a `Base:` image. On a non-bootc system (plain
-Workstation, rpm-ostree from before the bootc split) stop here — Wrainrock does
+Workstation, rpm-ostree from before the bootc split) stop here — Wraindrock does
 not ship an installer yet; that is v0.3 on the roadmap.
 
 ## Preheat checks
@@ -80,7 +80,7 @@ Run these once. Five minutes now avoids a bad afternoon.
    sudo bootc status > ~/bootc-status-before-switch.txt
    ```
 
-4. **Secure Boot.** Wrainrock ships Fedora's signed kernels and shim,
+4. **Secure Boot.** Wraindrock ships Fedora's signed kernels and shim,
    unmodified. Secure Boot is expected to work, but the branded image has not
    been validated on Secure Boot hardware. If you dual-boot with a custom key
    setup, read your firmware's recovery path before switching.
@@ -88,7 +88,7 @@ Run these once. Five minutes now avoids a bad afternoon.
 ## Switch
 
 ```bash
-sudo bootc switch ghcr.io/wraindrock/wrainrock-linux:44
+sudo bootc switch ghcr.io/wraindrock/wraindrock-linux:44
 ```
 
 `switch` pulls the image, verifies it is a bootc image, and stages a new
@@ -110,23 +110,23 @@ sudo systemctl reboot
 bootc status
 ```
 
-- `Booted:` should reference `ghcr.io/wraindrock/wrainrock-linux:44`.
+- `Booted:` should reference `ghcr.io/wraindrock/wraindrock-linux:44`.
 - The previous Silverblue deployment should still be listed as the rollback
   deployment.
 
 ```bash
 cat /usr/lib/os-release
-# NAME="Wrainrock Linux"
-# ID=wrainrock
+# NAME="Wraindrock Linux"
+# ID=wraindrock
 # ID_LIKE="fedora"
 ```
 
-`PRETTY_NAME` keeps the base Fedora version (`Wrainrock Linux 44.<build>
+`PRETTY_NAME` keeps the base Fedora version (`Wraindrock Linux 44.<build>
 (Silverblue)`): the version tells you which Fedora release and update window
 you are actually running.
 
 ```bash
-cat /usr/share/wrainrock/delta.json
+cat /usr/share/wraindrock/delta.json
 ```
 
 Every intended difference from the base is listed there. If the image differs
@@ -134,17 +134,17 @@ from the base in any other way, that is a bug — report it.
 
 ```bash
 gsettings get org.gnome.desktop.background picture-uri
-# 'file:///usr/share/backgrounds/wrainrock/wrainrock-wallpaper.png'
+# 'file:///usr/share/backgrounds/wraindrock/wraindrock-wallpaper.png'
 ```
 
 If you had already changed your wallpaper, your personal setting wins — the
 image only changes the default for new users and for the login screen. Reset it
 with `gsettings reset org.gnome.desktop.background picture-uri` to see the
-Wrainrock default.
+Wraindrock default.
 
 ```bash
 plymouth-set-default-theme
-# wrainrock
+# wraindrock
 ```
 
 The splash is drawn from the initramfs and handed over to the root filesystem,
@@ -152,36 +152,36 @@ so it only changes after the new deployment regenerates its initrd. `bootc`
 does that on deploy; if you ever need to force it, `sudo dracut -f`.
 
 ```bash
-sudo wrainrock-grub-theme status
+sudo wraindrock-grub-theme status
 ```
 
 The GRUB menu theme is **opt-in**. bootc images cannot rewrite
 `/boot/grub2/grub.cfg`: bootupd installs it as a static config when the system
-is installed. The image ships `/usr/bin/wrainrock-grub-theme`, which copies the
-theme to `/boot/grub2/themes/wrainrock/` and wires it in through bootupd's
+is installed. The image ships `/usr/bin/wraindrock-grub-theme`, which copies the
+theme to `/boot/grub2/themes/wraindrock/` and wires it in through bootupd's
 supported `custom.cfg` hook:
 
 ```bash
-sudo wrainrock-grub-theme enable
+sudo wraindrock-grub-theme enable
 sudo systemctl reboot
 ```
 
 The helper refuses to touch a `custom.cfg` it does not manage, and it only works
 on systems whose GRUB config sources `custom.cfg` (systemd-boot hosts are not
-supported). To undo it: `sudo wrainrock-grub-theme disable --yes`.
+supported). To undo it: `sudo wraindrock-grub-theme disable --yes`.
 
 ```bash
 hostnamectl
 ```
 
-A fresh install seeds the hostname to `wrainrock` on its first boot
-(`wrainrock-hostname-seed.service`). It only replaces an unconfigured name — the
+A fresh install seeds the hostname to `wraindrock` on its first boot
+(`wraindrock-hostname-seed.service`). It only replaces an unconfigured name — the
 base's `fedora` or an empty file — and never touches a name you already set. On
 a `bootc switch` the existing `/etc/hostname` wins. Change it with
 `sudo hostnamectl set-hostname <name>`; this does not modify the image.
 
 ```bash
-cat /usr/share/wrainrock/build-info.json
+cat /usr/share/wraindrock/build-info.json
 ```
 
 This is the receipt: base image digest, Fedora version, git SHA, build date and
@@ -190,9 +190,9 @@ to install.
 
 ```bash
 cosign verify \
-  --certificate-identity-regexp '^https://github.com/Wraindrock/wrainrock-linux/' \
+  --certificate-identity-regexp '^https://github.com/Wraindrock/wraindrock-linux/' \
   --certificate-oidc-issuer https://token.actions.githubusercontent.com \
-  ghcr.io/wraindrock/wrainrock-linux:44
+  ghcr.io/wraindrock/wraindrock-linux:44
 ```
 
 If cosign cannot verify the image, do not trust it — roll back and report it.
@@ -220,7 +220,7 @@ sudo systemctl enable --now bootc-fetch-apply-updates.timer
 Pinning an exact build instead of following the channel:
 
 ```bash
-sudo bootc switch ghcr.io/wraindrock/wrainrock-linux:44.20261017T061500Z.42
+sudo bootc switch ghcr.io/wraindrock/wraindrock-linux:44.20261017T061500Z.42
 ```
 
 ## Going back
@@ -232,7 +232,7 @@ sudo bootc rollback
 sudo systemctl reboot
 ```
 
-To return to stock Fedora Silverblue instead of the previous Wrainrock build:
+To return to stock Fedora Silverblue instead of the previous Wraindrock build:
 
 ```bash
 sudo bootc switch quay.io/fedora/fedora-silverblue:44
@@ -247,7 +247,7 @@ strings matter because they are what you search for.
 ### `unauthorized: authentication required`
 
 ```
-error: copying image ...: reading manifest 44 in ghcr.io/wraindrock/wrainrock-linux:
+error: copying image ...: reading manifest 44 in ghcr.io/wraindrock/wraindrock-linux:
 unauthorized: authentication required
 ```
 
@@ -259,7 +259,7 @@ settings → Change visibility), or authenticate:
 
 ```bash
 podman login ghcr.io        # username: your GitHub user, password: a PAT with read:packages
-sudo bootc switch ghcr.io/wraindrock/wrainrock-linux:44
+sudo bootc switch ghcr.io/wraindrock/wraindrock-linux:44
 ```
 
 **Escape hatch:** your running system was never modified; nothing to undo.
@@ -303,9 +303,9 @@ should be at least the version Fedora 44 ships.
 **Fix:** reboot, then re-check. If `Booted:` is still the old image, the switch
 did not stage — re-run it and read the error.
 
-### Secure Boot refuses to boot Wrainrock
+### Secure Boot refuses to boot Wraindrock
 
-**Cause:** Wrainrock uses Fedora's signed kernels, but a custom key enrollment or
+**Cause:** Wraindrock uses Fedora's signed kernels, but a custom key enrollment or
 a non-standard shim can break the chain.
 
 **Fix:** enroll Fedora's key or disable Secure Boot after understanding the risk;
@@ -315,15 +315,15 @@ this is a firmware/key-management issue, not an image defect.
 
 ### GRUB menu still looks like Fedora
 
-`sudo wrainrock-grub-theme status` reports `custom.cfg: absent`, and the boot
+`sudo wraindrock-grub-theme status` reports `custom.cfg: absent`, and the boot
 menu is unchanged. The theme is opt-in by design; enable it with
-`sudo wrainrock-grub-theme enable`.
+`sudo wraindrock-grub-theme enable`.
 
 If enable fails with `error: ... does not source custom.cfg`, the installed
 bootloader config predates bootupd's static configs. Run
 `sudo bootupctl migrate-static-grub-config` (it keeps a backup at
 `/boot/grub2/grub.cfg.backup`), then retry. Escape hatch:
-`sudo wrainrock-grub-theme disable --yes`.
+`sudo wraindrock-grub-theme disable --yes`.
 
 ### Logs and upstream
 
@@ -334,4 +334,4 @@ journalctl -b -u bootc-fetch-apply-updates  # if you enabled the timer
 
 - bootc: <https://github.com/bootc-dev/bootc/issues>
 - Fedora Atomic Desktops: <https://docs.fedoraproject.org/en-US/atomic-desktops/>
-- Wrainrock issues: <https://github.com/Wraindrock/wrainrock-linux/issues>
+- Wraindrock issues: <https://github.com/Wraindrock/wraindrock-linux/issues>

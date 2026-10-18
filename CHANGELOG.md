@@ -1,9 +1,24 @@
 # Changelog
 
-All notable changes to the Wrainrock Linux repository are recorded here.
+All notable changes to the Wraindrock Linux repository are recorded here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 image versions are the Fedora channel plus an immutable build tag, see
 [docs/architecture.md](docs/architecture.md).
+
+## [0.7.0] - 2026-10-18
+
+### Changed
+
+- Renamed the project from the misspelling "Wrainrock" to **Wraindrock**.
+  This is the one intentional break in the image's continuity: the GitHub
+  repository, GHCR image (`ghcr.io/wraindrock/wraindrock-linux`), disk
+  artifact package (`ghcr.io/wraindrock/wraindrock-linux-disk`), installed
+  paths (`/usr/share/wraindrock`, `/var/lib/wraindrock`,
+  `/usr/libexec/wraindrock-*`, `/usr/share/plymouth/themes/wraindrock`),
+  hostname, `os-release` identity, labels (`org.wraindrock.*`), and the
+  wordmark all use the corrected name. Previously published `wrainrock-*`
+  packages and tags are left in place as read-only history and are no longer
+  updated.
 
 ## [0.6.2] - 2026-10-18
 
@@ -11,7 +26,7 @@ image versions are the Fedora channel plus an immutable build tag, see
 
 - The disk workflow publishes verified qcow2 + ISO + `SHA256SUMS` as an
   immutable OCI artifact set on GHCR
-  (`ghcr.io/wraindrock/wrainrock-linux-disk:<image version>`), using a pinned
+  (`ghcr.io/wraindrock/wraindrock-linux-disk:<image version>`), using a pinned
   `oras` release with a verified tarball checksum. The publish step refuses to
   overwrite an existing version tag, checks the stored manifest's layer digests
   and sizes against the local files, and proves the package is anonymously
@@ -30,17 +45,17 @@ image versions are the Fedora channel plus an immutable build tag, see
 
 ### Added
 
-- `wrainrock-hostname-seed.service` (with `/usr/libexec/wrainrock-hostname-seed`):
+- `wraindrock-hostname-seed.service` (with `/usr/libexec/wraindrock-hostname-seed`):
   a one-shot first-boot unit that applies `DEFAULT_HOSTNAME` on installed
   systems, where `bootc-image-builder`'s install path otherwise leaves the base
   deployment's `fedora` hostname in place. It only replaces an empty or `fedora`
-  hostname, records `/var/lib/wrainrock/hostname-seeded`, and never overwrites a
+  hostname, records `/var/lib/wraindrock/hostname-seeded`, and never overwrites a
   name the user or installer chose. Parity exercises the seeder against a
   fixture and checks the unit's `sysinit.target.wants` wiring.
 
 ### Fixed
 
-- Fresh installs now report `wrainrock` as the hostname, so the qcow2 install
+- Fresh installs now report `wraindrock` as the hostname, so the qcow2 install
   test's serial prompt and `hostnamectl` agree with the image identity.
 
 ## [0.6.0] - 2026-10-17
@@ -56,15 +71,15 @@ image versions are the Fedora channel plus an immutable build tag, see
 - `disk_config/disk.toml`: qcow2 root filesystem sized at 20 GiB.
 - The `disk` workflow boots the ISO under QEMU/KVM (`vm_test`, default true),
   installs it to a scratch disk, boots the installed system and requires the
-  GNOME welcome screen or the Wrainrock GDM wallpaper before passing. The VM
+  GNOME welcome screen or the Wraindrock GDM wallpaper before passing. The VM
   harness (`tests/vm-test.sh`, `tests/png-stats.py`) is shared with local runs;
-  qcow2 mode still asserts `gdm.service` and the `wrainrock` serial getty.
+  qcow2 mode still asserts `gdm.service` and the `wraindrock` serial getty.
 
 ### Fixed
 
 - The image no longer contains the builder's empty `/etc/hostname` placeholder:
   `podman build --no-hostname` keeps the file out, so a fresh install uses
-  `DEFAULT_HOSTNAME` (`wrainrock`) instead of the kernel default `fedora`.
+  `DEFAULT_HOSTNAME` (`wraindrock`) instead of the kernel default `fedora`.
   (Parity cannot assert the absence: `podman run` injects `/etc/hostname` at
   runtime. `tests/lint.sh` asserts the `--no-hostname` build flag instead.)
 
@@ -84,9 +99,9 @@ image versions are the Fedora channel plus an immutable build tag, see
 ### Added
 
 - GRUB boot menu theme, shipped as an opt-in helper:
-  `/usr/share/grub/themes/wrainrock/` (theme.txt plus the 1920x1080 Wrainrock
-  background) and `/usr/bin/wrainrock-grub-theme`. `enable` copies the theme to
-  `/boot/grub2/themes/wrainrock/`, installs the GRUB font, and writes a marked
+  `/usr/share/grub/themes/wraindrock/` (theme.txt plus the 1920x1080 Wraindrock
+  background) and `/usr/bin/wraindrock-grub-theme`. `enable` copies the theme to
+  `/boot/grub2/themes/wraindrock/`, installs the GRUB font, and writes a marked
   `/boot/grub2/custom.cfg` that bootupd's static config sources; `disable`
   removes only files the helper owns; `status` reports the state. It refuses a
   foreign `custom.cfg` and systems without a `custom.cfg` hook, and it never
@@ -109,13 +124,13 @@ image versions are the Fedora channel plus an immutable build tag, see
 ### Added
 
 - Plymouth boot splash: a `two-step` theme at
-  `/usr/share/plymouth/themes/wrainrock/` (1920x1080 gradient background plus 30
+  `/usr/share/plymouth/themes/wraindrock/` (1920x1080 gradient background plus 30
   animation frames, an outlined `W` with a rotating blue arc), selected by
-  `/etc/plymouth/plymouthd.conf` (`[Daemon] Theme=wrainrock`). Uses the plugin
+  `/etc/plymouth/plymouthd.conf` (`[Daemon] Theme=wraindrock`). Uses the plugin
   the base image already ships; no package changes.
 - Parity checks: theme file and plugin, `ImageDir`, update progress-bar blocks,
   the daemon config, background dimensions, 30 valid 256x256 frames, and
-  `plymouth-set-default-theme -l` listing `wrainrock`.
+  `plymouth-set-default-theme -l` listing `wraindrock`.
 - Lint checks: Plymouth assets exist, the source SVGs are font-independent, the
   background/frame PNG headers have the expected dimensions, and the docs
   describe the splash.
@@ -132,16 +147,16 @@ image versions are the Fedora channel plus an immutable build tag, see
 
 ### Added
 
-- Default wallpaper (desktop and GDM login): `wrainrock-wallpaper.svg` source
+- Default wallpaper (desktop and GDM login): `wraindrock-wallpaper.svg` source
   plus a 3840x2160 PNG (dark blue gradient with a thin blue outlined `W`),
-  installed at `/usr/share/backgrounds/wrainrock/wrainrock-wallpaper.png` and
+  installed at `/usr/share/backgrounds/wraindrock/wraindrock-wallpaper.png` and
   selected for both `picture-uri` and `picture-uri-dark` through
-  `zz-wrainrock.gschema.override`. Fedora's f44 day/night JXLs stay installed
+  `zz-wraindrock.gschema.override`. Fedora's f44 day/night JXLs stay installed
   and untouched.
 - Parity checks for the wallpaper: the declared file exists, the PNG is
   3840x2160 and non-trivial, both override keys point at it, the compiled schema
   cache contains it, and `gsettings get` resolves both defaults to it.
-- Lint checks: the wallpaper source is font-independent, uses the Wrainrock
+- Lint checks: the wallpaper source is font-independent, uses the Wraindrock
   blue, and the PNG header is 3840x2160.
 
 ### Changed
@@ -155,16 +170,16 @@ image versions are the Fedora channel plus an immutable build tag, see
 
 ### Added
 
-- Branded identity: `NAME="Wrainrock Linux"`, `PRETTY_NAME` derived from the base
-  version, `ID=wrainrock` with `ID_LIKE="fedora"`, `LOGO=wrainrock-logo-icon`,
-  `DEFAULT_HOSTNAME="wrainrock"`, project URLs, and
-  `CPE_NAME="cpe:/o:wraindrock:wrainrock_linux:44"`.
+- Branded identity: `NAME="Wraindrock Linux"`, `PRETTY_NAME` derived from the base
+  version, `ID=wraindrock` with `ID_LIKE="fedora"`, `LOGO=wraindrock-logo-icon`,
+  `DEFAULT_HOSTNAME="wraindrock"`, project URLs, and
+  `CPE_NAME="cpe:/o:wraindrock:wraindrock_linux:44"`.
 - Placeholder logo assets shipped as SVG **outlines** (no font dependency):
-  `wrainrock-logo-icon.svg` (Settings → About) and
-  `wrainrock-gdm-logo.{svg,png}` (GDM login screen).
-- `zz-wrainrock.gschema.override` so the GDM login screen shows the Wrainrock
+  `wraindrock-logo-icon.svg` (Settings → About) and
+  `wraindrock-gdm-logo.{svg,png}` (GDM login screen).
+- `zz-wraindrock.gschema.override` so the GDM login screen shows the Wraindrock
   wordmark; Fedora's own override is left untouched.
-- `/usr/share/wrainrock/delta.json`: the manifest of every intended difference
+- `/usr/share/wraindrock/delta.json`: the manifest of every intended difference
   from the base — changed/added os-release keys with their actual values,
   modified files and added files.
 - CI anonymous-pull check: the published digest must be pullable without
@@ -184,9 +199,9 @@ image versions are the Fedora channel plus an immutable build tag, see
   `GITHUB_TOKEN` (it lacks `packages` scope); it asserts anonymous
   pullability instead and fails with the package-settings link if the package is
   private.
-- `build-info.json` gains `"identity": "wrainrock"`.
+- `build-info.json` gains `"identity": "wraindrock"`.
 - Build provenance is now part of the declared delta: the three
-  `/usr/share/wrainrock/` files are listed under `files.added`, RPM queries run
+  `/usr/share/wraindrock/` files are listed under `files.added`, RPM queries run
   against a throwaway copy of the database, and parity compares the rpmdb's
   sqlite sidecars (`-wal`/`-shm`/`.rpm.lock`) against the base, so the build
   cannot modify them. The builder's empty `/etc/hostname` placeholder is
@@ -204,15 +219,15 @@ image versions are the Fedora channel plus an immutable build tag, see
 
 ### Added
 
-- Bootc image `ghcr.io/wraindrock/wrainrock-linux`, built `FROM
+- Bootc image `ghcr.io/wraindrock/wraindrock-linux`, built `FROM
   quay.io/fedora/fedora-silverblue:44` with the base digest resolved and
   recorded at build time.
 - Parity invariant: the image's RPM set and `/usr/lib/os-release` are identical
-  to the base; only `/usr/share/wrainrock/` is added.
-- Build provenance in `/usr/share/wrainrock/build-info.json` (schema, image,
+  to the base; only `/usr/share/wraindrock/` is added.
+- Build provenance in `/usr/share/wraindrock/build-info.json` (schema, image,
   version, build number, git SHA, build date, base image, base digest, Fedora
   version, parity marker, RPM count, RPM-set SHA-256) and a pristine
-  `/usr/share/wrainrock/base-os-release`.
+  `/usr/share/wraindrock/base-os-release`.
 - `bootc container lint` runs inside the image build.
 - CI gates: `tests/lint.sh`, `tests/parity.sh` (RPM + os-release diff against the
   base), `tests/smoke.sh` (the image boots under systemd).

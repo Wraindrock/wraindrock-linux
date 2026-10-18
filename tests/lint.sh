@@ -18,9 +18,9 @@ while IFS= read -r file; do shell_files+=("$file"); done < <(
     find . -path ./.git -prune -o -type f -name '*.sh' -print | sort
 )
 # The GRUB theme helper is a bash script without a .sh suffix.
-shell_files+=("build_files/grub-theme/wrainrock-grub-theme")
+shell_files+=("build_files/grub-theme/wraindrock-grub-theme")
 # Same for the first-boot hostname seeder.
-shell_files+=("build_files/hostname/wrainrock-hostname-seed")
+shell_files+=("build_files/hostname/wraindrock-hostname-seed")
 for file in "${shell_files[@]}"; do
     if bash -n "${file}"; then
         pass "${file}"
@@ -88,7 +88,7 @@ if [[ -r ${containerfile} ]]; then
         'RUN bootc container lint' \
         'CMD ["/sbin/init"]' \
         'org.opencontainers.image.source=' \
-        'org.wrainrock.base.image='; do
+        'org.wraindrock.base.image='; do
         if grep -Fq "${needle}" "${containerfile}"; then
             pass "Containerfile contains ${needle}"
         else
@@ -101,15 +101,15 @@ fi
 
 echo "branding"
 for asset in \
-    build_files/branding/wrainrock-logo-icon.svg \
-    build_files/branding/wrainrock-gdm-logo.svg \
-    build_files/branding/wrainrock-gdm-logo.png \
-    build_files/branding/wrainrock-wallpaper.svg \
-    build_files/branding/wrainrock-wallpaper.png \
-    build_files/branding/plymouth/wrainrock.plymouth \
+    build_files/branding/wraindrock-logo-icon.svg \
+    build_files/branding/wraindrock-gdm-logo.svg \
+    build_files/branding/wraindrock-gdm-logo.png \
+    build_files/branding/wraindrock-wallpaper.svg \
+    build_files/branding/wraindrock-wallpaper.png \
+    build_files/branding/plymouth/wraindrock.plymouth \
     build_files/branding/plymouth/background.png \
-    build_files/branding/plymouth/wrainrock-boot-background.svg \
-    build_files/branding/plymouth/wrainrock-boot-frame.svg \
+    build_files/branding/plymouth/wraindrock-boot-background.svg \
+    build_files/branding/plymouth/wraindrock-boot-frame.svg \
     build_files/branding/grub/theme.txt \
     build_files/branding/grub/background.png; do
     if [[ -s ${asset} ]]; then
@@ -119,31 +119,31 @@ for asset in \
     fi
 done
 for svg in \
-    build_files/branding/wrainrock-logo-icon.svg \
-    build_files/branding/wrainrock-gdm-logo.svg \
-    build_files/branding/wrainrock-wallpaper.svg \
-    build_files/branding/plymouth/wrainrock-boot-background.svg \
-    build_files/branding/plymouth/wrainrock-boot-frame.svg; do
+    build_files/branding/wraindrock-logo-icon.svg \
+    build_files/branding/wraindrock-gdm-logo.svg \
+    build_files/branding/wraindrock-wallpaper.svg \
+    build_files/branding/plymouth/wraindrock-boot-background.svg \
+    build_files/branding/plymouth/wraindrock-boot-frame.svg; do
     if grep -q '<text' "${svg}"; then
         fail "${svg} renders text at runtime (use outlines instead)"
     else
         pass "${svg} is font-independent"
     fi
 done
-if grep -Fiq '#3C6EB4' build_files/branding/wrainrock-logo-icon.svg &&
-   grep -Fiq '#3C6EB4' build_files/branding/wrainrock-gdm-logo.svg &&
-   grep -Fiq '#3C6EB4' build_files/branding/wrainrock-wallpaper.svg &&
-   grep -Fiq '3c6eb4' build_files/branding/plymouth/wrainrock-boot-frame.svg &&
-   grep -Fiq '3c6eb4' build_files/branding/plymouth/wrainrock.plymouth &&
+if grep -Fiq '#3C6EB4' build_files/branding/wraindrock-logo-icon.svg &&
+   grep -Fiq '#3C6EB4' build_files/branding/wraindrock-gdm-logo.svg &&
+   grep -Fiq '#3C6EB4' build_files/branding/wraindrock-wallpaper.svg &&
+   grep -Fiq '3c6eb4' build_files/branding/plymouth/wraindrock-boot-frame.svg &&
+   grep -Fiq '3c6eb4' build_files/branding/plymouth/wraindrock.plymouth &&
    grep -Fiq '3c6eb4' build_files/branding/grub/theme.txt; then
-    pass "branding assets use the documented Wrainrock blue"
+    pass "branding assets use the documented Wraindrock blue"
 else
-    fail "branding assets lost the Wrainrock blue outline"
+    fail "branding assets lost the Wraindrock blue outline"
 fi
 if python3 - <<'PY'
 import struct
 
-with open("build_files/branding/wrainrock-wallpaper.png", "rb") as handle:
+with open("build_files/branding/wraindrock-wallpaper.png", "rb") as handle:
     data = handle.read(24)
 assert data[:8] == b"\x89PNG\r\n\x1a\n", "not a PNG"
 width, height = struct.unpack(">II", data[16:24])
@@ -192,20 +192,20 @@ else
 fi
 
 echo "GRUB boot menu theme"
-if [[ -x build_files/grub-theme/wrainrock-grub-theme ]]; then
+if [[ -x build_files/grub-theme/wraindrock-grub-theme ]]; then
     pass "GRUB theme helper is executable"
 else
     fail "GRUB theme helper is missing or not executable"
 fi
 for needle in 'custom.cfg' 'set theme=' '--boot-dir' \
               'refusing to modify' 'loadfont'; do
-    if grep -Fq -e "${needle}" build_files/grub-theme/wrainrock-grub-theme; then
+    if grep -Fq -e "${needle}" build_files/grub-theme/wraindrock-grub-theme; then
         pass "GRUB theme helper handles ${needle}"
     else
         fail "GRUB theme helper is missing ${needle}"
     fi
 done
-for needle in 'desktop-image: "background.png"' 'title-text: "Wrainrock Linux"' \
+for needle in 'desktop-image: "background.png"' 'title-text: "Wraindrock Linux"' \
               '+ boot_menu' 'id = "__timeout__"'; do
     if grep -Fq "${needle}" build_files/branding/grub/theme.txt; then
         pass "GRUB theme contains ${needle}"
@@ -229,18 +229,18 @@ else
 fi
 
 echo "first-boot hostname seeding"
-for needle in 'DEFAULT_HOSTNAME' 'state_dir=/var/lib/wrainrock' \
+for needle in 'DEFAULT_HOSTNAME' 'state_dir=/var/lib/wraindrock' \
               'hostname-seeded' 'hostname "${default}"'; do
-    if grep -Fq -e "${needle}" build_files/hostname/wrainrock-hostname-seed; then
+    if grep -Fq -e "${needle}" build_files/hostname/wraindrock-hostname-seed; then
         pass "hostname seeder handles ${needle}"
     else
         fail "hostname seeder is missing ${needle}"
     fi
 done
-for needle in 'ConditionPathExists=!/var/lib/wrainrock/hostname-seeded' \
-              'ExecStart=/usr/libexec/wrainrock-hostname-seed' \
+for needle in 'ConditionPathExists=!/var/lib/wraindrock/hostname-seeded' \
+              'ExecStart=/usr/libexec/wraindrock-hostname-seed' \
               'WantedBy=sysinit.target'; do
-    if grep -Fqx -e "${needle}" build_files/hostname/wrainrock-hostname-seed.service; then
+    if grep -Fqx -e "${needle}" build_files/hostname/wraindrock-hostname-seed.service; then
         pass "hostname unit contains ${needle}"
     else
         fail "hostname unit is missing ${needle}"
@@ -248,10 +248,10 @@ for needle in 'ConditionPathExists=!/var/lib/wrainrock/hostname-seeded' \
 done
 
 echo "build invariants"
-for needle in 'base-os-release' 'delta.json' 'zz-wrainrock.gschema.override' \
-              'wrainrock-wallpaper.png' 'Theme=wrainrock' \
-              'plymouth/animation-' 'grub/theme.txt' 'wrainrock-grub-theme' \
-              'wrainrock-hostname-seed'; do
+for needle in 'base-os-release' 'delta.json' 'zz-wraindrock.gschema.override' \
+              'wraindrock-wallpaper.png' 'Theme=wraindrock' \
+              'plymouth/animation-' 'grub/theme.txt' 'wraindrock-grub-theme' \
+              'wraindrock-hostname-seed'; do
     if grep -Fq "${needle}" build_files/build.sh; then
         pass "build.sh handles ${needle}"
     else
@@ -280,13 +280,13 @@ for doc in README.md docs/architecture.md docs/install.md docs/roadmap.md \
     fi
 done
 if grep -Fq "bootc switch" docs/install.md &&
-   grep -Fq "ghcr.io/wraindrock/wrainrock-linux" docs/install.md; then
+   grep -Fq "ghcr.io/wraindrock/wraindrock-linux" docs/install.md; then
     pass "install doc documents the switch command"
 else
     fail "docs/install.md does not document a bootc switch command"
 fi
-if grep -Fq 'wrainrock-grub-theme' docs/architecture.md &&
-   grep -Fq 'wrainrock-grub-theme' docs/install.md; then
+if grep -Fq 'wraindrock-grub-theme' docs/architecture.md &&
+   grep -Fq 'wraindrock-grub-theme' docs/install.md; then
     pass "docs document the GRUB theme helper"
 else
     fail "docs do not document the GRUB theme helper"
@@ -295,9 +295,9 @@ if grep -Fq 'delta.json' docs/architecture.md &&
    grep -Fq 'delta.json' docs/install.md; then
     pass "docs document the delta manifest"
 else
-    fail "docs do not describe /usr/share/wrainrock/delta.json"
+    fail "docs do not describe /usr/share/wraindrock/delta.json"
 fi
-if grep -Fq 'wrainrock-wallpaper' docs/architecture.md; then
+if grep -Fq 'wraindrock-wallpaper' docs/architecture.md; then
     pass "architecture doc describes the wallpaper override"
 else
     fail "docs/architecture.md does not describe the wallpaper"
@@ -338,7 +338,7 @@ if [[ -r .github/workflows/disk.yml ]]; then
     pass "disk workflow exists"
     for needle in 'bootc-image-builder' '--type anaconda-iso' '--type qcow2' \
                   'SHA256SUMS' 'sha256sum' 'BIB_IMAGE' \
-                  'wrainrock-linux-disk' 'oras push' 'oras manifest fetch' \
+                  'wraindrock-linux-disk' 'oras push' 'oras manifest fetch' \
                   'immutable artifact tags are never overwritten' \
                   'f27adb935022d94df8dc77719c322dda592c78a0d57a6f7dcdd8d900b248c454'; do
         if grep -Fq -e "${needle}" .github/workflows/disk.yml; then
@@ -350,7 +350,7 @@ if [[ -r .github/workflows/disk.yml ]]; then
 else
     fail ".github/workflows/disk.yml is missing"
 fi
-for needle in 'ghcr.io/wraindrock/wrainrock-linux-disk' 'oras pull' \
+for needle in 'ghcr.io/wraindrock/wraindrock-linux-disk' 'oras pull' \
               'immutable OCI artifact'; do
     if grep -Fq -e "${needle}" README.md docs/install.md docs/roadmap.md; then
         pass "docs mention ${needle}"

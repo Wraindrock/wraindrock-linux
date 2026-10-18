@@ -1,17 +1,17 @@
 #!/usr/bin/env bash
 # ---------------------------------------------------------------------------
-# Wrainrock Linux image build step.
+# Wraindrock Linux image build step.
 #
 # Runs as root inside the pristine Fedora Silverblue base image. It does three
 # things and nothing else:
 #
 #   1. prove the base is the Fedora Silverblue bootc image this project claims;
-#   2. record provenance at /usr/share/wrainrock/build-info.json and preserve
+#   2. record provenance at /usr/share/wraindrock/build-info.json and preserve
 #      the untouched base os-release next to it;
-#   3. apply the Wrainrock identity: os-release display fields, the Wrainrock
+#   3. apply the Wraindrock identity: os-release display fields, the Wraindrock
 #      logo icon, the GDM login logo, the default desktop/GDM wallpaper and
 #      the Plymouth boot splash, then record every applied difference in
-#      /usr/share/wrainrock/delta.json.
+#      /usr/share/wraindrock/delta.json.
 #
 # The delta manifest is the contract the parity test enforces: the image may
 # differ from the base only in ways listed there. It must not install
@@ -21,7 +21,7 @@
 set -euo pipefail
 
 die() { printf 'error: %s\n' "$*" >&2; exit 1; }
-say() { printf 'wrainrock: %s\n' "$*"; }
+say() { printf 'wraindrock: %s\n' "$*"; }
 
 [[ ${EUID} -eq 0 ]] || die "build.sh must run as root"
 for cmd in rpm sha256sum install grep sed; do
@@ -49,8 +49,8 @@ grep -qx 'VARIANT_ID=silverblue' "${os_release}" \
 
 # --- 2. provenance ----------------------------------------------------------
 # Copy the pristine os-release before branding: parity diffs against this copy.
-install -d -m 0755 /usr/share/wrainrock
-install -m 0644 "${os_release}" /usr/share/wrainrock/base-os-release
+install -d -m 0755 /usr/share/wraindrock
+install -m 0644 "${os_release}" /usr/share/wraindrock/base-os-release
 
 # Query a throwaway copy of the RPM database. The base image ships the database
 # together with sqlite's sidecar files (.rpm.lock, -wal, -shm); opening the
@@ -66,7 +66,7 @@ rpm_db_signature() {
 }
 rpm_db_before="$(rpm_db_signature)"
 
-rpm_db_tmp="$(mktemp -d /tmp/wrainrock-rpmdb.XXXXXX)"
+rpm_db_tmp="$(mktemp -d /tmp/wraindrock-rpmdb.XXXXXX)"
 cp -a /usr/share/rpm/rpmdb.sqlite "${rpm_db_tmp}/rpmdb.sqlite"
 rpm_query() { rpm --dbpath "${rpm_db_tmp}" "$@"; }
 rpm_count="$(rpm_query -qa | wc -l)"
@@ -82,9 +82,9 @@ rm -rf "${rpm_db_tmp}"
     || die "the RPM database changed during the build"
 
 # --- 3. identity ------------------------------------------------------------
-for asset in wrainrock-logo-icon.svg wrainrock-gdm-logo.svg \
-    wrainrock-gdm-logo.png wrainrock-wallpaper.png \
-    plymouth/wrainrock.plymouth plymouth/background.png \
+for asset in wraindrock-logo-icon.svg wraindrock-gdm-logo.svg \
+    wraindrock-gdm-logo.png wraindrock-wallpaper.png \
+    plymouth/wraindrock.plymouth plymouth/background.png \
     plymouth/animation-0001.png plymouth/animation-0030.png \
     grub/theme.txt grub/background.png; do
     [[ -r ${branding_dir}/${asset} ]] || die "branding asset ${asset} is missing"
@@ -94,31 +94,31 @@ done
 # the base: update cadence and support window must stay honest. Only identity
 # and links change.
 sed -i \
-    -e 's/^NAME=.*/NAME="Wrainrock Linux"/' \
-    -e 's/^PRETTY_NAME="Fedora Linux /PRETTY_NAME="Wrainrock Linux /' \
-    -e 's/^ID=fedora$/ID=wrainrock/' \
-    -e 's/^LOGO=.*/LOGO=wrainrock-logo-icon/' \
-    -e 's/^DEFAULT_HOSTNAME=.*/DEFAULT_HOSTNAME="wrainrock"/' \
-    -e 's|^HOME_URL=.*|HOME_URL="https://github.com/Wraindrock/wrainrock-linux"|' \
-    -e 's|^DOCUMENTATION_URL=.*|DOCUMENTATION_URL="https://github.com/Wraindrock/wrainrock-linux/blob/main/docs/install.md"|' \
-    -e 's|^SUPPORT_URL=.*|SUPPORT_URL="https://github.com/Wraindrock/wrainrock-linux/issues"|' \
-    -e 's|^BUG_REPORT_URL=.*|BUG_REPORT_URL="https://github.com/Wraindrock/wrainrock-linux/issues"|' \
-    -e "s|^CPE_NAME=.*|CPE_NAME=\"cpe:/o:wraindrock:wrainrock_linux:${FEDORA_VERSION}\"|" \
+    -e 's/^NAME=.*/NAME="Wraindrock Linux"/' \
+    -e 's/^PRETTY_NAME="Fedora Linux /PRETTY_NAME="Wraindrock Linux /' \
+    -e 's/^ID=fedora$/ID=wraindrock/' \
+    -e 's/^LOGO=.*/LOGO=wraindrock-logo-icon/' \
+    -e 's/^DEFAULT_HOSTNAME=.*/DEFAULT_HOSTNAME="wraindrock"/' \
+    -e 's|^HOME_URL=.*|HOME_URL="https://github.com/Wraindrock/wraindrock-linux"|' \
+    -e 's|^DOCUMENTATION_URL=.*|DOCUMENTATION_URL="https://github.com/Wraindrock/wraindrock-linux/blob/main/docs/install.md"|' \
+    -e 's|^SUPPORT_URL=.*|SUPPORT_URL="https://github.com/Wraindrock/wraindrock-linux/issues"|' \
+    -e 's|^BUG_REPORT_URL=.*|BUG_REPORT_URL="https://github.com/Wraindrock/wraindrock-linux/issues"|' \
+    -e "s|^CPE_NAME=.*|CPE_NAME=\"cpe:/o:wraindrock:wraindrock_linux:${FEDORA_VERSION}\"|" \
     "${os_release}"
 
 # Fedora has no ID_LIKE; add one so downstream tooling can still tell this is a
 # Fedora-family system.
 grep -q '^ID_LIKE=' "${os_release}" \
-    || sed -i '/^ID=wrainrock$/a ID_LIKE="fedora"' "${os_release}"
+    || sed -i '/^ID=wraindrock$/a ID_LIKE="fedora"' "${os_release}"
 
-grep -qx 'NAME="Wrainrock Linux"' "${os_release}" \
+grep -qx 'NAME="Wraindrock Linux"' "${os_release}" \
     || die "failed to brand NAME"
-grep -Eq '^PRETTY_NAME="Wrainrock Linux [0-9]' "${os_release}" \
+grep -Eq '^PRETTY_NAME="Wraindrock Linux [0-9]' "${os_release}" \
     || die "failed to brand PRETTY_NAME"
-grep -qx 'ID=wrainrock' "${os_release}" || die "failed to brand ID"
+grep -qx 'ID=wraindrock' "${os_release}" || die "failed to brand ID"
 grep -qx 'ID_LIKE="fedora"' "${os_release}" || die "failed to add ID_LIKE"
-grep -qx 'LOGO=wrainrock-logo-icon' "${os_release}" || die "failed to brand LOGO"
-grep -qx 'DEFAULT_HOSTNAME="wrainrock"' "${os_release}" \
+grep -qx 'LOGO=wraindrock-logo-icon' "${os_release}" || die "failed to brand LOGO"
+grep -qx 'DEFAULT_HOSTNAME="wraindrock"' "${os_release}" \
     || die "failed to brand DEFAULT_HOSTNAME"
 grep -qx "VERSION_ID=${FEDORA_VERSION}" "${os_release}" \
     || die "branding changed VERSION_ID"
@@ -127,33 +127,33 @@ grep -qx 'VARIANT_ID=silverblue' "${os_release}" \
 
 # 3b. icons. LOGO names an icon theme entry (Settings -> About); GDM reads the
 # wordmark by path from the gsettings override below.
-install -D -m 0644 "${branding_dir}/wrainrock-logo-icon.svg" \
-    /usr/share/icons/hicolor/scalable/apps/wrainrock-logo-icon.svg
-install -D -m 0644 "${branding_dir}/wrainrock-gdm-logo.svg" \
-    /usr/share/pixmaps/wrainrock-gdm-logo.svg
-install -D -m 0644 "${branding_dir}/wrainrock-gdm-logo.png" \
-    /usr/share/pixmaps/wrainrock-gdm-logo.png
+install -D -m 0644 "${branding_dir}/wraindrock-logo-icon.svg" \
+    /usr/share/icons/hicolor/scalable/apps/wraindrock-logo-icon.svg
+install -D -m 0644 "${branding_dir}/wraindrock-gdm-logo.svg" \
+    /usr/share/pixmaps/wraindrock-gdm-logo.svg
+install -D -m 0644 "${branding_dir}/wraindrock-gdm-logo.png" \
+    /usr/share/pixmaps/wraindrock-gdm-logo.png
 
 # 3c. Wallpaper. Fedora ships 10_org.gnome.desktop.background.fedora.gschema
 # override pointing at the f44 day/night images; our zz- override is merged
 # later and therefore wins for new users and for the GDM greeter, which reads
 # the same schema defaults.
-install -D -m 0644 "${branding_dir}/wrainrock-wallpaper.png" \
-    /usr/share/backgrounds/wrainrock/wrainrock-wallpaper.png
+install -D -m 0644 "${branding_dir}/wraindrock-wallpaper.png" \
+    /usr/share/backgrounds/wraindrock/wraindrock-wallpaper.png
 
 # 3d. GDM logo and default wallpaper. Override files are merged in name order,
 # so zz- wins over Fedora's 10_* override. The login screen stays legible on
 # its own background - see docs/architecture.md for the known dark-background
 # contrast caveat.
 gschema_dir=/usr/share/glib-2.0/schemas
-override="${gschema_dir}/zz-wrainrock.gschema.override"
+override="${gschema_dir}/zz-wraindrock.gschema.override"
 cat > "${override}" <<'EOF'
 [org.gnome.login-screen]
-logo='/usr/share/pixmaps/wrainrock-gdm-logo.png'
+logo='/usr/share/pixmaps/wraindrock-gdm-logo.png'
 
 [org.gnome.desktop.background]
-picture-uri='file:///usr/share/backgrounds/wrainrock/wrainrock-wallpaper.png'
-picture-uri-dark='file:///usr/share/backgrounds/wrainrock/wrainrock-wallpaper.png'
+picture-uri='file:///usr/share/backgrounds/wraindrock/wraindrock-wallpaper.png'
+picture-uri-dark='file:///usr/share/backgrounds/wraindrock/wraindrock-wallpaper.png'
 EOF
 chmod 0644 "${override}"
 command -v glib-compile-schemas >/dev/null 2>&1 \
@@ -165,22 +165,22 @@ glib-compile-schemas "${gschema_dir}"
 # daemon config is enough. plymouth's /usr/lib/plymouth/plymouth-populate-initrd
 # reads this config when a deployment regenerates its initramfs and copies the
 # selected theme into it.
-plymouth_dir=/usr/share/plymouth/themes/wrainrock
+plymouth_dir=/usr/share/plymouth/themes/wraindrock
 install -d -m 0755 "${plymouth_dir}"
-install -m 0644 "${branding_dir}/plymouth/wrainrock.plymouth" "${plymouth_dir}/"
+install -m 0644 "${branding_dir}/plymouth/wraindrock.plymouth" "${plymouth_dir}/"
 install -m 0644 "${branding_dir}/plymouth/background.png" "${plymouth_dir}/"
 install -m 0644 "${branding_dir}"/plymouth/animation-????.png "${plymouth_dir}/"
 [[ -f ${plymouth_dir}/animation-0001.png && -f ${plymouth_dir}/animation-0030.png ]] \
     || die "Plymouth animation frames not installed"
 
 cat > /etc/plymouth/plymouthd.conf <<'PLYMOUTHD'
-# Wrainrock Linux boot splash. The theme itself is shipped in
-# /usr/share/plymouth/themes/wrainrock; this file only selects it.
+# Wraindrock Linux boot splash. The theme itself is shipped in
+# /usr/share/plymouth/themes/wraindrock; this file only selects it.
 [Daemon]
-Theme=wrainrock
+Theme=wraindrock
 PLYMOUTHD
 chmod 0644 /etc/plymouth/plymouthd.conf
-grep -qx 'Theme=wrainrock' /etc/plymouth/plymouthd.conf \
+grep -qx 'Theme=wraindrock' /etc/plymouth/plymouthd.conf \
     || die "failed to select the Plymouth theme"
 
 # 3f. GRUB boot menu theme (opt-in at runtime). bootc systems get their
@@ -188,14 +188,14 @@ grep -qx 'Theme=wrainrock' /etc/plymouth/plymouthd.conf \
 # an image update cannot change the menu by itself. Ship the theme and a small
 # helper; the helper copies it to /boot and uses bootupd's supported
 # custom.cfg hook. See docs/architecture.md.
-grub_theme_dir=/usr/share/grub/themes/wrainrock
+grub_theme_dir=/usr/share/grub/themes/wraindrock
 install -d -m 0755 "${grub_theme_dir}"
 install -m 0644 "${branding_dir}/grub/theme.txt" "${grub_theme_dir}/theme.txt"
 install -m 0644 "${branding_dir}/grub/background.png" "${grub_theme_dir}/background.png"
 [[ -f /usr/share/grub/unicode.pf2 ]] \
     || die "base image is missing /usr/share/grub/unicode.pf2"
-install -D -m 0755 "${script_dir}/grub-theme/wrainrock-grub-theme" /usr/bin/wrainrock-grub-theme
-[[ -x /usr/bin/wrainrock-grub-theme ]] || die "GRUB theme helper not installed"
+install -D -m 0755 "${script_dir}/grub-theme/wraindrock-grub-theme" /usr/bin/wraindrock-grub-theme
+[[ -x /usr/bin/wraindrock-grub-theme ]] || die "GRUB theme helper not installed"
 
 # 3g. First-boot hostname seeding. bootc-image-builder's install path does not
 # apply DEFAULT_HOSTNAME: the installed system inherits the base deployment's
@@ -203,17 +203,17 @@ install -D -m 0755 "${script_dir}/grub-theme/wrainrock-grub-theme" /usr/bin/wrai
 # first boot, without touching a value the user already chose. The marker makes
 # it idempotent and keeps later hostnamectl changes.
 hostname_seed_dir="${script_dir}/hostname"
-install -D -m 0755 "${hostname_seed_dir}/wrainrock-hostname-seed" /usr/libexec/wrainrock-hostname-seed
-install -D -m 0644 "${hostname_seed_dir}/wrainrock-hostname-seed.service" \
-    /usr/lib/systemd/system/wrainrock-hostname-seed.service
+install -D -m 0755 "${hostname_seed_dir}/wraindrock-hostname-seed" /usr/libexec/wraindrock-hostname-seed
+install -D -m 0644 "${hostname_seed_dir}/wraindrock-hostname-seed.service" \
+    /usr/lib/systemd/system/wraindrock-hostname-seed.service
 systemd_wants=/usr/lib/systemd/system/sysinit.target.wants
 install -d -m 0755 "${systemd_wants}"
-ln -sfn ../wrainrock-hostname-seed.service "${systemd_wants}/wrainrock-hostname-seed.service"
-[[ -x /usr/libexec/wrainrock-hostname-seed && -f /usr/lib/systemd/system/wrainrock-hostname-seed.service ]] \
+ln -sfn ../wraindrock-hostname-seed.service "${systemd_wants}/wraindrock-hostname-seed.service"
+[[ -x /usr/libexec/wraindrock-hostname-seed && -f /usr/lib/systemd/system/wraindrock-hostname-seed.service ]] \
     || die "hostname seed unit or script not installed"
-[[ -L ${systemd_wants}/wrainrock-hostname-seed.service ]] \
+[[ -L ${systemd_wants}/wraindrock-hostname-seed.service ]] \
     || die "hostname seed unit is not enabled"
-grep -q '^WantedBy=sysinit.target$' /usr/lib/systemd/system/wrainrock-hostname-seed.service \
+grep -q '^WantedBy=sysinit.target$' /usr/lib/systemd/system/wraindrock-hostname-seed.service \
     || die "hostname seed unit has the wrong target"
 
 # --- 4. delta manifest ------------------------------------------------------
@@ -237,7 +237,7 @@ json_value() {
     fi
 }
 
-cat > /usr/share/wrainrock/delta.json <<EOF
+cat > /usr/share/wraindrock/delta.json <<EOF
 {
   "schema": 1,
   "base_image": $(json_value "${BASE_IMAGE:-unknown}"),
@@ -266,59 +266,59 @@ cat > /usr/share/wrainrock/delta.json <<EOF
       "/etc/plymouth/plymouthd.conf"
     ],
     "added": [
-      "/usr/share/icons/hicolor/scalable/apps/wrainrock-logo-icon.svg",
-      "/usr/share/pixmaps/wrainrock-gdm-logo.svg",
-      "/usr/share/pixmaps/wrainrock-gdm-logo.png",
-      "/usr/share/glib-2.0/schemas/zz-wrainrock.gschema.override",
-      "/usr/share/backgrounds/wrainrock/wrainrock-wallpaper.png",
-      "/usr/share/plymouth/themes/wrainrock/wrainrock.plymouth",
-      "/usr/share/plymouth/themes/wrainrock/background.png",
-      "/usr/share/plymouth/themes/wrainrock/animation-0001.png",
-      "/usr/share/plymouth/themes/wrainrock/animation-0002.png",
-      "/usr/share/plymouth/themes/wrainrock/animation-0003.png",
-      "/usr/share/plymouth/themes/wrainrock/animation-0004.png",
-      "/usr/share/plymouth/themes/wrainrock/animation-0005.png",
-      "/usr/share/plymouth/themes/wrainrock/animation-0006.png",
-      "/usr/share/plymouth/themes/wrainrock/animation-0007.png",
-      "/usr/share/plymouth/themes/wrainrock/animation-0008.png",
-      "/usr/share/plymouth/themes/wrainrock/animation-0009.png",
-      "/usr/share/plymouth/themes/wrainrock/animation-0010.png",
-      "/usr/share/plymouth/themes/wrainrock/animation-0011.png",
-      "/usr/share/plymouth/themes/wrainrock/animation-0012.png",
-      "/usr/share/plymouth/themes/wrainrock/animation-0013.png",
-      "/usr/share/plymouth/themes/wrainrock/animation-0014.png",
-      "/usr/share/plymouth/themes/wrainrock/animation-0015.png",
-      "/usr/share/plymouth/themes/wrainrock/animation-0016.png",
-      "/usr/share/plymouth/themes/wrainrock/animation-0017.png",
-      "/usr/share/plymouth/themes/wrainrock/animation-0018.png",
-      "/usr/share/plymouth/themes/wrainrock/animation-0019.png",
-      "/usr/share/plymouth/themes/wrainrock/animation-0020.png",
-      "/usr/share/plymouth/themes/wrainrock/animation-0021.png",
-      "/usr/share/plymouth/themes/wrainrock/animation-0022.png",
-      "/usr/share/plymouth/themes/wrainrock/animation-0023.png",
-      "/usr/share/plymouth/themes/wrainrock/animation-0024.png",
-      "/usr/share/plymouth/themes/wrainrock/animation-0025.png",
-      "/usr/share/plymouth/themes/wrainrock/animation-0026.png",
-      "/usr/share/plymouth/themes/wrainrock/animation-0027.png",
-      "/usr/share/plymouth/themes/wrainrock/animation-0028.png",
-      "/usr/share/plymouth/themes/wrainrock/animation-0029.png",
-      "/usr/share/plymouth/themes/wrainrock/animation-0030.png",
-      "/usr/share/grub/themes/wrainrock/theme.txt",
-      "/usr/share/grub/themes/wrainrock/background.png",
-      "/usr/bin/wrainrock-grub-theme",
-      "/usr/libexec/wrainrock-hostname-seed",
-      "/usr/lib/systemd/system/wrainrock-hostname-seed.service",
-      "/usr/lib/systemd/system/sysinit.target.wants/wrainrock-hostname-seed.service",
-      "/usr/share/wrainrock/base-os-release",
-      "/usr/share/wrainrock/build-info.json",
-      "/usr/share/wrainrock/delta.json"
+      "/usr/share/icons/hicolor/scalable/apps/wraindrock-logo-icon.svg",
+      "/usr/share/pixmaps/wraindrock-gdm-logo.svg",
+      "/usr/share/pixmaps/wraindrock-gdm-logo.png",
+      "/usr/share/glib-2.0/schemas/zz-wraindrock.gschema.override",
+      "/usr/share/backgrounds/wraindrock/wraindrock-wallpaper.png",
+      "/usr/share/plymouth/themes/wraindrock/wraindrock.plymouth",
+      "/usr/share/plymouth/themes/wraindrock/background.png",
+      "/usr/share/plymouth/themes/wraindrock/animation-0001.png",
+      "/usr/share/plymouth/themes/wraindrock/animation-0002.png",
+      "/usr/share/plymouth/themes/wraindrock/animation-0003.png",
+      "/usr/share/plymouth/themes/wraindrock/animation-0004.png",
+      "/usr/share/plymouth/themes/wraindrock/animation-0005.png",
+      "/usr/share/plymouth/themes/wraindrock/animation-0006.png",
+      "/usr/share/plymouth/themes/wraindrock/animation-0007.png",
+      "/usr/share/plymouth/themes/wraindrock/animation-0008.png",
+      "/usr/share/plymouth/themes/wraindrock/animation-0009.png",
+      "/usr/share/plymouth/themes/wraindrock/animation-0010.png",
+      "/usr/share/plymouth/themes/wraindrock/animation-0011.png",
+      "/usr/share/plymouth/themes/wraindrock/animation-0012.png",
+      "/usr/share/plymouth/themes/wraindrock/animation-0013.png",
+      "/usr/share/plymouth/themes/wraindrock/animation-0014.png",
+      "/usr/share/plymouth/themes/wraindrock/animation-0015.png",
+      "/usr/share/plymouth/themes/wraindrock/animation-0016.png",
+      "/usr/share/plymouth/themes/wraindrock/animation-0017.png",
+      "/usr/share/plymouth/themes/wraindrock/animation-0018.png",
+      "/usr/share/plymouth/themes/wraindrock/animation-0019.png",
+      "/usr/share/plymouth/themes/wraindrock/animation-0020.png",
+      "/usr/share/plymouth/themes/wraindrock/animation-0021.png",
+      "/usr/share/plymouth/themes/wraindrock/animation-0022.png",
+      "/usr/share/plymouth/themes/wraindrock/animation-0023.png",
+      "/usr/share/plymouth/themes/wraindrock/animation-0024.png",
+      "/usr/share/plymouth/themes/wraindrock/animation-0025.png",
+      "/usr/share/plymouth/themes/wraindrock/animation-0026.png",
+      "/usr/share/plymouth/themes/wraindrock/animation-0027.png",
+      "/usr/share/plymouth/themes/wraindrock/animation-0028.png",
+      "/usr/share/plymouth/themes/wraindrock/animation-0029.png",
+      "/usr/share/plymouth/themes/wraindrock/animation-0030.png",
+      "/usr/share/grub/themes/wraindrock/theme.txt",
+      "/usr/share/grub/themes/wraindrock/background.png",
+      "/usr/bin/wraindrock-grub-theme",
+      "/usr/libexec/wraindrock-hostname-seed",
+      "/usr/lib/systemd/system/wraindrock-hostname-seed.service",
+      "/usr/lib/systemd/system/sysinit.target.wants/wraindrock-hostname-seed.service",
+      "/usr/share/wraindrock/base-os-release",
+      "/usr/share/wraindrock/build-info.json",
+      "/usr/share/wraindrock/delta.json"
     ]
   }
 }
 EOF
-chmod 0644 /usr/share/wrainrock/delta.json
+chmod 0644 /usr/share/wraindrock/delta.json
 
-cat > /usr/share/wrainrock/build-info.json <<EOF
+cat > /usr/share/wraindrock/build-info.json <<EOF
 {
   "schema": 1,
   "image": "${IMAGE_NAME:-unknown}",
@@ -329,18 +329,18 @@ cat > /usr/share/wrainrock/build-info.json <<EOF
   "base_image": "${BASE_IMAGE:-unknown}",
   "base_digest": "${BASE_DIGEST:-unknown}",
   "fedora_version": "${FEDORA_VERSION:-unknown}",
-  "identity": "wrainrock",
+  "identity": "wraindrock",
   "parity": "fedora-silverblue-${FEDORA_VERSION:-unknown}",
   "rpm_count": ${rpm_count},
   "rpm_set_sha256": "${rpm_set_sha256}"
 }
 EOF
-chmod 0644 /usr/share/wrainrock/build-info.json
+chmod 0644 /usr/share/wraindrock/build-info.json
 
 say "provenance written for ${IMAGE_NAME:-unknown} (${rpm_count} packages)"
-say "base os-release preserved at /usr/share/wrainrock/base-os-release"
+say "base os-release preserved at /usr/share/wraindrock/base-os-release"
 say "identity applied: $(unquote "$(field PRETTY_NAME)")"
-say "boot splash installed: ${plymouth_dir} (theme: wrainrock)"
-say "GRUB theme helper installed: /usr/bin/wrainrock-grub-theme (opt-in)"
-say "delta manifest written to /usr/share/wrainrock/delta.json"
+say "boot splash installed: ${plymouth_dir} (theme: wraindrock)"
+say "GRUB theme helper installed: /usr/bin/wraindrock-grub-theme (opt-in)"
+say "delta manifest written to /usr/share/wraindrock/delta.json"
 say "rpm database left byte-identical to the base"

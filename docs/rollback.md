@@ -25,7 +25,7 @@ If the previous local deployment is already gone (for example after several
 updates), switch to the registry's rollback pointer:
 
 ```bash
-sudo bootc switch ghcr.io/wraindrock/wrainrock-linux:previous
+sudo bootc switch ghcr.io/wraindrock/wraindrock-linux:previous
 sudo systemctl reboot
 ```
 
@@ -33,7 +33,7 @@ sudo systemctl reboot
 It is a moving tag, so record the digest if you need it to be reproducible:
 
 ```bash
-podman inspect --format '{{index .RepoDigests 0}}' ghcr.io/wraindrock/wrainrock-linux:previous
+podman inspect --format '{{index .RepoDigests 0}}' ghcr.io/wraindrock/wraindrock-linux:previous
 ```
 
 ## Rolling back to stock Fedora Silverblue
@@ -59,8 +59,8 @@ machine quickly.
    attempt to "repair" the deployment by editing files in place — switch to a
    known-good image instead.
 4. **Reinstall as a last resort.** Back up `/home` from the live environment
-   first. Wrainrock has no installer of its own yet; reinstall Silverblue with
-   Anaconda and then `bootc switch` back if you want Wrainrock again.
+   first. Wraindrock has no installer of its own yet; reinstall Silverblue with
+   Anaconda and then `bootc switch` back if you want Wraindrock again.
 
 ## What rollback does *not* recover
 

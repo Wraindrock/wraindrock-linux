@@ -4,7 +4,7 @@
 # not reach a running systemd is not a distribution - the build succeeding
 # proves nothing about PID 1.
 #
-#   tests/smoke.sh localhost/wrainrock-linux:44
+#   tests/smoke.sh localhost/wraindrock-linux:44
 #
 # Needs an engine where rootless systemd containers work (stock cgroup v2 host).
 # ---------------------------------------------------------------------------
@@ -19,7 +19,7 @@ command -v "${ENGINE}" >/dev/null 2>&1 || {
     exit 1
 }
 
-NAME="${WR_SMOKE_NAME:-wrainrock-smoke}"
+NAME="${WR_SMOKE_NAME:-wraindrock-smoke}"
 TIMEOUT="${WR_SMOKE_TIMEOUT:-180}"
 
 cleanup() { "${ENGINE}" rm -f "${NAME}" >/dev/null 2>&1 || true; }

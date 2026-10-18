@@ -1,5 +1,5 @@
 #!/bin/bash
-# Seed the Wrainrock hostname once, on the first boot of an installed system.
+# Seed the Wraindrock hostname once, on the first boot of an installed system.
 #
 # bootc-image-builder's install path does not apply os-release's DEFAULT_HOSTNAME
 # (the installed system inherits the base deployment's /etc), so a fresh install
@@ -8,14 +8,14 @@
 # choice made by the user or installer is never overwritten.
 set -euo pipefail
 
-state_dir=/var/lib/wrainrock
+state_dir=/var/lib/wraindrock
 marker="${state_dir}/hostname-seeded"
 
 # Idempotent: a second boot is a no-op.
 [[ -e ${marker} ]] && exit 0
 
 default="$(sed -n 's/^DEFAULT_HOSTNAME="\(.*\)"$/\1/p' /usr/lib/os-release | head -n 1)"
-[[ -n ${default} ]] || default=wrainrock
+[[ -n ${default} ]] || default=wraindrock
 
 # /etc/hostname is what persists; the running hostname is what the user sees.
 # An empty file means "nothing was configured"; "fedora" is the base image's
