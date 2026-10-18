@@ -276,7 +276,7 @@ rpm_count="$(wc -l < "${rpm_current_set_file}")"
 # Nothing below this point may run rpm again.
 [[ ! -s /usr/share/rpm/rpmdb.sqlite-wal ]] \
     || die "the RPM database WAL was not checkpointed before packaging"
-install -m 0644 "${rpm_base_set_file}" /usr/share/wrainrock/base-rpm-set
+install -m 0644 "${rpm_base_set_file}" /usr/share/wraindrock/base-rpm-set
 rm -f "${rpm_base_set_file}" "${rpm_current_set_file}"
 
 # --- 4. delta manifest ------------------------------------------------------
