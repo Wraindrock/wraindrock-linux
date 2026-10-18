@@ -219,6 +219,8 @@ assert delta["files"]["modified"] == [
     "/usr/lib/os-release",
     "/usr/share/glib-2.0/schemas/gschemas.compiled",
     "/etc/plymouth/plymouthd.conf",
+    "/usr/share/rpm/rpmdb.sqlite",
+    "/opt",
 ], delta["files"]
 expected_added = {
     "/usr/share/icons/hicolor/scalable/apps/wraindrock-logo-icon.svg",
