@@ -51,17 +51,45 @@ tmpdir="$(mktemp -d)"
 trap 'rm -rf "${tmpdir}"' EXIT
 
 # --- RPM set ----------------------------------------------------------------
+# The image may add packages, but only the ones delta.json declares, and it
+# may not remove or replace anything the base shipped.
 rpm_query='rpm -qa --qf "%{NAME}-%{VERSION}-%{RELEASE}.%{ARCH}\n" | LC_ALL=C sort'
 in_image "${BASE}" "${rpm_query}" > "${tmpdir}/base.rpm"
 in_image "${IMAGE}" "${rpm_query}" > "${tmpdir}/image.rpm"
+comm -13 "${tmpdir}/base.rpm" "${tmpdir}/image.rpm" > "${tmpdir}/rpm.added"
+comm -23 "${tmpdir}/base.rpm" "${tmpdir}/image.rpm" > "${tmpdir}/rpm.removed"
 
 base_count="$(wc -l < "${tmpdir}/base.rpm")"
 image_count="$(wc -l < "${tmpdir}/image.rpm")"
-if diff -u "${tmpdir}/base.rpm" "${tmpdir}/image.rpm" > "${tmpdir}/rpm.diff"; then
-    pass "RPM set identical (${image_count} packages)"
+in_image "${IMAGE}" 'cat /usr/share/wraindrock/delta.json' > "${tmpdir}/delta.json"
+
+if [[ ! -s ${tmpdir}/rpm.removed ]] \
+    && python3 - "${tmpdir}/delta.json" "${tmpdir}/rpm.added" "${tmpdir}/rpm.removed" <<'PY'
+import json
+import sys
+
+delta_path, added_path, removed_path = sys.argv[1:4]
+delta = json.load(open(delta_path))
+added = [line.strip() for line in open(added_path) if line.strip()]
+removed = [line.strip() for line in open(removed_path) if line.strip()]
+assert delta["schema"] == 2, delta
+assert delta["rpm"]["removed"] == [], delta["rpm"]["removed"]
+assert set(delta["rpm"]["added"]) == set(added), (
+    "declared", sorted(delta["rpm"]["added"]), "actual", sorted(added)
+)
+assert removed == [], removed
+expected = {
+    "clash-verge-2.5.8-1.x86_64",
+    "rayburst-4.0.1-1.x86_64",
+    "sing-box-1.14.3-1.x86_64",
+}
+assert set(added) == expected, added
+PY
+then
+    pass "RPM set is the base plus exactly the declared additions (${base_count} -> ${image_count})"
 else
-    fail "RPM set differs (base ${base_count}, image ${image_count})"
-    head -40 "${tmpdir}/rpm.diff"
+    fail "RPM set differs beyond the declared additions (base ${base_count}, image ${image_count})"
+    head -40 "${tmpdir}/rpm.added" || true
 fi
 
 # --- os-release -------------------------------------------------------------
@@ -154,7 +182,8 @@ else
 fi
 
 # --- delta manifest ---------------------------------------------------------
-in_image "${IMAGE}" 'cat /usr/share/wraindrock/delta.json' > "${tmpdir}/delta.json"
+# delta.json was captured together with the RPM set above; validate that copy.
+[[ -s ${tmpdir}/delta.json ]] || fail "delta manifest is missing"
 if python3 - "${tmpdir}/delta.json" "${tmpdir}/image-os-release" <<'PY'
 import json
 import sys
@@ -171,7 +200,7 @@ with open(sys.argv[2], encoding="utf-8") as handle:
         key, _, value = line.partition("=")
         image[key] = value.strip('"')
 
-assert delta["schema"] == 1, delta
+assert delta["schema"] == 2, delta
 assert delta["base_image"], delta
 assert delta["base_digest"], delta
 
@@ -208,6 +237,9 @@ expected_added = {
     "/usr/libexec/wraindrock-hostname-seed",
     "/usr/lib/systemd/system/wraindrock-hostname-seed.service",
     "/usr/lib/systemd/system/sysinit.target.wants/wraindrock-hostname-seed.service",
+    "/usr/share/wraindrock/base-rpm-set",
+    "/usr/share/flatpak/preinstall.d/wraindrock.preinstall",
+    "/etc/xdg/mimeapps.list",
 }
 expected_added |= {
     f"/usr/share/plymouth/themes/wraindrock/animation-{i:04d}.png"
@@ -234,18 +266,65 @@ while IFS= read -r path; do
     fi
 done < "${tmpdir}/added-files"
 
-# The base ships sqlite's sidecar files next to the RPM database. The build
-# must not touch them: equal checksums prove the image inherited them instead
-# of copying them up with new content (or adding them where the base has none).
-for sidecar in .rpm.lock rpmdb.sqlite-wal rpmdb.sqlite-shm; do
-    base_sum="$(in_image "${BASE}" "sha256sum /usr/share/rpm/${sidecar} 2>/dev/null || true")"
-    image_sum="$(in_image "${IMAGE}" "sha256sum /usr/share/rpm/${sidecar} 2>/dev/null || true")"
-    if [[ -n ${base_sum} && ${base_sum} == "${image_sum}" ]]; then
-        pass "rpm database sidecar untouched: ${sidecar}"
-    elif [[ -z ${base_sum} && -z ${image_sum} ]]; then
-        pass "rpm database sidecar absent in base and image: ${sidecar}"
+# The build writes the RPM database (three packages are added), so the sqlite
+# sidecars cannot stay byte-identical to the base. A clean rpm exit checkpoints
+# the WAL; require an empty WAL and keep the sidecars the base ships, because
+# rpm on a read-only /usr relies on the pre-created -shm and -wal files.
+wal_size="$(in_image "${IMAGE}" "stat -c %s /usr/share/rpm/rpmdb.sqlite-wal")"
+if [[ ${wal_size} == 0 ]]; then
+    pass "RPM database WAL is checkpointed (0 bytes)"
+else
+    fail "RPM database WAL is not empty (${wal_size} bytes)"
+fi
+if in_image "${IMAGE}" "test -e /usr/share/rpm/rpmdb.sqlite-shm"; then
+    pass "RPM database ships its sqlite shared-memory file"
+else
+    fail "RPM database is missing rpmdb.sqlite-shm"
+fi
+
+# --- software ---------------------------------------------------------------
+preinstall=/usr/share/flatpak/preinstall.d/wraindrock.preinstall
+if in_image "${IMAGE}" "test -s ${preinstall}"; then
+    pass "first-boot Flatpak preinstall file is installed"
+else
+    fail "first-boot Flatpak preinstall file is missing"
+fi
+preinstall_count="$(in_image "${IMAGE}" "grep -c '^\[Flatpak Preinstall ' ${preinstall}")"
+if [[ ${preinstall_count} == 10 ]]; then
+    pass "preinstall file declares 10 Flatpaks"
+else
+    fail "preinstall file declares ${preinstall_count} Flatpaks (expected 10)"
+fi
+for app in de.leopoldluley.Clapgrep io.github.getnf.embellish \
+    io.podman_desktop.PodmanDesktop me.iepure.devtoolbox org.gnome.Builder \
+    com.github.tuna_os.Tavern app.zen_browser.zen com.tencent.WeChat \
+    com.github.flxzt.rnote it.mijorus.gearlever; do
+    if in_image "${IMAGE}" "grep -Fxq '[Flatpak Preinstall ${app}]' ${preinstall}"; then
+        :
     else
-        fail "rpm database sidecar differs from the base: ${sidecar}"
+        fail "preinstall file is missing ${app}"
+    fi
+done
+pass "preinstall file lists the Bluefin DX and Wraindrock app IDs"
+
+if in_image "${IMAGE}" \
+    "grep -Fxq 'x-scheme-handler/https=app.zen_browser.zen.desktop' /etc/xdg/mimeapps.list"; then
+    pass "Zen Browser is the default for https"
+else
+    fail "Zen Browser is not the default for https"
+fi
+
+declare -A rpm_pins=(
+    [clash-verge]=2.5.8-1
+    [rayburst]=4.0.1-1
+    [sing-box]=1.14.3-1
+)
+for name in clash-verge rayburst sing-box; do
+    version="$(in_image "${IMAGE}" "rpm -q --qf '%{VERSION}-%{RELEASE}' ${name}")"
+    if [[ ${version} == "${rpm_pins[${name}]}" ]]; then
+        pass "baked package present at the pinned version: ${name} ${version}"
+    else
+        fail "baked package ${name} is ${version}, expected ${rpm_pins[${name}]}"
     fi
 done
 

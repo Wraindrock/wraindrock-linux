@@ -65,8 +65,11 @@ The boot menu offers two entries:
 > a single >4 GB file (exFAT) or write it directly with `dd`.
 
 Boot the stick on a UEFI machine, pick an entry and let Anaconda install; the
-system reboots into GDM. The GRUB menu theme stays opt-in:
-`sudo wraindrock-grub-theme enable`.
+system reboots into GDM. On the first boot the network must be up: the system
+installs ten Flatpaks in the background (Podman Desktop, GNOME Builder,
+DevToolbox, Clapgrep, Embellish, Tavern, Zen Browser, WeChat, Rnote, Gear
+Lever). Zen Browser is the default browser; Firefox remains installed. The
+GRUB menu theme stays opt-in: `sudo wraindrock-grub-theme enable`.
 
 ## Verify after reboot
 
@@ -75,10 +78,18 @@ bootc status                         # Booted: ghcr.io/wraindrock/wraindrock-lin
 cat /usr/lib/os-release              # NAME="Wraindrock", ID=bluefin
 cat /usr/share/wraindrock/delta.json # every intended difference
 hostnamectl                          # wraindrock on a fresh install
+flatpak list --system                # the ten declared preinstalls
+rpm -q clash-verge rayburst sing-box # Clash Verge, Rayburst, SFL
 gsettings get org.gnome.desktop.background picture-uri
 plymouth-set-default-theme           # wraindrock
 sudo wraindrock-grub-theme status    # opt-in
 ```
+
+The three RPMs are part of the image and update with it. For a package you
+need newer before an image update, use
+`sudo rpm-ostree override replace <path-or-url-to-rpm>`; removing the override
+goes back to the baked version. Flatpaks update independently of the image
+through Flathub.
 
 `ID=bluefin` and `CPE_NAME` stay upstream's on purpose: uBlue tooling keys off
 `ID`, and the CPE keeps the lineage honest. `PRETTY_NAME` keeps the Bluefin

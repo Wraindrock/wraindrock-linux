@@ -5,6 +5,30 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 image versions are the upstream channel plus an immutable build tag, see
 [docs/architecture.md](docs/architecture.md).
 
+## [0.9.0] - 2026-10-18
+
+### Added
+
+- First-boot software: `/usr/share/flatpak/preinstall.d/wraindrock.preinstall`
+  declares ten Flatpaks (Bluefin DX's Podman Desktop, GNOME Builder, DevToolbox,
+  Clapgrep, Embellish and Tavern, plus Zen Browser, WeChat, Rnote and Gear
+  Lever) and is consumed by Bluefin's `flatpak-preinstall.service`.
+- Zen Browser is the default handler for HTML and http(s) links in
+  `/etc/xdg/mimeapps.list`; Firefox is left installed and selectable.
+- Three pinned GitHub RPMs are installed at build time after a sha256 and
+  version check: Clash Verge Rev 2.5.8, Rayburst 4.0.1 and sing-box (SFL)
+  1.14.3. The dependency closure already exists in the base.
+
+### Changed
+
+- `delta.json` moves to schema 2: it now records `rpm.added` (exactly the three
+  packages), `rpm.removed` (empty) and adds the preinstall file, mimeapps list
+  and base RPM set to `files.added`; `rpmdb.sqlite` becomes a listed
+  modification. Parity compares the real `rpm -qa` diff against the manifest.
+- The build no longer keeps the RPM database byte-identical to the base (it must
+  write it); it asserts the sqlite WAL is checkpointed to 0 bytes instead and
+  keeps the sidecars a read-only `/usr` needs.
+
 ## [0.8.3] - 2026-10-18
 
 ### Fixed

@@ -63,13 +63,19 @@ journald and dbus cannot build their mount namespaces without it.
 **Goal:** "install it and it is already mine", built only from mechanisms
 upstream already provides.
 
-- [ ] Flatpak preinstalls through uBlue's supported mechanism
-      (`/etc/flatpak/preinstall.d/`), starting with
-      `io.podman_desktop.PodmanDesktop`
+- [x] Flatpak preinstalls through uBlue's supported mechanism
+      (`/usr/share/flatpak/preinstall.d/wraindrock.preinstall`): Bluefin DX's six
+      developer apps plus Zen Browser, WeChat, Rnote and Gear Lever; Zen is the
+      default browser via `/etc/xdg/mimeapps.list`; Firefox stays installed.
+      The other 36 Bluefin Flatpaks remain `ujust install-system-flatpaks`.
+- [x] Three GitHub RPMs baked at pinned versions with sha256 checks:
+      Clash Verge Rev 2.5.8, Rayburst 4.0.1, sing-box (SFL) 1.14.3; declared in
+      delta.json schema 2 under `rpm.added`, updates via image or
+      `rpm-ostree override replace`
 - [ ] Homebrew bundle for CLI tooling (uBlue ships Brew; we only list formulae)
 - [ ] GNOME defaults via `gschema.override` (theme, fonts, clock, input method)
 - [ ] CJK fonts + input method (fcitx5) as declared, documented additions
-- [ ] Every addition lands in `delta.json`; the delta invariant stays enforced
+- [x] Every addition lands in `delta.json`; the delta invariant stays enforced
 
 **Non-goals:** a second package manager, a mutable `/usr`, removing upstream
 apps "for taste" without a documented reason.

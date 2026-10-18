@@ -247,6 +247,49 @@ for needle in 'ConditionPathExists=!/var/lib/wraindrock/hostname-seeded' \
     fi
 done
 
+echo "software defaults"
+for asset in build_files/software/wraindrock.preinstall build_files/software/mimeapps.list; do
+    if [[ -s ${asset} ]]; then
+        pass "${asset} exists"
+    else
+        fail "${asset} is missing"
+    fi
+done
+preinstall_count=$(grep -c '^\[Flatpak Preinstall ' build_files/software/wraindrock.preinstall || true)
+if [[ ${preinstall_count} == 10 ]]; then
+    pass "preinstall file declares 10 Flatpaks"
+else
+    fail "preinstall file declares ${preinstall_count} Flatpaks, want 10"
+fi
+for app in io.podman_desktop.PodmanDesktop app.zen_browser.zen com.tencent.WeChat \
+    com.github.flxzt.rnote it.mijorus.gearlever org.gnome.Builder; do
+    if grep -Fxq "[Flatpak Preinstall ${app}]" build_files/software/wraindrock.preinstall; then
+        pass "preinstall file lists ${app}"
+    else
+        fail "preinstall file is missing ${app}"
+    fi
+done
+for scheme in text/html application/xhtml+xml x-scheme-handler/http x-scheme-handler/https; do
+    if grep -Fxq "${scheme}=app.zen_browser.zen.desktop" build_files/software/mimeapps.list; then
+        pass "Zen Browser is the default for ${scheme}"
+    else
+        fail "Zen Browser is not the default for ${scheme}"
+    fi
+done
+for needle in "wraindrock.preinstall" "mimeapps.list" "rpm -i" "sha256sum -c" \
+    "rpm_base_set_file" "rpmdb.sqlite-wal"; do
+    if grep -Fq -- "${needle}" build_files/build.sh; then
+        pass "build.sh handles ${needle}"
+    else
+        fail "build.sh does not handle ${needle}"
+    fi
+done
+if grep -Fq -- 'delta["rpm"]["added"]' tests/parity.sh; then
+    pass "parity checks the declared RPM additions"
+else
+    fail "parity does not check the declared RPM additions"
+fi
+
 echo "build invariants"
 for needle in 'base-os-release' 'delta.json' 'zzzz-wraindrock.gschema.override' \
               'wraindrock-wallpaper.png' 'Theme=wraindrock' \
@@ -258,11 +301,16 @@ for needle in 'base-os-release' 'delta.json' 'zzzz-wraindrock.gschema.override' 
         fail "build.sh does not handle ${needle}"
     fi
 done
-if grep -Eq 'dnf[[:space:]]+(install|remove|upgrade|groupinstall)|rpm[[:space:]]+-[iUe]' \
+if grep -Eq 'dnf[[:space:]]+(install|remove|upgrade|groupinstall)|rpm[[:space:]]+-[UeF]' \
         build_files/build.sh; then
-    fail "build.sh changes the RPM set; v0.2 must keep it identical to the base"
+    fail "build.sh removes or upgrades base packages; only pinned additions are allowed"
 else
-    pass "build.sh does not change the RPM set"
+    pass "build.sh never removes or upgrades base packages"
+fi
+if [[ $(grep -Fc 'rpm -i "${rpm_dir}"' build_files/build.sh) -eq 1 ]]; then
+    pass "build.sh installs only the pinned RPM directory"
+else
+    fail "build.sh has an unexpected rpm install command"
 fi
 if grep -Fq 'delta' tests/parity.sh; then
     pass "parity.sh enforces the delta manifest"

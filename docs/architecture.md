@@ -68,13 +68,15 @@ one-line, reviewable change.
 v0.1–v0.3 enforced "identical to Fedora Silverblue". v0.4 moves the baseline to
 Bluefin DX and keeps the falsifiable part machine-checkable:
 
-> The image's RPM set is identical to the base's. `/usr/lib/os-release` differs
-> only in the identity keys listed in `/usr/share/wraindrock/delta.json`, and
-> every added file is declared there.
+> The image's RPM set is the base's plus exactly the packages declared in
+> `/usr/share/wraindrock/delta.json`; no base package is removed or upgraded.
+> `/usr/lib/os-release` differs only in the listed identity keys, and every
+> added file is declared there.
 
-The parity test diffs `rpm -qa`. For os-release it parses both files and allows
-only the changed keys `NAME`, `PRETTY_NAME`, `LOGO`, `DEFAULT_HOSTNAME` and the
-four URLs. A removed, added or changed key outside that set fails the build;
+The parity test diffs `rpm -qa` with `comm` and requires the actual additions to
+equal `rpm.added`, the removals to be empty, and the additions to be the three
+known packages. For os-release it parses both files and allows only the changed
+keys `NAME`, `PRETTY_NAME`, `LOGO`, `DEFAULT_HOSTNAME` and the four URLs. A removed, added or changed key outside that set fails the build;
 each declared value is then cross-checked against the actual file, so the
 manifest cannot drift into a polite fiction. The test also proves the GDM
 override is compiled into `gschemas.compiled` and that `rpm -V --nomtime` on the
@@ -88,15 +90,16 @@ Adding a customization therefore means adding it to the manifest **and**
 teaching the test about it — never relaxing the diff.
 
 The manifest also covers the files the build itself adds: the branding,
-boot-splash, hostname-seeding and GRUB-helper files sit next to the three
+boot-splash, hostname-seeding, GRUB-helper and software files sit next to the
 `/usr/share/wraindrock/` provenance files in `files.added`, and parity requires
-that set to match exactly. RPM is queried
-from a throwaway copy of the database, so the image's rpmdb and sqlite's
-`-wal`/`-shm`/`.rpm.lock` sidecars stay byte-identical to the base (the build
-checks this before and after the query, and parity compares the sidecar
-checksums). The build passes `--no-hostname` to `podman build`, so the image
-ships no `/etc/hostname` at all (buildah's empty placeholder would otherwise
-count as a configured, empty hostname).
+that set to match exactly. Because three RPMs are baked, the image's RPM
+database *is* written by design; the build asserts the sqlite WAL is
+checkpointed (0 bytes) after the last `rpm` call and keeps the sidecars the base
+ships, since `rpm` on a read-only `/usr` relies on the pre-created `-shm`/`-wal`.
+`rpmdb.sqlite` is listed under `files.modified`. The build passes
+`--no-hostname` to `podman build`, so the image ships no `/etc/hostname` at all
+(buildah's empty placeholder would otherwise count as a configured, empty
+hostname).
 
 `DEFAULT_HOSTNAME` alone is not enough on an installed system:
 `bootc-image-builder`'s install path inherits the base deployment's `/etc`, so a
@@ -167,6 +170,29 @@ scalable SVGs without a cache, and skipping it avoids a generated
 *is* run, because GSettings only reads compiled schemas; that rewrites
 `/usr/share/glib-2.0/schemas/gschemas.compiled`, which the delta lists under
 `files.modified`.
+
+### Software
+
+Two delivery mechanisms keep the out-of-box set small and updatable:
+
+- **Flatpaks install on first boot.** `/usr/share/flatpak/preinstall.d/wraindrock.preinstall`
+  declares ten apps and Bluefin's `flatpak-preinstall.service` runs
+  `flatpak preinstall -y` once the network is up. Zen Browser is the default
+  handler in `/etc/xdg/mimeapps.list`; Firefox stays installed and selectable.
+  The other 36 Bluefin apps remain a one-liner (`ujust install-system-flatpaks`)
+  because Bluefin itself does not bake them.
+- **Three RPMs are baked** (Clash Verge Rev, Rayburst, sing-box/SFL) because
+  they have no Flatpak. They are downloaded at build time from pinned upstream
+  URLs, checked against a pinned sha256 and expected version, and installed with
+  `rpm -i`; the dependency closure already exists in the base, so nothing is
+  resolved from a repository. Their `%post` scriptlets run as root inside the
+  build container. They update with the image; `rpm-ostree override replace`
+  gives a per-package escape hatch between image releases.
+
+Backend caveats are deliberate and documented rather than patched: Clash Verge
+and SFL both want TUN/network control and should not run at the same time;
+WeChat runs through XWayland/portals; Gear Lever needs FUSE for AppImages;
+the first-boot preinstall needs working networking.
 
 ### Provenance
 

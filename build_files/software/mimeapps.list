@@ -1,0 +1,7 @@
+# Wraindrock: Zen is the default browser. This only changes the default
+# association; the Firefox RPM entry stays visible and users may pick anything.
+[Default Applications]
+text/html=app.zen_browser.zen.desktop
+application/xhtml+xml=app.zen_browser.zen.desktop
+x-scheme-handler/http=app.zen_browser.zen.desktop
+x-scheme-handler/https=app.zen_browser.zen.desktop

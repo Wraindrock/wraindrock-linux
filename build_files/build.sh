@@ -2,21 +2,23 @@
 # ---------------------------------------------------------------------------
 # Wraindrock image build step.
 #
-# Runs as root inside the pristine Bluefin DX base image. It does three
+# Runs as root inside the pristine Bluefin DX base image. It does four
 # things and nothing else:
 #
 #   1. prove the base is the Bluefin DX bootc image this project claims;
 #   2. record provenance at /usr/share/wraindrock/build-info.json and preserve
-#      the untouched base os-release next to it;
+#      the untouched base os-release and RPM set next to it;
 #   3. apply the Wraindrock identity: os-release display fields, the Wraindrock
-#      logo icon, the GDM login logo, the default desktop/GDM wallpaper and
-#      the Plymouth boot splash, then record every applied difference in
+#      logo icon, the GDM login logo, the default desktop/GDM wallpaper, the
+#      Plymouth boot splash and the opt-in GRUB theme;
+#   4. declare the first-boot Flatpaks, the Zen default browser and the three
+#      pinned GitHub RPMs, then record every applied difference in
 #      /usr/share/wraindrock/delta.json.
 #
 # The delta manifest is the contract the parity test enforces: the image may
-# differ from the base only in ways listed there. It must not install
-# packages, touch /var, or write to /run. Those are later roadmap steps with
-# their own assertions.
+# differ from the base only in ways listed there. It must not touch /var
+# state or write to /run; those are later roadmap steps with their own
+# assertions.
 # ---------------------------------------------------------------------------
 set -euo pipefail
 
@@ -24,7 +26,7 @@ die() { printf 'error: %s\n' "$*" >&2; exit 1; }
 say() { printf 'wraindrock: %s\n' "$*"; }
 
 [[ ${EUID} -eq 0 ]] || die "build.sh must run as root"
-for cmd in rpm sha256sum install grep sed; do
+for cmd in rpm sha256sum install grep sed curl comm; do
     command -v "${cmd}" >/dev/null 2>&1 || die "${cmd} is required"
 done
 
@@ -70,17 +72,16 @@ rpm_db_before="$(rpm_db_signature)"
 rpm_db_tmp="$(mktemp -d /tmp/wraindrock-rpmdb.XXXXXX)"
 cp -a /usr/share/rpm/rpmdb.sqlite "${rpm_db_tmp}/rpmdb.sqlite"
 rpm_query() { rpm --dbpath "${rpm_db_tmp}" "$@"; }
-rpm_count="$(rpm_query -qa | wc -l)"
-rpm_set_sha256="$(
-    rpm_query -qa --qf '%{NAME}-%{VERSION}-%{RELEASE}.%{ARCH}\n' \
-        | LC_ALL=C sort \
-        | sha256sum \
-        | cut -d' ' -f1
-)"
+rpm_base_set_file="$(mktemp /tmp/wraindrock-base-rpm-set.XXXXXX)"
+rpm_query -qa --qf '%{NAME}-%{VERSION}-%{RELEASE}.%{ARCH}\n' \
+    | LC_ALL=C sort > "${rpm_base_set_file}"
+rpm_base_count="$(wc -l < "${rpm_base_set_file}")"
+rpm_count="${rpm_base_count}"
+rpm_set_sha256="$(sha256sum "${rpm_base_set_file}" | cut -d' ' -f1)"
 rm -rf "${rpm_db_tmp}"
 
 [[ $(rpm_db_signature) == "${rpm_db_before}" ]] \
-    || die "the RPM database changed during the build"
+    || die "the RPM database changed before the software step"
 
 # --- 3. identity ------------------------------------------------------------
 for asset in wraindrock-logo-icon.svg wraindrock-gdm-logo.svg \
@@ -211,6 +212,62 @@ ln -sfn ../wraindrock-hostname-seed.service "${systemd_wants}/wraindrock-hostnam
 grep -q '^WantedBy=sysinit.target$' /usr/lib/systemd/system/wraindrock-hostname-seed.service \
     || die "hostname seed unit has the wrong target"
 
+# --- 3h. software defaults --------------------------------------------------
+# Bluefin DX's developer Flatpaks and Wraindrock's personal defaults are
+# installed by flatpak-preinstall.service on the first boot (Flatpak only; the
+# file is declarative and survives image updates). Three programs have no
+# Flatpak, so their GitHub RPMs are baked at pinned versions. Every added
+# package is recorded in delta.json and parity refuses anything undeclared.
+
+install -d -m 0755 /usr/share/flatpak/preinstall.d /etc/xdg
+install -m 0644 "${script_dir}/software/wraindrock.preinstall" \
+    /usr/share/flatpak/preinstall.d/wraindrock.preinstall
+install -m 0644 "${script_dir}/software/mimeapps.list" /etc/xdg/mimeapps.list
+
+# name|version-release|url|sha256. Bump a pin and its checksum together.
+rpm_pins=(
+    "clash-verge|2.5.8-1|https://github.com/clash-verge-rev/clash-verge-rev/releases/download/v2.5.8/Clash.Verge-2.5.8-1.x86_64.rpm|ad378ea9fb12ebae49500fcddb0435fd67abef79d828b654368e0f67b5785c2e"
+    "rayburst|4.0.1-1|https://github.com/AnInsomniacy/rayburst/releases/download/v4.0.1/Rayburst-4.0.1-1.x86_64.rpm|06b08d124fa1f487c7450a2cc720eb9b9299f621ebb3db4213b77fb3e99b6633"
+    "sing-box|1.14.3-1|https://github.com/SagerNet/sing-box/releases/download/v1.14.3/SFL-1.14.3-x86_64.rpm|979bfdeb419525ff5603a2edc30602e56953abba983eabda4dda2877a23f31f4"
+)
+
+say "installing pinned software RPMs"
+rpm_dir="$(mktemp -d /tmp/wraindrock-rpms.XXXXXX)"
+for pin in "${rpm_pins[@]}"; do
+    IFS='|' read -r rpm_name rpm_version rpm_url rpm_sha256 <<<"${pin}"
+    rpm_file="${rpm_dir}/${rpm_name}.rpm"
+    curl -fsSL --retry 3 --retry-delay 2 -o "${rpm_file}" "${rpm_url}" \
+        || die "could not download ${rpm_name} from ${rpm_url}"
+    printf '%s  %s\n' "${rpm_sha256}" "${rpm_file}" | sha256sum -c - >/dev/null \
+        || die "sha256 mismatch for ${rpm_name}"
+    rpm_got_version="$(rpm -qp --qf '%{VERSION}-%{RELEASE}' "${rpm_file}")"
+    [[ ${rpm_got_version} == "${rpm_version}" ]] \
+        || die "${rpm_name}: expected ${rpm_version}, got ${rpm_got_version}"
+done
+rpm -i "${rpm_dir}"/*.rpm
+rm -rf "${rpm_dir}"
+
+rpm_current_set_file="$(mktemp /tmp/wraindrock-current-rpm-set.XXXXXX)"
+rpm_added_file="$(mktemp /tmp/wraindrock-rpm-added.XXXXXX)"
+rpm_removed_file="$(mktemp /tmp/wraindrock-rpm-removed.XXXXXX)"
+rpm -qa --qf '%{NAME}-%{VERSION}-%{RELEASE}.%{ARCH}\n' \
+    | LC_ALL=C sort > "${rpm_current_set_file}"
+comm -13 "${rpm_base_set_file}" "${rpm_current_set_file}" > "${rpm_added_file}"
+comm -23 "${rpm_base_set_file}" "${rpm_current_set_file}" > "${rpm_removed_file}"
+rpm_count="$(wc -l < "${rpm_current_set_file}")"
+[[ $(wc -l < "${rpm_added_file}") -eq 3 ]] \
+    || die "expected exactly 3 added packages, found $(wc -l < "${rpm_added_file}")"
+[[ ! -s "${rpm_removed_file}" ]] || die "the software step removed base packages"
+
+# sqlite checkpoints the WAL when the last connection closes. Never ship a
+# non-empty WAL: that would mean an uncheckpointed database. The sidecars stay
+# where the base put them (a read-only /usr needs the pre-created -shm/-wal).
+# Nothing below this point may run rpm again.
+[[ ! -s /usr/share/rpm/rpmdb.sqlite-wal ]] \
+    || die "the RPM database WAL was not checkpointed before packaging"
+install -m 0644 "${rpm_base_set_file}" /usr/share/wrainrock/base-rpm-set
+rm -f "${rpm_base_set_file}" "${rpm_current_set_file}"
+
 # --- 4. delta manifest ------------------------------------------------------
 # Every intended difference from the base, machine-readable. tests/parity.sh
 # fails the build if the real image differs in any other way.
@@ -232,9 +289,21 @@ json_value() {
     fi
 }
 
+json_list() {
+    local first=1 line
+    printf '['
+    while IFS= read -r line; do
+        [[ -z ${line} ]] && continue
+        [[ ${first} == 1 ]] || printf ', '
+        printf '"%s"' "${line}"
+        first=0
+    done
+    printf ']'
+}
+
 cat > /usr/share/wraindrock/delta.json <<EOF
 {
-  "schema": 1,
+  "schema": 2,
   "base_image": $(json_value "${BASE_IMAGE:-unknown}"),
   "base_digest": $(json_value "${BASE_DIGEST:-unknown}"),
   "os_release": {
@@ -249,11 +318,16 @@ cat > /usr/share/wraindrock/delta.json <<EOF
       "BUG_REPORT_URL": $(json_value "$(unquote "$(field BUG_REPORT_URL)")")
     }
   },
+  "rpm": {
+    "added": $(json_list < "${rpm_added_file}"),
+    "removed": $(json_list < "${rpm_removed_file}")
+  },
   "files": {
     "modified": [
       "/usr/lib/os-release",
       "/usr/share/glib-2.0/schemas/gschemas.compiled",
-      "/etc/plymouth/plymouthd.conf"
+      "/etc/plymouth/plymouthd.conf",
+      "/usr/share/rpm/rpmdb.sqlite"
     ],
     "added": [
       "/usr/share/icons/hicolor/scalable/apps/wraindrock-logo-icon.svg",
@@ -300,8 +374,11 @@ cat > /usr/share/wraindrock/delta.json <<EOF
       "/usr/lib/systemd/system/wraindrock-hostname-seed.service",
       "/usr/lib/systemd/system/sysinit.target.wants/wraindrock-hostname-seed.service",
       "/usr/share/wraindrock/base-os-release",
+      "/usr/share/wraindrock/base-rpm-set",
       "/usr/share/wraindrock/build-info.json",
-      "/usr/share/wraindrock/delta.json"
+      "/usr/share/wraindrock/delta.json",
+      "/usr/share/flatpak/preinstall.d/wraindrock.preinstall",
+      "/etc/xdg/mimeapps.list"
     ]
   }
 }
@@ -322,15 +399,19 @@ cat > /usr/share/wraindrock/build-info.json <<EOF
   "identity": "wraindrock",
   "parity": "bluefin-dx-${FEDORA_VERSION:-unknown}",
   "rpm_count": ${rpm_count},
+  "rpm_base_count": ${rpm_base_count},
+  "rpm_added_count": 3,
   "rpm_set_sha256": "${rpm_set_sha256}"
 }
 EOF
 chmod 0644 /usr/share/wraindrock/build-info.json
 
-say "provenance written for ${IMAGE_NAME:-unknown} (${rpm_count} packages)"
+say "provenance written for ${IMAGE_NAME:-unknown} (${rpm_count} packages, ${rpm_base_count} in base)"
 say "base os-release preserved at /usr/share/wraindrock/base-os-release"
 say "identity applied: $(unquote "$(field PRETTY_NAME)")"
 say "boot splash installed: ${plymouth_dir} (theme: wraindrock)"
 say "GRUB theme helper installed: /usr/bin/wraindrock-grub-theme (opt-in)"
+say "first-boot Flatpaks: 10 declared in /usr/share/flatpak/preinstall.d/wraindrock.preinstall"
+say "baked RPMs: $(wc -l < "${rpm_added_file}") (clash-verge, rayburst, sing-box)"
 say "delta manifest written to /usr/share/wraindrock/delta.json"
-say "rpm database left byte-identical to the base"
+say "rpm database written by design; WAL checkpointed, sidecars in place"

@@ -34,11 +34,18 @@ your machine (bootc)                    ── verifies only if you ask it to
 - The base image is Universal Blue's Bluefin DX, pulled **by digest** at build
   time; the digest is recorded in `/usr/share/wraindrock/build-info.json`. uBlue's
   own build and signing chain is trusted transitively.
-- The only deviation from that base is the recorded identity and presentation
-  delta, listed in `/usr/share/wraindrock/delta.json`. `rpm -V --nomtime` on the
+- The only deviation from that base is the recorded delta in
+  `/usr/share/wraindrock/delta.json`: identity fields, presentation assets, three
+  pinned RPMs and their files. `rpm -V --nomtime` on the
   package that owns `/usr/lib/os-release` (looked up dynamically) reporting that
   one file as modified is expected, not tampering; a deviation not listed in the
   manifest is a bug worth reporting.
+- The three baked RPMs are downloaded at build time from pinned upstream GitHub
+  release URLs and checked against pinned sha256 values (and expected
+  versions). Their package scriptlets run as root inside the build container;
+  the resulting files are in the image and signed with it. At first boot the ten
+  Flatpaks come from Flathub through `flatpak preinstall`, so their integrity is
+  Flathub's OSTree/signature chain, not this project's.
 - The workflow runs on GitHub-hosted runners only. There are no self-hosted
   runners and no long-lived registry credentials.
 - The only credentials in the pipeline are the ephemeral `GITHUB_TOKEN` and the
