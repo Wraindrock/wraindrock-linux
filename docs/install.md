@@ -51,13 +51,19 @@ sha256sum -c SHA256SUMS
 sudo dd if=install.iso of=/dev/sdX bs=8M status=progress oflag=direct conv=fsync
 ```
 
-> **The installer is unattended and clears the first disk.** It does not ask
-> which disk to use. Test in a VM or detach data disks first. The ISO is larger
-> than 4 GB, so use an 8 GB or larger USB stick formatted for a single >4 GB
-> file (exFAT) or write it directly with `dd`.
+The boot menu offers two entries:
 
-Boot the stick on a UEFI machine. Anaconda runs in text mode, installs, and
-reboots into GDM. The GRUB menu theme stays opt-in:
+- **Install Wraindrock (interactive, choose disks)** — the default. Anaconda's
+  hub opens so you choose the target disk and partitioning yourself.
+- **Install Wraindrock - erase first disk (unattended)** — keeps the generated
+  kickstart: it clears the first disk and installs without prompting. Use it
+  only on a scratch machine, with data disks detached, or in a VM.
+
+> The ISO is larger than 4 GB, so use an 8 GB or larger USB stick formatted for
+> a single >4 GB file (exFAT) or write it directly with `dd`.
+
+Boot the stick on a UEFI machine, pick an entry and let Anaconda install; the
+system reboots into GDM. The GRUB menu theme stays opt-in:
 `sudo wraindrock-grub-theme enable`.
 
 ## Verify after reboot

@@ -21,8 +21,8 @@ build if the image carries anything that is not in that manifest.
 
 ## Screenshots
 
-Real frames from the CI virtual-machine runs: the unattended installer, and the
-first boot after it (our wallpaper behind GNOME Initial Setup).
+Real frames from the CI virtual-machine runs: the installer, and the first boot
+after it (our wallpaper behind GNOME Initial Setup).
 
 | Installer | First boot |
 | --- | --- |
@@ -56,9 +56,14 @@ sha256sum -c SHA256SUMS
 sudo dd if=install.iso of=/dev/sdX bs=8M status=progress oflag=direct conv=fsync
 ```
 
-> **The ISO is unattended: it clears the first disk without asking.** Use a
-> scratch machine, detach data disks, or test in a VM first. The ISO is larger
-> than 4 GB, so a FAT32 USB stick will not work — use an 8 GB or larger stick.
+The boot menu offers two entries. The default, **Install Wraindrock
+(interactive, choose disks)**, opens Anaconda's hub so you pick the disk and
+partitioning. The second, **Install Wraindrock - erase first disk
+(unattended)**, clears the first disk without asking — use that one only on a
+scratch machine, with data disks detached, or in a VM.
+
+> The ISO is larger than 4 GB, so a FAT32 USB stick will not work — use an 8 GB
+> or larger exFAT stick, or write it directly with `dd`.
 
 ## Verify
 

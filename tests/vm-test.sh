@@ -9,9 +9,11 @@
 #   tests/vm-test.sh iso   PATH [--timeout 1800] [--disk-size 30G]
 #
 # For an ISO the installer boots once, then the firmware boots the installed
-# disk. The ISO mode does not trust serial output (Anaconda installs a system
-# whose kernel may keep console=tty0), so it instead requires the installed
-# system's graphical screen: the GNOME welcome screen (compared against
+# disk. The ISO menu defaults to the interactive installer, so the test presses
+# Down+Enter to pick the explicit "erase first disk (unattended)" entry. The
+# ISO mode does not trust serial output (Anaconda installs a system whose kernel
+# may keep console=tty0), so it instead requires the installed system's
+# graphical screen: the GNOME welcome screen (compared against
 # tests/fixtures/gnome-initial-setup.png) or the Wraindrock GDM wallpaper.
 #
 # KVM is used when /dev/kvm is usable; otherwise QEMU falls back to TCG (slow,
@@ -163,6 +165,40 @@ if 'error' in msg:
 PY
 }
 
+# QMP key press, used to pick the unattended entry in the ISO boot menu.
+send_key() {
+    python3 - "${qmp}" "$@" <<'PY'
+import json, socket, sys
+sock_path, *keys = sys.argv[1:]
+s = socket.socket(socket.AF_UNIX)
+s.settimeout(15)
+s.connect(sock_path)
+f = s.makefile('rwb')
+
+def recv():
+    while True:
+        line = f.readline()
+        if not line:
+            raise SystemExit('qmp: connection closed')
+        msg = json.loads(line)
+        if 'event' in msg:
+            continue
+        return msg
+
+recv()  # greeting
+f.write(b'{"execute":"qmp_capabilities"}\n'); f.flush()
+recv()
+payload = {
+    'execute': 'send-key',
+    'arguments': {'keys': [{'type': 'qcode', 'data': key} for key in keys]},
+}
+f.write((json.dumps(payload) + '\n').encode()); f.flush()
+msg = recv()
+if 'error' in msg:
+    raise SystemExit('qmp send-key failed: %s' % msg['error'])
+PY
+}
+
 for _ in $(seq 1 100); do
     [[ -S "${qmp}" ]] && break
     kill -0 "${qemu_pid}" 2>/dev/null || { echo "error: qemu exited early" >&2; cat "${qemu_log}" >&2; exit 1; }
@@ -176,6 +212,16 @@ kill -0 "${qemu_pid}" 2>/dev/null || {
 }
 
 # Give firmware and the bootloader time to hand over before the first frame.
+if [[ "${mode}" == iso ]]; then
+    # The default menu entry is the interactive installer; Down+Enter picks the
+    # unattended entry below it. The GRUB menu timeout is 60 s, so both attempts
+    # land inside it; a key press that arrives too early is simply ignored.
+    sleep 15
+    send_key down ret || true
+    sleep 15
+    send_key down ret || true
+    sleep 10
+fi
 sleep 20
 start=$(date +%s)
 best_file=""

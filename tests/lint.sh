@@ -308,11 +308,24 @@ else
     fail "docs/architecture.md does not describe the Plymouth theme"
 fi
 
-if grep -Fq 'first disk' docs/install.md &&
-   grep -Fq 'unattended' docs/install.md; then
-    pass "docs/install.md warns that the ISO is unattended and clears the first disk"
+if grep -Fq 'interactive' docs/install.md &&
+   grep -Fq 'erase first disk' docs/install.md; then
+    pass "docs/install.md documents the interactive and unattended boot entries"
 else
-    fail "docs/install.md does not warn about the unattended ISO"
+    fail "docs/install.md does not document the installer choice"
+fi
+if [[ -x tests/iso-menu.sh ]]; then
+    pass "installer menu patcher is executable"
+    for needle in 'interactive, choose disks' 'erase first disk (unattended)' \
+                  'inst.ks=' 'occurrence'; do
+        if grep -Fq -e "${needle}" tests/iso-menu.sh; then
+            pass "iso-menu.sh handles ${needle}"
+        else
+            fail "iso-menu.sh is missing ${needle}"
+        fi
+    done
+else
+    fail "tests/iso-menu.sh is missing or not executable"
 fi
 if grep -Fq 'disk.yml' README.md; then
     pass "README documents the disk-image workflow"
@@ -340,6 +353,8 @@ if [[ -r .github/workflows/disk.yml ]]; then
                   'SHA256SUMS' 'sha256sum' 'BIB_IMAGE' \
                   'wraindrock-linux-disk' 'oras push' 'oras manifest fetch' \
                   'immutable artifact tags are never overwritten' \
+                  'tests/iso-menu.sh' \
+                  'Install Wraindrock (interactive, choose disks)' \
                   'f27adb935022d94df8dc77719c322dda592c78a0d57a6f7dcdd8d900b248c454'; do
         if grep -Fq -e "${needle}" .github/workflows/disk.yml; then
             pass "disk workflow contains ${needle}"

@@ -5,6 +5,21 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 image versions are the upstream channel plus an immutable build tag, see
 [docs/architecture.md](docs/architecture.md).
 
+## [0.8.2] - 2026-10-18
+
+### Fixed
+
+- The installer no longer force-installs. bootc-image-builder bakes an
+  unattended kickstart into the ISO, so `tests/iso-menu.sh` rewrites both the
+  UEFI and BIOS GRUB menus in place: the default entry
+  **Install Wraindrock (interactive, choose disks)** has no kickstart, and
+  **Install Wraindrock - erase first disk (unattended)** keeps it as an
+  explicit choice. The rewrite pads the menus to their original byte length,
+  so the ISO9660 extents, El Torito/GPT images and the signed `grubx64.efi`
+  are untouched.
+- The disk workflow asserts both menu entries and exactly one kickstart entry
+  per menu; the ISO VM test presses Down+Enter to select the unattended entry.
+
 ## [0.8.1] - 2026-10-18
 
 ### Changed

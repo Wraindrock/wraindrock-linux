@@ -154,6 +154,15 @@ jobs:
           iso=$(find output -type f -name '*.iso' | head -1)
           [ -n "${iso}" ] || { echo "::error::no ISO produced"; exit 1; }
 
+      - name: Add the interactive/unattended boot-menu choice
+        # bootc-image-builder always injects a kickstart, which erases the first
+        # disk without asking. Patch both GRUB menus so the default entry is the
+        # interactive installer and the unattended one is an explicit choice.
+        run: |
+          set -euo pipefail
+          iso=$(find output/bootiso -name '*.iso' -print -quit)
+          bash tests/iso-menu.sh "${iso}"
+
       - name: Verify artifacts
         run: |
           set -euo pipefail
@@ -179,6 +188,16 @@ jobs:
           trap 'sudo umount /mnt/iso' EXIT
           test -f /mnt/iso/EFI/BOOT/BOOTX64.EFI || { echo "::error::ISO has no EFI bootloader"; exit 1; }
           test -d /mnt/iso/images || { echo "::error::ISO has no images/ payload"; exit 1; }
+          # The boot menu must offer the choice: interactive by default, plus one
+          # explicit unattended entry that keeps the generated kickstart.
+          for menu in /mnt/iso/EFI/BOOT/grub.cfg /mnt/iso/boot/grub2/grub.cfg; do
+            grep -Fq "Install Wraindrock (interactive, choose disks)" "${menu}" \
+              || { echo "::error::${menu} lacks the interactive entry"; exit 1; }
+            grep -Fq "Install Wraindrock - erase first disk (unattended)" "${menu}" \
+              || { echo "::error::${menu} lacks the unattended entry"; exit 1; }
+            [ "$(grep -cF 'inst.ks=' "${menu}")" = 1 ] \
+              || { echo "::error::${menu} must have exactly one kickstart entry"; exit 1; }
+          done
           find /mnt/iso/EFI /mnt/iso/images -maxdepth 2 -type f | sort | head -20
           sudo umount /mnt/iso
           trap - EXIT

@@ -29,7 +29,8 @@ a fresh machine can be installed without an existing system.
 - [x] Plymouth boot splash (`two-step`, no package change)
 - [x] Opt-in GRUB menu theme via `/usr/bin/wraindrock-grub-theme`
       (bootc cannot rewrite an installed bootloader config)
-- [x] qcow2 + unattended Anaconda ISO in CI; KVM install + boot tests
+- [x] qcow2 + Anaconda ISO in CI (interactive default, unattended option);
+      KVM install + boot tests
 - [x] Verified disk artifacts published as immutable OCI artifacts on GHCR
 
 ## v0.4 — rebase onto Bluefin DX (done)
