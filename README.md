@@ -14,6 +14,8 @@ owns the identity, the presentation and a short list of personal defaults.
 - The GDM logo, a 4K dark wallpaper, a Plymouth boot splash and an opt-in GRUB
   theme replace upstream's presentation.
 - A fresh install seeds the hostname to `wraindrock`.
+- The default input method is **IBus** with the `libpinyin` engine (no Fcitx);
+  the Noto CJK fonts come from the base.
 
 Everything else matches Bluefin DX package for package, except the four
 software packages listed below. `/usr/share/wraindrock/delta.json` records every
@@ -36,6 +38,9 @@ release is caught by the daily upstream-watch workflow, which bumps the pin and
 publishes a new signed image tag — the apps do not wait for a Fedora major
 release. Bluefin's other 36 Flatpaks stay one command away:
 `ujust install-system-flatpaks`.
+
+Input: **IBus + libpinyin** is the system default (Super+Space switches between
+US and Chinese); Fcitx is not installed. Noto Sans CJK ships in the base.
 
 ## Screenshots
 

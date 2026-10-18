@@ -319,6 +319,32 @@ else
     fail "Helium browser binary is missing"
 fi
 
+# --- input method -----------------------------------------------------------
+# IBus with the libpinyin engine is the declared default; Fcitx must not be
+# present, because the two frameworks would fight over the same session.
+im_sources="$(in_image "${IMAGE}" \
+    'GSETTINGS_BACKEND=memory gsettings get org.gnome.desktop.input-sources sources' 2>/dev/null || true)"
+if [[ ${im_sources} == *"'ibus', 'libpinyin'"* ]]; then
+    pass "input method default is IBus with libpinyin (${im_sources})"
+else
+    fail "input method default is not IBus/libpinyin (${im_sources:-empty})"
+fi
+if in_image "${IMAGE}" "rpm -q ibus-libpinyin >/dev/null 2>&1"; then
+    pass "ibus-libpinyin engine is installed"
+else
+    fail "ibus-libpinyin is missing"
+fi
+if in_image "${IMAGE}" "rpm -q google-noto-sans-cjk-fonts >/dev/null 2>&1"; then
+    pass "CJK fonts are installed"
+else
+    fail "google-noto-sans-cjk-fonts is missing"
+fi
+if in_image "${IMAGE}" "rpm -q fcitx5 >/dev/null 2>&1"; then
+    fail "fcitx5 is installed, but the default input method must be IBus"
+else
+    pass "no Fcitx packages are installed"
+fi
+
 # Expected versions come from the manifest, which build.sh derived from the
 # pins it verified; compare them with what rpm actually installed.
 python3 - "${tmpdir}/delta.json" <<'RPM_VERSIONS' > "${tmpdir}/rpm.versions"

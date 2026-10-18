@@ -11,9 +11,9 @@
 #   3. apply the Wraindrock identity: os-release display fields, the Wraindrock
 #      logo icon, the GDM login logo, the default desktop/GDM wallpaper, the
 #      Plymouth boot splash and the opt-in GRUB theme;
-#   4. declare the first-boot Flatpaks, the Zen default browser and the three
-#      pinned GitHub RPMs, then record every applied difference in
-#      /usr/share/wraindrock/delta.json.
+#   4. declare the first-boot Flatpaks, the Helium default browser, the four
+#      pinned RPMs and the IBus/libpinyin input-method default, then record
+#      every applied difference in /usr/share/wraindrock/delta.json.
 #
 # The delta manifest is the contract the parity test enforces: the image may
 # differ from the base only in ways listed there. It must not touch /var
@@ -26,7 +26,7 @@ die() { printf 'error: %s\n' "$*" >&2; exit 1; }
 say() { printf 'wraindrock: %s\n' "$*"; }
 
 [[ ${EUID} -eq 0 ]] || die "build.sh must run as root"
-for cmd in rpm sha256sum install grep sed curl comm; do
+for cmd in rpm sha256sum install grep sed curl comm gsettings; do
     command -v "${cmd}" >/dev/null 2>&1 || die "${cmd} is required"
 done
 
@@ -150,11 +150,29 @@ logo='/usr/share/pixmaps/wraindrock-gdm-logo.png'
 [org.gnome.desktop.background]
 picture-uri='file:///usr/share/backgrounds/wraindrock/wraindrock-wallpaper.png'
 picture-uri-dark='file:///usr/share/backgrounds/wraindrock/wraindrock-wallpaper.png'
+
+# IBus (not Fcitx) is the input method; libpinyin is the Chinese engine. The
+# engine already ships in the base, so only the default needs declaring. A
+# user's own input-sources setting always wins.
+[org.gnome.desktop.input-sources]
+sources=[('xkb', 'us'), ('ibus', 'libpinyin')]
+mru-sources=[('xkb', 'us'), ('ibus', 'libpinyin')]
+show-all-sources=true
 EOF
 chmod 0644 "${override}"
 command -v glib-compile-schemas >/dev/null 2>&1 \
     || die "glib-compile-schemas is required to apply the GDM logo"
 glib-compile-schemas "${gschema_dir}"
+
+# The input-method default is only real if the compiled schema reports it.
+GSETTINGS_BACKEND=memory gsettings get org.gnome.desktop.input-sources sources \
+    | grep -q "libpinyin" \
+    || die "the compiled schemas do not report the IBus libpinyin default"
+rpm -q ibus ibus-libpinyin google-noto-sans-cjk-fonts >/dev/null 2>&1 \
+    || die "IBus, libpinyin or the CJK fonts are missing from the base"
+if rpm -q fcitx5 >/dev/null 2>&1; then
+    die "fcitx5 is installed; the default must stay IBus"
+fi
 
 # 3e. Plymouth boot splash. Fedora's theme plugins are all shipped in the base
 # image, so the splash needs no package change: a two-step theme plus the

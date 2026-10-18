@@ -5,6 +5,14 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 image versions are the upstream channel plus an immutable build tag, see
 [docs/architecture.md](docs/architecture.md).
 
+## [0.11.0] - 2026-10-19
+
+### Added
+
+- IBus with the libpinyin engine is the system default input method, declared
+  through `zzzz-wraindrock.gschema.override`; no Fcitx is installed and the
+  Noto CJK fonts come from the base. A user's own input-sources setting wins.
+
 ## [0.10.0] - 2026-10-18
 
 ### Changed

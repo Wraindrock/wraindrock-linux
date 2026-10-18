@@ -76,7 +76,8 @@ upstream already provides.
       build per upstream release, so apps track their own cadence
 - [ ] Homebrew bundle for CLI tooling (uBlue ships Brew; we only list formulae)
 - [ ] GNOME defaults via `gschema.override` (theme, fonts, clock, input method)
-- [ ] CJK fonts + input method (fcitx5) as declared, documented additions
+- [x] CJK fonts (Noto Sans CJK, already in the base) + **IBus + libpinyin**
+      as the declared system default (Fcitx is not installed)
 - [x] Every addition lands in `delta.json`; the delta invariant stays enforced
 
 **Non-goals:** a second package manager, a mutable `/usr`, removing upstream

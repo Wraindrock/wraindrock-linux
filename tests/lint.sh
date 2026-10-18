@@ -307,13 +307,24 @@ echo "build invariants"
 for needle in 'base-os-release' 'delta.json' 'zzzz-wraindrock.gschema.override' \
               'wraindrock-wallpaper.png' 'Theme=wraindrock' \
               'plymouth/animation-' 'grub/theme.txt' 'wraindrock-grub-theme' \
-              'wraindrock-hostname-seed' 'install -d -m 0755 /opt'; do
+              'wraindrock-hostname-seed' 'install -d -m 0755 /opt' \
+              'org.gnome.desktop.input-sources' 'libpinyin'; do
     if grep -Fq "${needle}" build_files/build.sh; then
         pass "build.sh handles ${needle}"
     else
         fail "build.sh does not handle ${needle}"
     fi
 done
+if grep -Fq 'GSETTINGS_BACKEND=memory' build_files/build.sh; then
+    pass "build.sh verifies the input-method default without a session bus"
+else
+    fail "build.sh does not verify the compiled input-method default"
+fi
+if grep -Fq 'fcitx5' tests/parity.sh; then
+    pass "parity refuses a stray Fcitx installation"
+else
+    fail "parity does not guard against Fcitx"
+fi
 if grep -Eq 'dnf[[:space:]]+(install|remove|upgrade|groupinstall)|rpm[[:space:]]+-[UeF]' \
         build_files/build.sh; then
     fail "build.sh removes or upgrades base packages; only pinned additions are allowed"
