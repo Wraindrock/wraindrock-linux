@@ -23,16 +23,16 @@ build if the image carries anything that is not in that manifest.
 
 Real QEMU frames from CI runs of the published ISO.
 
-| Boot menu | Interactive install | Disk layout |
+| Boot menu | Disk layout | Manual partitioning |
 | --- | --- | --- |
-| ![GRUB boot menu](docs/screenshots/boot-menu.png) | ![Anaconda summary](docs/screenshots/installer-hub.png) | ![Installation destination](docs/screenshots/installer-destination.png) |
+| ![GRUB boot menu](docs/screenshots/boot-menu.png) | ![Installation destination](docs/screenshots/installer-destination.png) | ![Manual partitioning](docs/screenshots/installer-partitioning.png) |
 
-| Manual partitioning | GDM login | First boot |
-| --- | --- | --- |
-| ![Manual partitioning](docs/screenshots/installer-partitioning.png) | ![GDM login](docs/screenshots/gdm-login.png) | ![First boot](docs/screenshots/first-boot.png) |
+| GDM login | First boot |
+| --- | --- |
+| ![GDM login](docs/screenshots/gdm-login.png) | ![First boot](docs/screenshots/first-boot.png) |
 
-The first menu entry installs interactively: choose Automatic, Custom or
-Blivet-GUI partitioning, then set up the user. Language is picked at GNOME
+The first menu entry installs interactively: choose the disk, the layout
+(Automatic, Custom or Blivet-GUI) and the user. Language is picked at GNOME
 Initial Setup on first boot. The second entry erases the first disk without
 asking.
 
