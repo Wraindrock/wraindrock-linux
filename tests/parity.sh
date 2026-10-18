@@ -80,7 +80,7 @@ expect_line() {
     fi
 }
 
-expect_line "NAME is Wraindrock Linux" 'NAME="Wraindrock Linux"'
+expect_line "NAME is Wraindrock" 'NAME="Wraindrock"'
 if grep -Eq '^PRETTY_NAME="Wraindrock \(Version: [0-9][^"]*\)"$' \
         "${tmpdir}/image-os-release"; then
     pass "PRETTY_NAME is branded and keeps the base version"
@@ -496,7 +496,7 @@ test -L "$want"
 test "$(readlink -f "$want")" = "$(readlink -f "$unit")"
 fixture=$(mktemp -d)
 mkdir -p "$fixture/state"
-printf "%s\n" "NAME=\"Wraindrock Linux\"" "DEFAULT_HOSTNAME=\"wraindrock\"" > "$fixture/os-release"
+printf "%s\n" "NAME=\"Wraindrock\"" "DEFAULT_HOSTNAME=\"wraindrock\"" > "$fixture/os-release"
 printf "fedora\n" > "$fixture/hostname"
 sed -e "s|/usr/lib/os-release|$fixture/os-release|" \
     -e "s|/etc/hostname|$fixture/hostname|" \

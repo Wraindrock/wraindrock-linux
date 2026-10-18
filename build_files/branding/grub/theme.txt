@@ -1,4 +1,4 @@
-# Wraindrock Linux GRUB theme.
+# Wraindrock GRUB theme.
 #
 # The theme is never read from this directory directly: `wraindrock-grub-theme`
 # copies it to /boot/grub2/themes/wraindrock/ and points GRUB at it from
@@ -8,7 +8,7 @@
 
 desktop-image: "background.png"
 desktop-color: "#080d16"
-title-text: "Wraindrock Linux"
+title-text: "Wraindrock"
 title-font: "Unifont Regular 16"
 title-color: "#eaf0fa"
 

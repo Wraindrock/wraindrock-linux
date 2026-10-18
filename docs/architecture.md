@@ -1,6 +1,6 @@
 # Architecture
 
-Wraindrock Linux is a **bootc system image**: an OCI container whose root
+Wraindrock is a **bootc system image**: an OCI container whose root
 filesystem is the operating system. This document covers how the image is
 produced, what is invariant about it, how releases are identified and signed,
 and what the project deliberately does not do.

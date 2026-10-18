@@ -1,9 +1,22 @@
 # Changelog
 
-All notable changes to the Wraindrock Linux repository are recorded here.
+All notable changes to Wraindrock are recorded here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 image versions are the upstream channel plus an immutable build tag, see
 [docs/architecture.md](docs/architecture.md).
+
+## [0.8.1] - 2026-10-18
+
+### Changed
+
+- The project's display name is now **Wraindrock**, not "Wraindrock Linux":
+  `NAME="Wraindrock"` in os-release, and the GRUB menu title, Plymouth
+  description, container title label and documentation use the shorter name.
+  Image and repository identifiers (`wraindrock-linux`) are unchanged.
+- README and install docs were cut back to the essentials: what the image is,
+  what differs from Bluefin DX, and the two supported install paths — pull the
+  GHCR image, or download the ISO. The starting-points matrix and the CI
+  assertion tables no longer front-load the documentation.
 
 ## [0.8.0] - 2026-10-18
 

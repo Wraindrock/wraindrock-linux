@@ -35,7 +35,7 @@ ENV WR_LINUX=1 \
     WR_BASE_IMAGE="${BASE_IMAGE}" \
     WR_FEDORA_VERSION="${FEDORA_VERSION}"
 
-LABEL org.opencontainers.image.title="Wraindrock Linux" \
+LABEL org.opencontainers.image.title="Wraindrock" \
       org.opencontainers.image.description="Wraindrock - a Bluefin DX based atomic desktop, tuned out of the box" \
       org.opencontainers.image.vendor="Wraindrock" \
       org.opencontainers.image.licenses="MIT" \

@@ -1,6 +1,6 @@
 [Plymouth Theme]
 Name=Wraindrock
-Description=Wraindrock Linux boot splash
+Description=Wraindrock boot splash
 ModuleName=two-step
 
 [two-step]

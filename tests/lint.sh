@@ -205,7 +205,7 @@ for needle in 'custom.cfg' 'set theme=' '--boot-dir' \
         fail "GRUB theme helper is missing ${needle}"
     fi
 done
-for needle in 'desktop-image: "background.png"' 'title-text: "Wraindrock Linux"' \
+for needle in 'desktop-image: "background.png"' 'title-text: "Wraindrock"' \
               '+ boot_menu' 'id = "__timeout__"'; do
     if grep -Fq "${needle}" build_files/branding/grub/theme.txt; then
         pass "GRUB theme contains ${needle}"

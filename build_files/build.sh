@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ---------------------------------------------------------------------------
-# Wraindrock Linux image build step.
+# Wraindrock image build step.
 #
 # Runs as root inside the pristine Bluefin DX base image. It does three
 # things and nothing else:
@@ -95,7 +95,7 @@ done
 # the base: update cadence and support window must stay honest. Only identity
 # and links change.
 sed -i \
-    -e 's/^NAME=.*/NAME="Wraindrock Linux"/' \
+    -e 's/^NAME=.*/NAME="Wraindrock"/' \
     -e 's/^PRETTY_NAME="Bluefin/PRETTY_NAME="Wraindrock/' \
     -e 's/^LOGO=.*/LOGO=wraindrock-logo-icon/' \
     -e 's/^DEFAULT_HOSTNAME=.*/DEFAULT_HOSTNAME="wraindrock"/' \
@@ -106,7 +106,7 @@ sed -i \
     "${os_release}"
 
 
-grep -qx 'NAME="Wraindrock Linux"' "${os_release}" \
+grep -qx 'NAME="Wraindrock"' "${os_release}" \
     || die "failed to brand NAME"
 grep -Eq '^PRETTY_NAME="Wraindrock \(Version: [0-9]' "${os_release}" \
     || die "failed to brand PRETTY_NAME"
@@ -169,7 +169,7 @@ install -m 0644 "${branding_dir}"/plymouth/animation-????.png "${plymouth_dir}/"
     || die "Plymouth animation frames not installed"
 
 cat > /etc/plymouth/plymouthd.conf <<'PLYMOUTHD'
-# Wraindrock Linux boot splash. The theme itself is shipped in
+# Wraindrock boot splash. The theme itself is shipped in
 # /usr/share/plymouth/themes/wraindrock; this file only selects it.
 [Daemon]
 Theme=wraindrock
