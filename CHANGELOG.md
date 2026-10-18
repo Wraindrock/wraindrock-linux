@@ -2,8 +2,30 @@
 
 All notable changes to the Wraindrock Linux repository are recorded here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
-image versions are the Fedora channel plus an immutable build tag, see
+image versions are the upstream channel plus an immutable build tag, see
 [docs/architecture.md](docs/architecture.md).
+
+## [0.8.0] - 2026-10-18
+
+### Changed
+
+- **Rebased the project onto Universal Blue's Bluefin DX**
+  (`ghcr.io/ublue-os/bluefin-dx:stable`). Wraindrock is now a personal remix of
+  Bluefin DX rather than a Fedora Silverblue derivative: the desktop, uBlue
+  tooling, update plumbing and akmods integration are inherited; only identity
+  and presentation are ours.
+- The identity delta is reduced to `NAME`, `PRETTY_NAME`, `LOGO`,
+  `DEFAULT_HOSTNAME` and the project URLs. `ID=bluefin`, `ID_LIKE=fedora`,
+  `CPE_NAME`, `VERSION_ID`, `OSTREE_VERSION` and `VARIANT_ID` stay upstream's so
+  uBlue tooling keeps working; the CPE continues to name Universal Blue.
+- `tests/parity.sh` now compares against Bluefin DX: identical RPM set, only the
+  identity keys above may differ, and the same `delta.json` manifest is
+  enforced.
+- Base assertions require `ID=bluefin` and `VARIANT_ID=bluefin-dx*`; the RPM
+  provenance check looks up the package owning `/usr/lib/os-release` dynamically.
+- Hostname seeding also replaces Bluefin's default `bluefin` on first boot.
+- Documentation, install/rollback paths and security boundaries now describe
+  Bluefin DX as the feedstock and stock Bluefin DX as the way back.
 
 ## [0.7.0] - 2026-10-18
 

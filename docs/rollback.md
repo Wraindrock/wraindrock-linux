@@ -15,9 +15,9 @@ After reboot, `bootc status` should show the previous deployment as `Booted:`.
 The bad deployment remains listed — rolling forward again is `bootc rollback`
 once more (it swaps booted/rollback), or `bootc switch` to a known-good tag.
 
-`bootc rollback` is implemented on top of ostree deployments, so on Fedora
-Atomic systems `sudo rpm-ostree rollback` still works as a fallback. Prefer
-`bootc rollback`; it is the supported interface for bootc images.
+`bootc rollback` is implemented on top of ostree deployments, so on
+ostree-based systems `sudo rpm-ostree rollback` still works as a fallback.
+Prefer `bootc rollback`; it is the supported interface for bootc images.
 
 ## Rolling back to the previous *published* image
 
@@ -36,31 +36,31 @@ It is a moving tag, so record the digest if you need it to be reproducible:
 podman inspect --format '{{index .RepoDigests 0}}' ghcr.io/wraindrock/wraindrock-linux:previous
 ```
 
-## Rolling back to stock Fedora Silverblue
+## Rolling back to stock Bluefin DX
 
 ```bash
-sudo bootc switch quay.io/fedora/fedora-silverblue:44
+sudo bootc switch ghcr.io/ublue-os/bluefin-dx:stable
 sudo systemctl reboot
 ```
 
 This is the cleanest "uninstall": your data stays, and the next boot is plain
-Fedora. Do this before reporting an install problem if you need a working
+Bluefin DX. Do this before reporting an install problem if you need a working
 machine quickly.
 
 ## If the system does not boot
 
 1. **Bootloader menu.** Hold `Shift` (BIOS) or press `Esc` (UEFI) during boot to
-   get the menu. Fedora keeps one entry per deployment; pick the older one. This
-   is the recovery path that does not require a working new deployment.
-2. **Recovery shell.** Fedora entries include rescue/recovery options. From a
-   root shell, `bootc status` and `bootc rollback` still work.
+   get the menu. The bootloader keeps one entry per deployment; pick the older
+   one. This is the recovery path that does not require a working new deployment.
+2. **Recovery shell.** The Fedora-based entries include rescue/recovery options.
+   From a root shell, `bootc status` and `bootc rollback` still work.
 3. **Live USB.** Boot a Fedora Atomic live image and inspect the installed
    system read-only (`ostree admin status` against the deployment root). Do not
    attempt to "repair" the deployment by editing files in place — switch to a
    known-good image instead.
 4. **Reinstall as a last resort.** Back up `/home` from the live environment
-   first. Wraindrock has no installer of its own yet; reinstall Silverblue with
-   Anaconda and then `bootc switch` back if you want Wraindrock again.
+   first. Reinstall Bluefin DX (its own media, or the Wraindrock ISO) and then
+   `bootc switch` back if you want Wraindrock again.
 
 ## What rollback does *not* recover
 

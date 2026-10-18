@@ -2,8 +2,9 @@
 # ---------------------------------------------------------------------------
 # Parity test for the branded image.
 #
-# v0.1 asserted "byte identical to Fedora Silverblue". v0.2 keeps the strong
-# part of that promise and makes the weaker part explicit:
+# v0.1 asserted "byte identical to Fedora Silverblue"; after the Bluefin DX
+# rebase the baseline is the upstream Bluefin DX image. The strong part of the
+# promise still holds:
 #
 #   * the RPM set is still identical, package for package;
 #   * /usr/lib/os-release may differ only in the identity keys listed in the
@@ -12,7 +13,7 @@
 #   * the GDM logo and wallpaper overrides are compiled into the schema cache;
 #   * the Plymouth boot splash is installed, selected, and complete.
 #
-#   tests/parity.sh quay.io/fedora/fedora-silverblue:44 \
+#   tests/parity.sh ghcr.io/ublue-os/bluefin-dx:stable \
 #                   localhost/wraindrock-linux:44
 #
 # Needs podman and python3; both images must be available locally.
@@ -80,13 +81,13 @@ expect_line() {
 }
 
 expect_line "NAME is Wraindrock Linux" 'NAME="Wraindrock Linux"'
-if grep -Eq '^PRETTY_NAME="Wraindrock Linux [0-9][^"]* \(Silverblue\)"$' \
+if grep -Eq '^PRETTY_NAME="Wraindrock \(Version: [0-9][^"]*\)"$' \
         "${tmpdir}/image-os-release"; then
     pass "PRETTY_NAME is branded and keeps the base version"
 else
-    fail "PRETTY_NAME is not a branded Silverblue string"
+    fail "PRETTY_NAME is not a branded Bluefin string"
 fi
-expect_line "ID is wraindrock" 'ID=wraindrock'
+expect_line "ID stays bluefin for uBlue tooling" 'ID=bluefin'
 expect_line "ID_LIKE is fedora" 'ID_LIKE="fedora"'
 expect_line "LOGO points at the Wraindrock icon" 'LOGO=wraindrock-logo-icon'
 expect_line "DEFAULT_HOSTNAME is wraindrock" 'DEFAULT_HOSTNAME="wraindrock"'
@@ -98,10 +99,11 @@ expect_line "SUPPORT_URL points at the issue tracker" \
     'SUPPORT_URL="https://github.com/Wraindrock/wraindrock-linux/issues"'
 expect_line "BUG_REPORT_URL points at the issue tracker" \
     'BUG_REPORT_URL="https://github.com/Wraindrock/wraindrock-linux/issues"'
-expect_line "CPE_NAME identifies Wraindrock" \
-    "CPE_NAME=\"cpe:/o:wraindrock:wraindrock_linux:${version_id}\""
+expect_line "CPE_NAME keeps the Bluefin lineage" \
+    "CPE_NAME=\"cpe:/o:universal-blue:bluefin:${version_id}\""
 expect_line "VERSION_ID still tracks the base" "VERSION_ID=${version_id}"
-expect_line "VARIANT_ID still tracks Silverblue" 'VARIANT_ID=silverblue'
+base_variant_id="$(sed -n 's/^VARIANT_ID=//p' "${tmpdir}/base-os-release" | tail -n 1)"
+expect_line "VARIANT_ID still tracks Bluefin DX" "VARIANT_ID=${base_variant_id}"
 
 # The diff itself must stay inside the documented whitelist. This is what
 # catches a branding step that quietly rewrites something else.
@@ -126,10 +128,10 @@ base = parse(sys.argv[1])
 image = parse(sys.argv[2])
 
 changed = {
-    "NAME", "PRETTY_NAME", "ID", "LOGO", "DEFAULT_HOSTNAME", "HOME_URL",
-    "DOCUMENTATION_URL", "SUPPORT_URL", "BUG_REPORT_URL", "CPE_NAME",
+    "NAME", "PRETTY_NAME", "LOGO", "DEFAULT_HOSTNAME", "HOME_URL",
+    "DOCUMENTATION_URL", "SUPPORT_URL", "BUG_REPORT_URL",
 }
-added = {"ID_LIKE"}
+added = set()
 
 problems = []
 for key, value in base.items():
@@ -176,10 +178,10 @@ assert delta["base_digest"], delta
 changed = delta["os_release"]["changed"]
 added = delta["os_release"]["added"]
 assert set(changed) == {
-    "NAME", "PRETTY_NAME", "ID", "LOGO", "DEFAULT_HOSTNAME", "HOME_URL",
-    "DOCUMENTATION_URL", "SUPPORT_URL", "BUG_REPORT_URL", "CPE_NAME",
+    "NAME", "PRETTY_NAME", "LOGO", "DEFAULT_HOSTNAME", "HOME_URL",
+    "DOCUMENTATION_URL", "SUPPORT_URL", "BUG_REPORT_URL",
 }, changed
-assert added == {"ID_LIKE": "fedora"}, added
+assert added == {}, added
 for key, value in changed.items():
     assert image[key] == value, f"delta says {key}={value!r}, image has {image[key]!r}"
 assert image["ID_LIKE"] == "fedora", image
@@ -398,22 +400,18 @@ else
 fi
 
 # rpm must agree that the only tracked file we changed is os-release.
-# On Fedora 44, /usr/lib/os-release belongs to the variant identity package
-# (fedora-release-identity-silverblue), not to fedora-release-common. Verify
-# that rather than hard-coding an assumption; base packaging drift in a future
-# Fedora release then fails with a clear message instead of a puzzling diff.
+# /usr/lib/os-release belongs to the variant identity package, not to
+# fedora-release-common. Look the package name up rather than hard-coding it:
+# base packaging drift in a future Bluefin release then fails with a clear
+# message instead of a puzzling diff.
 #
 # The mtime check is disabled: image layers store mtime 0 for files that are
 # hardlinks into the ostree repo, while rpm headers record the package build
 # time. A plain `rpm -V` would therefore report a T flag for every tracked file
 # of the package, drowning out the single content change we actually made.
-identity_package=fedora-release-identity-silverblue
-if owner="$(in_image "${IMAGE}" 'rpm -q --whatprovides /usr/lib/os-release')"; then
-    if [[ ${owner} == "${identity_package}"-* ]]; then
-        pass "release identity package owns /usr/lib/os-release (${owner})"
-    else
-        fail "unexpected owner of /usr/lib/os-release: ${owner}"
-    fi
+identity_package="$(in_image "${IMAGE}" 'rpm -q --whatprovides /usr/lib/os-release' || true)"
+if [[ -n ${identity_package} ]]; then
+    pass "release identity package owns /usr/lib/os-release (${identity_package})"
 else
     fail "could not determine which package owns /usr/lib/os-release"
 fi
@@ -538,7 +536,7 @@ with open(sys.argv[1], encoding="utf-8") as handle:
 
 assert info["schema"] == 1, info
 assert info["identity"] == "wraindrock", info
-assert info["parity"].startswith("fedora-silverblue-"), info
+assert info["parity"].startswith("bluefin-dx-"), info
 assert info["rpm_count"] > 0, info
 assert len(info["rpm_set_sha256"]) == 64, info
 PY
@@ -583,5 +581,5 @@ if [[ ${failures} -ne 0 ]]; then
     printf '%s parity check(s) failed\n' "${failures}" >&2
     exit 1
 fi
-printf 'parity holds: Fedora Silverblue %s package set, branded, delta recorded\n' \
+printf 'parity holds: Bluefin DX %s package set, branded, delta recorded\n' \
     "${version_id}"

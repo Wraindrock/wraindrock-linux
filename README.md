@@ -1,63 +1,66 @@
-# Wraindrock Linux
+# Wraindrock
 
-An atomic desktop Linux distribution built on **Fedora Silverblue** and delivered as a
-**bootc container image**.
+A personal, out-of-the-box remix of **Universal Blue's Bluefin DX**, delivered as
+a **bootc container image**.
 
 [![build](https://github.com/Wraindrock/wraindrock-linux/actions/workflows/build.yml/badge.svg)](https://github.com/Wraindrock/wraindrock-linux/actions/workflows/build.yml)
 
-Wraindrock Linux is a bootable operating system image: the whole OS is an OCI
-image, updated with `bootc update`, rolled back with `bootc rollback`, and
-installed on top of an existing Fedora Atomic system with `bootc switch`. There
-is no package manager mutation of the running root and no "partially upgraded"
-state: an update either becomes the next boot entry or it does not happen.
+Wraindrock is not an independent distribution and not a fork of Fedora. It is
+Bluefin DX with my branding and my defaults: the GNOME desktop, the uBlue
+tooling (`ujust`, Homebrew, Flatpak setup, update services), the akmods
+integration and the security cadence are inherited from upstream; this
+repository owns the identity, the presentation and, over time, a short list of
+personal preferences.
 
-> **Status: v0.3 in progress — branded boot menu (opt-in).** The package set is
-> still Fedora Silverblue 44, unchanged. What differs is presentation and
-> identity: `NAME`, `PRETTY_NAME`, `ID=wraindrock` (with `ID_LIKE=fedora`), the
-> logo icon, the GDM login logo, the default hostname, the default desktop and
-> GDM wallpaper, the Plymouth boot splash, and (new) a GRUB menu theme that is
-> opt-in because bootc images cannot rewrite a bootloader config that bootupd
-> generated at install time. Every difference is recorded in
-> `/usr/share/wraindrock/delta.json`, and `tests/parity.sh` fails if the image
-> differs from the base in any way that is not in that manifest. An installable
-> qcow2/ISO pair is built from the same image by
-> `.github/workflows/disk.yml`; the installer is unattended and installs to the
-> first disk — see [docs/install.md](docs/install.md).
+The whole OS is an OCI image: updated with `bootc update`, rolled back with
+`bootc rollback`, and either installed from the unattended ISO or switched onto
+an existing Bluefin DX system. There is no package-manager mutation of the
+running root and no "partially upgraded" state.
 
-## Why
+> **Status: v0.4 — rebased onto Bluefin DX.** The base feedstock is now
+> `ghcr.io/ublue-os/bluefin-dx:stable` (digest-pinned at build time). The RPM set
+> is still **identical to upstream**, package for package; what differs is the
+> identity and presentation delta recorded in `/usr/share/wraindrock/delta.json`.
+> `tests/parity.sh` fails the build if the image differs from Bluefin DX in any
+> way that is not in that manifest. Personal preferences (Flatpak preinstalls,
+> KVM, NVIDIA, data partitions) are the next milestones — see
+> [docs/roadmap.md](docs/roadmap.md).
 
-- **Atomic by construction.** Updates are image swaps. A failed update leaves
-  the previous deployment bootable. There is no half-upgraded system to repair.
-- **Reproducible.** Every image is built from a pinned Fedora base digest by a
-  public GitHub Actions workflow, tagged immutably, and signed with Sigstore.
-- **Boring to operate.** The desktop, drivers, GNOME stack and update cadence
-  are Fedora's. Wraindrock only owns what it can test.
-- **No surprise state.** The image ships no custom system services, and the
-  only system files it changes are the recorded identity/wallpaper delta. If
-  the pipeline is wrong, the parity test fails before anything is published.
+## What is inherited, what changes
 
-## What the Wraindrock delta changes
+Inherited from Bluefin DX, unchanged and always upstream: the GNOME desktop,
+the kernel and firmware, drivers, the uBlue tooling, Flatpak/Brew application
+management, update and rollback plumbing, and the signed upstream image digest
+the build starts from.
 
-| Field | Fedora Silverblue 44 | Wraindrock Linux 44 |
+Changed by this repository (all recorded in `delta.json`):
+
+| Field | Bluefin DX | Wraindrock |
 | --- | --- | --- |
-| `NAME` | `Fedora Linux` | `Wraindrock Linux` |
-| `PRETTY_NAME` | `Fedora Linux 44.20261017.0 (Silverblue)` | `Wraindrock Linux 44.20261017.0 (Silverblue)` |
-| `ID` / `ID_LIKE` | `fedora` / — | `wraindrock` / `fedora` |
+| `NAME` | `Bluefin` | `Wraindrock Linux` |
+| `PRETTY_NAME` | `Bluefin (Version: 44.YYYYMMDD)` | `Wraindrock (Version: 44.YYYYMMDD)` |
+| `ID` / `ID_LIKE` | `bluefin` / `fedora` | unchanged — uBlue tooling keys off `ID=bluefin` |
 | `LOGO` | `fedora-logo-icon` | `wraindrock-logo-icon` |
-| `DEFAULT_HOSTNAME` | `fedora` | `wraindrock` |
-| URLs / `CPE_NAME` | fedoraproject.org | this repository / `cpe:/o:wraindrock:wraindrock_linux:44` |
+| `DEFAULT_HOSTNAME` | `bluefin` | `wraindrock` |
+| URLs / `CPE_NAME` | upstream Bluefin | this repository / Bluefin CPE (lineage kept honest) |
 | GDM logo | Fedora logo | Wraindrock wordmark |
-| Wallpaper (light + dark) | Fedora 44 day/night JXL | `wraindrock-wallpaper.png` (4K, dark blue + outlined W) |
-| GDM background | Fedora 44 day wallpaper | the same Wraindrock wallpaper |
-| Boot splash | Fedora BGRT spinner on the firmware logo | `wraindrock` two-step theme: dark blue gradient, animated outlined W |
-| Boot menu (GRUB) | Fedora's plain menu | `/usr/bin/wraindrock-grub-theme enable` copies a themed menu to `/boot/grub2/themes/wraindrock/` and hooks it into bootupd's `custom.cfg`. Opt-in: the image cannot edit an installed GRUB config. |
+| Wallpaper (light + dark) | Bluefin default | `wraindrock-wallpaper.png` (4K, dark blue + outlined W) |
+| Boot splash | Bluefin/upstream | `wraindrock` two-step Plymouth theme |
+| Boot menu (GRUB) | upstream menu | opt-in `/usr/bin/wraindrock-grub-theme` |
+| Hostname on fresh installs | base default | seeded once to `wraindrock` |
 
-`VERSION`, `VERSION_ID`, `OSTREE_VERSION` and `SUPPORT_END` stay Fedora's: the
-update cadence and support window are not ours to rewrite yet.
+`VERSION`, `VERSION_ID`, `OSTREE_VERSION` and `SUPPORT_END` stay upstream's:
+the update cadence and support window are not ours to rewrite.
 
 ## Install
 
-On a Fedora Atomic Desktop (Silverblue/Kinoite/Bluefin/Aurora, Fedora 44+):
+Two supported paths:
+
+1. **From the ISO** — the unattended Anaconda ISO built by
+   `.github/workflows/disk.yml`. It installs to the first disk without asking;
+   use a scratch machine or detach data disks. See
+   [docs/install.md](docs/install.md).
+2. **Onto an existing Bluefin DX system** (same major release):
 
 ```bash
 sudo bootc switch ghcr.io/wraindrock/wraindrock-linux:44
@@ -72,19 +75,17 @@ Full preflight checks, verification and the way back are in
 
 | Tag | Meaning | Mutable |
 | --- | --- | --- |
-| `44` | Fedora 44 channel; what `bootc switch ...:44` follows | yes, moves with each release |
+| `44` | Bluefin 44 channel; what `bootc switch ...:44` follows | yes |
 | `latest` | Alias of the newest channel | yes |
 | `previous` | The channel image that `44` pointed at before the last release | yes |
-| `44.<UTC timestamp>.<run>` | Artifact of record for one build, e.g. `44.20261017T061500Z.42` | **never** |
-| `44.20261017` | Not used; the immutable tag always includes the time and run number | — |
+| `44.<UTC timestamp>.<run>` | Artifact of record for one build | **never** |
 
 The workflow refuses to overwrite an existing immutable tag. Install the channel
 tag; quote the immutable tag when you need to say exactly what you ran.
 
 ## Disk images
 
-The image is the source of truth; disk artifacts are derived from a published
-image and built on demand, never on every push:
+Disk artifacts are derived from a published image and built on demand:
 
 ```bash
 # Build (CI; also boots the ISO under KVM before publishing)
@@ -95,66 +96,46 @@ oras pull ghcr.io/wraindrock/wraindrock-linux-disk:<version>
 sha256sum -c SHA256SUMS
 ```
 
-- **qcow2** — a preinstalled disk; boot it with QEMU/virt-manager for testing or
-  as a ready-made VM.
-- **Anaconda ISO** — the installation media. bootc-image-builder bakes an
-  unattended kickstart (`autopart`, btrfs, reboot), so the ISO **installs over
-  the first disk without asking**. Use a scratch machine or detach data disks.
-  On a UEFI machine, write it to USB with `dd` and boot it; the installed system
-  reboots into GDM.
-
-Both artifacts are built from a pinned `bootc-image-builder` digest and record
-the source image version, revision and resolved digest in the run summary. The
-workflow also boots the ISO under KVM (`vm_test`, on by default), installs it to
-a scratch disk, and requires the installed system to reach its graphical
-welcome/login screen before the run turns green.
-
-Verified artifacts are published as an immutable OCI artifact set on GHCR:
-`ghcr.io/wraindrock/wraindrock-linux-disk:<image version>`, three blobs
-(`disk.qcow2`, `install.iso`, `SHA256SUMS`). The workflow refuses to overwrite
-an existing version tag, verifies the stored manifest against the local
-digests, and fetches the manifest anonymously to prove the package is public.
-GitHub Release assets cannot carry these files — GitHub caps release assets at
-2 GiB, while the qcow2/ISO are larger — so GHCR is the distribution channel.
+Verified artifacts are published as an immutable OCI artifact set on GHCR
+(`disk.qcow2`, `install.iso`, `SHA256SUMS`). GitHub Release assets cap at 2 GiB,
+so GHCR is the distribution channel. Both the ISO install test and the qcow2
+boot test run under KVM in CI before the run turns green.
 
 ## Verify what you booted
 
 ```bash
 bootc status
-cat /usr/lib/os-release
+cat /usr/lib/os-release          # NAME/PRETTY_NAME are Wraindrock; ID stays bluefin
 cat /usr/share/wraindrock/build-info.json
-cat /usr/share/wraindrock/delta.json     # every difference from the base
+cat /usr/share/wraindrock/delta.json     # every difference from Bluefin DX
 hostnamectl                             # static hostname: wraindrock
 gsettings get org.gnome.desktop.background picture-uri
-plymouth-set-default-theme                 # wraindrock
-sudo wraindrock-grub-theme status           # opt-in; reports the /boot state
+plymouth-set-default-theme              # wraindrock
+sudo wraindrock-grub-theme status       # opt-in
 ```
 
 ```bash
-# Keyless Sigstore signature, made by this repository's workflow.
 cosign verify \
   --certificate-identity-regexp '^https://github.com/Wraindrock/wraindrock-linux/' \
   --certificate-oidc-issuer https://token.actions.githubusercontent.com \
   ghcr.io/wraindrock/wraindrock-linux:44
 ```
 
-`build-info.json` records the base image **digest**, base Fedora version, git
-SHA, build date, RPM count and RPM-set hash. Two builds from the same commit and
-base digest produce the same RPM set. `delta.json` is the machine-readable
-contract the parity test enforces: os-release keys that changed, the files the
-build changed, and the branding files it added (logo, GDM wordmark, schema
-override, wallpaper, boot-splash theme, GRUB theme and helper).
+`build-info.json` records the base image **digest**, the Bluefin version, git
+SHA, build date, RPM count and RPM-set hash. `delta.json` is the machine-readable
+contract the parity test enforces: os-release keys that changed, files the build
+modified, and files it added.
 
 ## How the build works
 
 ```
-feedstock:  quay.io/fedora/fedora-silverblue:44  (digest-pinned)
+feedstock:  ghcr.io/ublue-os/bluefin-dx:stable  (digest-pinned)
                     │
                     ▼
         Containerfile  ── build_files/build.sh ──> identity + delta.json
                     │
                     ▼
-        bootc container lint  (the image's own contract)
+        bootc container lint
                     │
                     ▼
         tests/lint.sh → tests/parity.sh → tests/smoke.sh
@@ -170,8 +151,8 @@ feedstock:  quay.io/fedora/fedora-silverblue:44  (digest-pinned)
 - **Pull request:** lint, build, parity and smoke tests run; nothing is pushed.
 - **Push to `main`:** the same gates, then publish immutable + channel tags and
   sign the published digest keyless with cosign.
-- **Nightly:** rebuilds against the freshest Fedora base so security updates
-  arrive without waiting for a Wraindrock commit.
+- **Nightly:** rebuilds against the freshest Bluefin DX base so upstream
+  security updates arrive without waiting for a Wraindrock commit.
 
 No personal access token is stored anywhere: the workflow uses the short-lived
 `GITHUB_TOKEN`, and signing uses the workflow's OIDC identity.
@@ -181,61 +162,43 @@ No personal access token is stored anywhere: the workflow uses the short-lived
 | Gate | Assertion |
 | --- | --- |
 | `tests/lint.sh` | Shell syntax, executable bits, `image.env` consistency, required docs, workflow permissions, no credential-shaped strings |
-| `tests/parity.sh` | RPM set **identical**; os-release differs only in the branded keys, with exactly the values in `delta.json`; added files match the manifest; GDM logo + wallpaper overrides compiled, and the schema defaults resolve to the Wraindrock wallpaper; Plymouth theme, config, background and all 30 animation frames present and listed; `rpm -V` shows one modified file; bootc labels and `CMD /sbin/init` intact |
-| `tests/smoke.sh` | The image boots under systemd (`systemctl is-system-running` = running/degraded), journald is alive |
+| `tests/parity.sh` | RPM set **identical to Bluefin DX**; os-release differs only in the branded keys, with exactly the values in `delta.json`; added files match the manifest; GDM logo + wallpaper overrides compiled and resolving; Plymouth theme, config and all 30 frames present; dynamic rpm-owner check shows exactly one modified file; bootc labels and `CMD /sbin/init` intact |
+| `tests/smoke.sh` | The image boots under systemd, journald is alive |
+| `disk.yml` | qcow2/ISO structural checks and SHA256SUMS; ISO install and qcow2 boot under KVM |
 
-A green build means "this is the Silverblue 44 package set with exactly the
-recorded branding delta, and it boots" — not "a human liked it".
+A green build means "this is the Bluefin DX package set with exactly the
+recorded delta, and it boots to a login screen" — not "a human liked it".
 
-## Develop locally
+## Roadmap in one line
 
-Building needs a real host with working rootless podman — a nested,
-capability-less container cannot build images. On Silverblue/Bluefin:
-
-```bash
-git clone https://github.com/Wraindrock/wraindrock-linux.git
-cd wraindrock-linux
-
-just check           # fast, no container needed
-just build           # podman build, tags localhost/wraindrock-linux:dev
-just parity          # compare local image against the pinned base
-just smoke           # boot it with systemd
-```
-
-Without `just`, use `bash tests/lint.sh` and read the `Justfile` recipes — they
-are plain podman commands.
+v0.4 (this rebase) → v0.5 out-of-the-box preferences → v0.6 KVM/NVIDIA from
+uBlue's recipes/akmods → v0.7 dev/test data partitions → v1.0 stable remix.
+Details and non-goals in [docs/roadmap.md](docs/roadmap.md).
 
 ## Repository layout
 
 ```
-Containerfile              image definition (FROM Silverblue, provenance, bootc lint)
+Containerfile              image definition (FROM Bluefin DX, provenance, bootc lint)
 image.env                  single source of truth: name, base, channel
 build_files/build.sh       base checks, branding, delta + build manifests
 build_files/branding/      logo, GDM wordmark, wallpaper, Plymouth + GRUB themes
 build_files/grub-theme/    wraindrock-grub-theme (opt-in boot-menu helper)
 tests/lint.sh              static repository checks
-tests/parity.sh            "is this still Silverblue, plus only the delta?" test
+tests/parity.sh            "still Bluefin DX, plus only the delta?" test
 tests/smoke.sh             "does it boot?" test
 .github/workflows/build.yml  build, test, publish, sign
 .github/workflows/disk.yml   qcow2 + unattended Anaconda ISO (on demand)
 disk_config/disk.toml      qcow2 root filesystem size
 docs/architecture.md       design, invariants, tag policy, non-goals
-docs/install.md            switch, preflight, verification, troubleshooting
+docs/install.md            switch/ISO install, preflight, verification, troubleshooting
 docs/rollback.md           escape hatches, step by step
 docs/roadmap.md            v0.1 → v1.0, with explicit non-goals
 SECURITY.md                trust model and how to report a vulnerability
 ```
 
-## Documentation
+## License and upstream
 
-- [Architecture and invariants](docs/architecture.md)
-- [Installing, verifying, troubleshooting](docs/install.md)
-- [Rolling back](docs/rollback.md)
-- [Roadmap](docs/roadmap.md)
-- [Security model](SECURITY.md)
-- [Contributing](CONTRIBUTING.md)
-
-## License
-
-MIT. Fedora, Silverblue and GNOME are upstream projects with their own licenses;
-Wraindrock claims no ownership over them.
+MIT for this repository's own files. Bluefin, Universal Blue, Fedora, GNOME and
+every inherited component remain their upstream projects' work under their own
+licenses; Wraindrock claims no ownership over them and redistributes them
+unmodified except for the recorded delta.

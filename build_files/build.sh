@@ -2,10 +2,10 @@
 # ---------------------------------------------------------------------------
 # Wraindrock Linux image build step.
 #
-# Runs as root inside the pristine Fedora Silverblue base image. It does three
+# Runs as root inside the pristine Bluefin DX base image. It does three
 # things and nothing else:
 #
-#   1. prove the base is the Fedora Silverblue bootc image this project claims;
+#   1. prove the base is the Bluefin DX bootc image this project claims;
 #   2. record provenance at /usr/share/wraindrock/build-info.json and preserve
 #      the untouched base os-release next to it;
 #   3. apply the Wraindrock identity: os-release display fields, the Wraindrock
@@ -37,12 +37,13 @@ os_release=/usr/lib/os-release
 # --- 1. base assertions -----------------------------------------------------
 # These are deliberately exact: a silent base change (wrong variant, wrong
 # Fedora release, a tag that moved) has to fail the build, not ship.
-grep -qx 'ID=fedora' "${os_release}" \
-    || die "base is not Fedora (ID=fedora missing)"
+grep -qx 'ID=bluefin' "${os_release}" \
+    || die "base is not Bluefin (ID=bluefin missing)"
 grep -qx "VERSION_ID=${FEDORA_VERSION}" "${os_release}" \
-    || die "base is not Fedora ${FEDORA_VERSION} (VERSION_ID mismatch)"
-grep -qx 'VARIANT_ID=silverblue' "${os_release}" \
-    || die "base is not Silverblue (VARIANT_ID=silverblue missing)"
+    || die "base is not Bluefin ${FEDORA_VERSION} (VERSION_ID mismatch)"
+grep -Eq '^VARIANT_ID=bluefin-dx' "${os_release}" \
+    || die "base is not Bluefin DX (VARIANT_ID=bluefin-dx* missing)"
+base_variant_id="$(sed -n 's/^VARIANT_ID=//p' "${os_release}" | tail -n 1)"
 
 [[ -x /usr/bin/bootc ]] || die "base does not ship the bootc CLI"
 [[ -d /usr/lib/bootc ]] || die "base is not a bootc image (/usr/lib/bootc missing)"
@@ -95,34 +96,28 @@ done
 # and links change.
 sed -i \
     -e 's/^NAME=.*/NAME="Wraindrock Linux"/' \
-    -e 's/^PRETTY_NAME="Fedora Linux /PRETTY_NAME="Wraindrock Linux /' \
-    -e 's/^ID=fedora$/ID=wraindrock/' \
+    -e 's/^PRETTY_NAME="Bluefin/PRETTY_NAME="Wraindrock/' \
     -e 's/^LOGO=.*/LOGO=wraindrock-logo-icon/' \
     -e 's/^DEFAULT_HOSTNAME=.*/DEFAULT_HOSTNAME="wraindrock"/' \
     -e 's|^HOME_URL=.*|HOME_URL="https://github.com/Wraindrock/wraindrock-linux"|' \
     -e 's|^DOCUMENTATION_URL=.*|DOCUMENTATION_URL="https://github.com/Wraindrock/wraindrock-linux/blob/main/docs/install.md"|' \
     -e 's|^SUPPORT_URL=.*|SUPPORT_URL="https://github.com/Wraindrock/wraindrock-linux/issues"|' \
     -e 's|^BUG_REPORT_URL=.*|BUG_REPORT_URL="https://github.com/Wraindrock/wraindrock-linux/issues"|' \
-    -e "s|^CPE_NAME=.*|CPE_NAME=\"cpe:/o:wraindrock:wraindrock_linux:${FEDORA_VERSION}\"|" \
     "${os_release}"
 
-# Fedora has no ID_LIKE; add one so downstream tooling can still tell this is a
-# Fedora-family system.
-grep -q '^ID_LIKE=' "${os_release}" \
-    || sed -i '/^ID=wraindrock$/a ID_LIKE="fedora"' "${os_release}"
 
 grep -qx 'NAME="Wraindrock Linux"' "${os_release}" \
     || die "failed to brand NAME"
-grep -Eq '^PRETTY_NAME="Wraindrock Linux [0-9]' "${os_release}" \
+grep -Eq '^PRETTY_NAME="Wraindrock \(Version: [0-9]' "${os_release}" \
     || die "failed to brand PRETTY_NAME"
-grep -qx 'ID=wraindrock' "${os_release}" || die "failed to brand ID"
-grep -qx 'ID_LIKE="fedora"' "${os_release}" || die "failed to add ID_LIKE"
+grep -qx 'ID=bluefin' "${os_release}" || die "branding changed ID"
+grep -qx 'ID_LIKE="fedora"' "${os_release}" || die "base lost ID_LIKE"
 grep -qx 'LOGO=wraindrock-logo-icon' "${os_release}" || die "failed to brand LOGO"
 grep -qx 'DEFAULT_HOSTNAME="wraindrock"' "${os_release}" \
     || die "failed to brand DEFAULT_HOSTNAME"
 grep -qx "VERSION_ID=${FEDORA_VERSION}" "${os_release}" \
     || die "branding changed VERSION_ID"
-grep -qx 'VARIANT_ID=silverblue' "${os_release}" \
+grep -qx "VARIANT_ID=${base_variant_id}" "${os_release}" \
     || die "branding changed VARIANT_ID"
 
 # 3b. icons. LOGO names an icon theme entry (Settings -> About); GDM reads the
@@ -246,17 +241,12 @@ cat > /usr/share/wraindrock/delta.json <<EOF
     "changed": {
       "NAME": $(json_value "$(unquote "$(field NAME)")"),
       "PRETTY_NAME": $(json_value "$(unquote "$(field PRETTY_NAME)")"),
-      "ID": $(json_value "$(unquote "$(field ID)")"),
       "LOGO": $(json_value "$(unquote "$(field LOGO)")"),
       "DEFAULT_HOSTNAME": $(json_value "$(unquote "$(field DEFAULT_HOSTNAME)")"),
       "HOME_URL": $(json_value "$(unquote "$(field HOME_URL)")"),
       "DOCUMENTATION_URL": $(json_value "$(unquote "$(field DOCUMENTATION_URL)")"),
       "SUPPORT_URL": $(json_value "$(unquote "$(field SUPPORT_URL)")"),
-      "BUG_REPORT_URL": $(json_value "$(unquote "$(field BUG_REPORT_URL)")"),
-      "CPE_NAME": $(json_value "$(unquote "$(field CPE_NAME)")")
-    },
-    "added": {
-      "ID_LIKE": $(json_value "$(unquote "$(field ID_LIKE)")")
+      "BUG_REPORT_URL": $(json_value "$(unquote "$(field BUG_REPORT_URL)")")
     }
   },
   "files": {
@@ -330,7 +320,7 @@ cat > /usr/share/wraindrock/build-info.json <<EOF
   "base_digest": "${BASE_DIGEST:-unknown}",
   "fedora_version": "${FEDORA_VERSION:-unknown}",
   "identity": "wraindrock",
-  "parity": "fedora-silverblue-${FEDORA_VERSION:-unknown}",
+  "parity": "bluefin-dx-${FEDORA_VERSION:-unknown}",
   "rpm_count": ${rpm_count},
   "rpm_set_sha256": "${rpm_set_sha256}"
 }

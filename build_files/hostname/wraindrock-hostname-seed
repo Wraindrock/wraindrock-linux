@@ -18,11 +18,13 @@ default="$(sed -n 's/^DEFAULT_HOSTNAME="\(.*\)"$/\1/p' /usr/lib/os-release | hea
 [[ -n ${default} ]] || default=wraindrock
 
 # /etc/hostname is what persists; the running hostname is what the user sees.
-# An empty file means "nothing was configured"; "fedora" is the base image's
-# own default that the installer copies over. Both are safe to replace.
+# An empty file means "nothing was configured"; "fedora" / "bluefin" are the
+# base images' own defaults that the installer copies over. All are safe to
+# replace; a hostname the user chose is not.
 configured="$(cat /etc/hostname 2>/dev/null || true)"
 running="$(hostname 2>/dev/null || true)"
-if [[ -z ${configured} || ${configured} == fedora || ${running} == fedora ]]; then
+if [[ -z ${configured} || ${configured} == fedora || ${configured} == bluefin \
+    || ${running} == fedora || ${running} == bluefin ]]; then
     install -d -m 0755 "${state_dir}"
     printf '%s\n' "${default}" > "${state_dir}/hostname.tmp"
     chmod 0644 "${state_dir}/hostname.tmp"

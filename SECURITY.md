@@ -11,16 +11,16 @@ acknowledge within 72 hours and to publish a fixed build before disclosing.
 
 ## Supported versions
 
-Only the current Fedora channel (`44` at the time of writing) and the `previous`
-tag receive security rebuilds. Older immutable tags are kept for audit and
-reproducibility but are **not** patched. The nightly workflow rebuilds the
-channel against the freshest Fedora base, so Fedora's fixes reach Wraindrock
-without a Wraindrock commit.
+Only the current upstream channel (`44` at the time of writing) and the
+`previous` tag receive security rebuilds. Older immutable tags are kept for
+audit and reproducibility but are **not** patched. The nightly workflow rebuilds
+the channel against the freshest Bluefin DX base, so upstream fixes reach
+Wraindrock without a Wraindrock commit.
 
 ## Trust model
 
 ```
-Fedora (base image, packages, kernel)   ── trusted upstream
+uBlue / Fedora (Bluefin DX base)        ── trusted upstream
         │
 GitHub Actions (public workflow)        ── trusted build environment
         │
@@ -31,12 +31,14 @@ ghcr.io (registry)                      ── distribution
 your machine (bootc)                    ── verifies only if you ask it to
 ```
 
-- The base image is pulled **by digest** at build time; the digest is recorded
-  in `/usr/share/wraindrock/build-info.json`.
-- The only deviation from that base is the recorded branding delta, listed in
-  `/usr/share/wraindrock/delta.json`. `rpm -V fedora-release-identity-silverblue`
-  reporting `/usr/lib/os-release` as modified is expected, not tampering; a
-  deviation not listed in the manifest is a bug worth reporting.
+- The base image is Universal Blue's Bluefin DX, pulled **by digest** at build
+  time; the digest is recorded in `/usr/share/wraindrock/build-info.json`. uBlue's
+  own build and signing chain is trusted transitively.
+- The only deviation from that base is the recorded identity and presentation
+  delta, listed in `/usr/share/wraindrock/delta.json`. `rpm -V --nomtime` on the
+  package that owns `/usr/lib/os-release` (looked up dynamically) reporting that
+  one file as modified is expected, not tampering; a deviation not listed in the
+  manifest is a bug worth reporting.
 - The workflow runs on GitHub-hosted runners only. There are no self-hosted
   runners and no long-lived registry credentials.
 - The only credentials in the pipeline are the ephemeral `GITHUB_TOKEN` and the
@@ -54,8 +56,9 @@ your machine (bootc)                    ── verifies only if you ask it to
 
 State it plainly rather than implying a guarantee:
 
-1. **A compromised Fedora base image.** Every package in Wraindrock comes from
-   Fedora. If Fedora's infrastructure is compromised, so is Wraindrock.
+1. **A compromised Bluefin DX or Fedora base image.** Every package in
+   Wraindrock comes from Universal Blue and Fedora. If either upstream's build or
+   distribution infrastructure is compromised, so is Wraindrock.
 2. **A compromised GitHub Actions runner.** The build executes on GitHub's
    infrastructure; a runner compromise can produce a signed malicious image.
    This is the same trust assumption every GitHub-built container makes.
@@ -68,8 +71,9 @@ State it plainly rather than implying a guarantee:
    users and is **not** a tenant boundary against untrusted users on the same
    kernel.
 6. **Physical access, firmware implants, disk theft without encryption.**
-   Wraindrock ships Fedora's defaults and adds no hardening of its own. Full-disk
-   encryption is an installer (v0.3) topic.
+   Wraindrock ships upstream's defaults and adds no hardening of its own. The
+   stock unattended ISO does not offer full-disk encryption; installing with
+   encryption is not implemented yet (see the roadmap).
 
 ## Credentials and build hygiene
 
@@ -89,7 +93,7 @@ State it plainly rather than implying a guarantee:
 
 ## Hardening principles for future changes
 
-When Wraindrock starts shipping its own services (v0.5+):
+When Wraindrock starts shipping its own services (v0.6+):
 
 - run as non-root with an explicit `User=`;
 - `NoNewPrivileges=yes`, `ProtectSystem=strict`, `ProtectHome=read-only`,

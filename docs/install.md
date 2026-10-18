@@ -1,9 +1,10 @@
 # Installing Wraindrock Linux
 
-Wraindrock v0.2 is installed **on top of an existing Fedora Atomic Desktop**. It
-is a `bootc switch`, not a repartition: your home directory, flatpaks, containers
-and user data are untouched. The switch adds a new boot deployment; your current
-system stays on disk as the rollback target.
+Wraindrock v0.4 is a remix of **Bluefin DX**. It is installed either from the
+unattended ISO below or with a `bootc switch` on an existing Bluefin DX system.
+The switch is not a repartition: your home directory, flatpaks, containers and
+user data are untouched. It adds a new boot deployment; your current system
+stays on disk as the rollback target.
 
 > **Read [rollback.md](rollback.md) before you switch.** The escape hatch is the
 > reason this is safe, and it is boring — but only if you know it.
@@ -34,10 +35,11 @@ after install (`sudo wraindrock-grub-theme enable`).
 
 | System | Notes |
 | --- | --- |
-| Fedora Silverblue 44 | Primary target |
-| Fedora Kinoite 44 | bootc switch works; the new deployment is GNOME (Silverblue), not KDE |
-| Bluefin / Aurora 44 (`ublue-os` bootc images) | Works; Wraindrock owns the whole image, so Bluefin tooling is not carried over |
-| Fedora Silverblue 43 or older | Switch to 44 first; do not cross a release into Wraindrock |
+| Bluefin DX 44 (`ghcr.io/ublue-os/bluefin-dx:stable`) | Primary target: the same package set plus the recorded delta |
+| Bluefin 44 (`ghcr.io/ublue-os/bluefin:stable`) | Works, but the next deployment is the DX variant |
+| Bluefin DX `gts` (older release) | Switch to the `44` stream first; do not cross a release |
+| Fedora Silverblue/Kinoite 44 | Not a supported target: the next deployment is Bluefin DX and distro-specific layering is lost; use the ISO or a VM |
+| Any system older than 44 | Do not cross a release into Wraindrock |
 
 Check that the running system understands bootc:
 
@@ -47,14 +49,14 @@ bootc status
 ```
 
 You should see `Booted: ...` and a `Base:` image. On a non-bootc system (plain
-Workstation, rpm-ostree from before the bootc split) stop here — Wraindrock does
-not ship an installer yet; that is v0.3 on the roadmap.
+Workstation, rpm-ostree from before the bootc split) use the ISO above; a custom
+installer with partitioning and encryption choices is not in scope.
 
 ## Preheat checks
 
 Run these once. Five minutes now avoids a bad afternoon.
 
-1. **Free space.** The image is roughly the size of Silverblue. Keep at least
+1. **Free space.** The image is roughly the size of Bluefin DX. Keep at least
    **10 GiB free** on the root filesystem, and ideally 15 GiB so both the new
    deployment and the previous one fit comfortably.
 
@@ -80,10 +82,12 @@ Run these once. Five minutes now avoids a bad afternoon.
    sudo bootc status > ~/bootc-status-before-switch.txt
    ```
 
-4. **Secure Boot.** Wraindrock ships Fedora's signed kernels and shim,
-   unmodified. Secure Boot is expected to work, but the branded image has not
-   been validated on Secure Boot hardware. If you dual-boot with a custom key
-   setup, read your firmware's recovery path before switching.
+4. **Secure Boot.** Wraindrock ships Bluefin DX's kernels and shim, unmodified.
+   Secure Boot is expected to work, but the branded image has not been validated
+   on Secure Boot hardware. On an NVIDIA variant, prebuilt akmods are enrolled
+   through MOK the same way upstream Bluefin does it; read your firmware's
+   recovery path before switching. If you dual-boot with a custom key setup,
+   keep that recovery path at hand.
 
 ## Switch
 
@@ -111,19 +115,21 @@ bootc status
 ```
 
 - `Booted:` should reference `ghcr.io/wraindrock/wraindrock-linux:44`.
-- The previous Silverblue deployment should still be listed as the rollback
+- The previous Bluefin deployment should still be listed as the rollback
   deployment.
 
 ```bash
 cat /usr/lib/os-release
 # NAME="Wraindrock Linux"
-# ID=wraindrock
+# ID=bluefin
 # ID_LIKE="fedora"
 ```
 
-`PRETTY_NAME` keeps the base Fedora version (`Wraindrock Linux 44.<build>
-(Silverblue)`): the version tells you which Fedora release and update window
-you are actually running.
+`ID` and `ID_LIKE` stay upstream's on purpose: uBlue tooling keys off
+`ID=bluefin`. `PRETTY_NAME` keeps the Bluefin version (`Wraindrock (Version:
+44.<date>)`), which tells you which upstream snapshot and update window you are
+actually running. `CPE_NAME` continues to name Universal Blue — the lineage is
+not rewritten.
 
 ```bash
 cat /usr/share/wraindrock/delta.json
@@ -175,10 +181,10 @@ hostnamectl
 ```
 
 A fresh install seeds the hostname to `wraindrock` on its first boot
-(`wraindrock-hostname-seed.service`). It only replaces an unconfigured name — the
-base's `fedora` or an empty file — and never touches a name you already set. On
-a `bootc switch` the existing `/etc/hostname` wins. Change it with
-`sudo hostnamectl set-hostname <name>`; this does not modify the image.
+(`wraindrock-hostname-seed.service`). It only replaces an unconfigured name — an
+empty file, or the base default `bluefin`/`fedora` — and never touches a name you
+already set. On a `bootc switch` the existing `/etc/hostname` wins. Change it
+with `sudo hostnamectl set-hostname <name>`; this does not modify the image.
 
 ```bash
 cat /usr/share/wraindrock/build-info.json
@@ -232,10 +238,10 @@ sudo bootc rollback
 sudo systemctl reboot
 ```
 
-To return to stock Fedora Silverblue instead of the previous Wraindrock build:
+To return to stock Bluefin DX instead of the previous Wraindrock build:
 
 ```bash
-sudo bootc switch quay.io/fedora/fedora-silverblue:44
+sudo bootc switch ghcr.io/ublue-os/bluefin-dx:stable
 sudo systemctl reboot
 ```
 
@@ -305,13 +311,13 @@ did not stage — re-run it and read the error.
 
 ### Secure Boot refuses to boot Wraindrock
 
-**Cause:** Wraindrock uses Fedora's signed kernels, but a custom key enrollment or
-a non-standard shim can break the chain.
+**Cause:** Wraindrock uses the base image's signed kernels, but a custom key
+enrollment, a non-standard shim, or an unenrolled NVIDIA MOK can break the chain.
 
 **Fix:** enroll Fedora's key or disable Secure Boot after understanding the risk;
 this is a firmware/key-management issue, not an image defect.
 
-**Escape hatch:** bootloader menu → previous Silverblue entry.
+**Escape hatch:** bootloader menu → previous Bluefin entry.
 
 ### GRUB menu still looks like Fedora
 
@@ -333,5 +339,5 @@ journalctl -b -u bootc-fetch-apply-updates  # if you enabled the timer
 ```
 
 - bootc: <https://github.com/bootc-dev/bootc/issues>
-- Fedora Atomic Desktops: <https://docs.fedoraproject.org/en-US/atomic-desktops/>
+- Bluefin documentation: <https://docs.projectbluefin.io/>
 - Wraindrock issues: <https://github.com/Wraindrock/wraindrock-linux/issues>

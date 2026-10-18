@@ -58,10 +58,10 @@ if [[ -r ${env_file} ]]; then
     else
         fail "IMAGE_NAME must be lowercase [a-z0-9._-]"
     fi
-    if [[ ${BASE_IMAGE:-} == *"silverblue:${FEDORA_VERSION:-}"* ]]; then
-        pass "BASE_IMAGE tracks Fedora ${FEDORA_VERSION}"
+    if [[ ${BASE_IMAGE:-} == ghcr.io/ublue-os/bluefin-dx:* ]]; then
+        pass "BASE_IMAGE tracks Bluefin DX"
     else
-        fail "BASE_IMAGE (${BASE_IMAGE:-}) does not match FEDORA_VERSION (${FEDORA_VERSION:-})"
+        fail "BASE_IMAGE (${BASE_IMAGE:-}) does not track Bluefin DX"
     fi
     if [[ ${DEFAULT_TAG:-} == "${FEDORA_VERSION:-}" ]]; then
         pass "DEFAULT_TAG is the Fedora channel tag"

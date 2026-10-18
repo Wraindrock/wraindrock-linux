@@ -1,9 +1,9 @@
 # syntax=docker/dockerfile:1
 #
-# Wraindrock Linux - a Fedora Silverblue based atomic desktop.
+# Wraindrock - a Bluefin DX based atomic desktop, tuned out of the box.
 #
 # v0.3 is a *branded parity build*: the RPM set is still exactly Fedora
-# Silverblue 44, plus a presentation delta (os-release display fields, logo
+# Bluefin DX 44, plus a presentation delta (os-release display fields, logo
 # icon, GDM logo, default wallpaper, Plymouth boot splash, GRUB theme assets
 # and an opt-in boot-menu helper) recorded in
 # /usr/share/wraindrock/delta.json. Any difference outside that manifest is a
@@ -14,12 +14,12 @@
 # The build inputs are bind-mounted, never COPYed, so the image does not ship
 # its own build scripts.
 
-ARG BASE_REF=quay.io/fedora/fedora-silverblue:44
+ARG BASE_REF=ghcr.io/ublue-os/bluefin-dx:stable
 
 FROM ${BASE_REF}
 
 ARG BASE_REF
-ARG BASE_IMAGE=quay.io/fedora/fedora-silverblue:44
+ARG BASE_IMAGE=ghcr.io/ublue-os/bluefin-dx:stable
 ARG BASE_DIGEST=unknown
 ARG IMAGE_NAME=wraindrock-linux
 ARG IMAGE_REGISTRY=ghcr.io/wraindrock
@@ -36,7 +36,7 @@ ENV WR_LINUX=1 \
     WR_FEDORA_VERSION="${FEDORA_VERSION}"
 
 LABEL org.opencontainers.image.title="Wraindrock Linux" \
-      org.opencontainers.image.description="Wraindrock Linux - a Fedora Silverblue based atomic desktop" \
+      org.opencontainers.image.description="Wraindrock - a Bluefin DX based atomic desktop, tuned out of the box" \
       org.opencontainers.image.vendor="Wraindrock" \
       org.opencontainers.image.licenses="MIT" \
       org.opencontainers.image.source="https://github.com/Wraindrock/wraindrock-linux" \
@@ -48,7 +48,7 @@ LABEL org.opencontainers.image.title="Wraindrock Linux" \
       org.wraindrock.base.image="${BASE_IMAGE}" \
       org.wraindrock.base.digest="${BASE_DIGEST}" \
       org.wraindrock.fedora.version="${FEDORA_VERSION}" \
-      org.wraindrock.parity="fedora-silverblue-${FEDORA_VERSION}"
+      org.wraindrock.parity="bluefin-dx-${FEDORA_VERSION}"
 
 # Apply the identity delta and record provenance, refusing to build on a base
 # that is not the bootc image this project claims to derive from. See
