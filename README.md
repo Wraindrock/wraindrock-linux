@@ -21,12 +21,20 @@ build if the image carries anything that is not in that manifest.
 
 ## Screenshots
 
-Real frames from the CI virtual-machine runs: the installer, and the first boot
-after it (our wallpaper behind GNOME Initial Setup).
+Real QEMU frames. The boot menu is from a local boot of the patched ISO; the
+other three are from the CI virtual-machine run of a published disk artifact.
+
+| Boot menu | GDM login |
+| --- | --- |
+| ![GRUB boot menu](docs/screenshots/boot-menu.png) | ![GDM login](docs/screenshots/gdm-login.png) |
 
 | Installer | First boot |
 | --- | --- |
 | ![Anaconda installer](docs/screenshots/installer.png) | ![First boot](docs/screenshots/first-boot.png) |
+
+The first menu entry is the default interactive install; the second erases the
+first disk without asking. After login the desktop runs on the Wraindrock
+wallpaper, and a fresh install lands on GNOME Initial Setup over it.
 
 ## Install
 

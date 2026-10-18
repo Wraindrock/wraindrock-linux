@@ -327,6 +327,18 @@ if [[ -x tests/iso-menu.sh ]]; then
 else
     fail "tests/iso-menu.sh is missing or not executable"
 fi
+for shot in boot-menu gdm-login installer first-boot; do
+    if [[ -s "docs/screenshots/${shot}.png" ]]; then
+        pass "screenshot ${shot}.png exists"
+    else
+        fail "docs/screenshots/${shot}.png is missing"
+    fi
+done
+if grep -Fq 'docs/screenshots/boot-menu.png' README.md; then
+    pass "README shows the boot menu"
+else
+    fail "README does not show the boot menu"
+fi
 if grep -Fq 'disk.yml' README.md; then
     pass "README documents the disk-image workflow"
 else

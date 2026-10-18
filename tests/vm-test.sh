@@ -217,6 +217,8 @@ if [[ "${mode}" == iso ]]; then
     # unattended entry below it. The GRUB menu timeout is 60 s, so both attempts
     # land inside it; a key press that arrives too early is simply ignored.
     sleep 15
+    # Capture the menu for evidence/README before selecting the second entry.
+    screendump "${out_dir}/boot-menu.png" 2>/dev/null || true
     send_key down ret || true
     sleep 15
     send_key down ret || true
