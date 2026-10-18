@@ -195,7 +195,7 @@ expected_added = {
     "/usr/share/icons/hicolor/scalable/apps/wraindrock-logo-icon.svg",
     "/usr/share/pixmaps/wraindrock-gdm-logo.svg",
     "/usr/share/pixmaps/wraindrock-gdm-logo.png",
-    "/usr/share/glib-2.0/schemas/zz-wraindrock.gschema.override",
+    "/usr/share/glib-2.0/schemas/zzzz-wraindrock.gschema.override",
     "/usr/share/backgrounds/wraindrock/wraindrock-wallpaper.png",
     "/usr/share/wraindrock/base-os-release",
     "/usr/share/wraindrock/build-info.json",
@@ -251,7 +251,7 @@ done
 
 if in_image "${IMAGE}" \
     "grep -qx \"logo='/usr/share/pixmaps/wraindrock-gdm-logo.png'\" \
-        /usr/share/glib-2.0/schemas/zz-wraindrock.gschema.override"; then
+        /usr/share/glib-2.0/schemas/zzzz-wraindrock.gschema.override"; then
     pass "GDM logo override points at the Wraindrock wordmark"
 else
     fail "GDM logo override is missing or wrong"
@@ -288,10 +288,10 @@ fi
 
 if in_image "${IMAGE}" \
     "grep -qxF \"picture-uri='file://${wallpaper}'\" \
-        /usr/share/glib-2.0/schemas/zz-wraindrock.gschema.override" &&
+        /usr/share/glib-2.0/schemas/zzzz-wraindrock.gschema.override" &&
    in_image "${IMAGE}" \
     "grep -qxF \"picture-uri-dark='file://${wallpaper}'\" \
-        /usr/share/glib-2.0/schemas/zz-wraindrock.gschema.override"; then
+        /usr/share/glib-2.0/schemas/zzzz-wraindrock.gschema.override"; then
     pass "wallpaper override sets both day and dark defaults"
 else
     fail "wallpaper override is missing or wrong"

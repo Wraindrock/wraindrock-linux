@@ -141,7 +141,7 @@ install -D -m 0644 "${branding_dir}/wraindrock-wallpaper.png" \
 # its own background - see docs/architecture.md for the known dark-background
 # contrast caveat.
 gschema_dir=/usr/share/glib-2.0/schemas
-override="${gschema_dir}/zz-wraindrock.gschema.override"
+override="${gschema_dir}/zzzz-wraindrock.gschema.override"
 cat > "${override}" <<'EOF'
 [org.gnome.login-screen]
 logo='/usr/share/pixmaps/wraindrock-gdm-logo.png'
@@ -259,7 +259,7 @@ cat > /usr/share/wraindrock/delta.json <<EOF
       "/usr/share/icons/hicolor/scalable/apps/wraindrock-logo-icon.svg",
       "/usr/share/pixmaps/wraindrock-gdm-logo.svg",
       "/usr/share/pixmaps/wraindrock-gdm-logo.png",
-      "/usr/share/glib-2.0/schemas/zz-wraindrock.gschema.override",
+      "/usr/share/glib-2.0/schemas/zzzz-wraindrock.gschema.override",
       "/usr/share/backgrounds/wraindrock/wraindrock-wallpaper.png",
       "/usr/share/plymouth/themes/wraindrock/wraindrock.plymouth",
       "/usr/share/plymouth/themes/wraindrock/background.png",

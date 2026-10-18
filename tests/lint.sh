@@ -248,7 +248,7 @@ for needle in 'ConditionPathExists=!/var/lib/wraindrock/hostname-seeded' \
 done
 
 echo "build invariants"
-for needle in 'base-os-release' 'delta.json' 'zz-wraindrock.gschema.override' \
+for needle in 'base-os-release' 'delta.json' 'zzzz-wraindrock.gschema.override' \
               'wraindrock-wallpaper.png' 'Theme=wraindrock' \
               'plymouth/animation-' 'grub/theme.txt' 'wraindrock-grub-theme' \
               'wraindrock-hostname-seed'; do

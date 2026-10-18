@@ -118,8 +118,8 @@ wallpaper and boot splash in v0.3):
 | display name, pretty name, logo, default hostname | `sed` on `/usr/lib/os-release` |
 | `ID`, `ID_LIKE`, `CPE_NAME`, version fields | left at upstream values — uBlue tooling keys off `ID=bluefin`, and the CPE keeps naming Universal Blue |
 | logo icon (`Settings` → `About`) | `/usr/share/icons/hicolor/scalable/apps/wraindrock-logo-icon.svg` |
-| GDM login logo | `/usr/share/pixmaps/wraindrock-gdm-logo.{svg,png}` + `zz-wraindrock.gschema.override` |
-| default desktop + GDM wallpaper | `/usr/share/backgrounds/wraindrock/wraindrock-wallpaper.png` + `[org.gnome.desktop.background]` in `zz-wraindrock.gschema.override` |
+| GDM login logo | `/usr/share/pixmaps/wraindrock-gdm-logo.{svg,png}` + `zzzz-wraindrock.gschema.override` |
+| default desktop + GDM wallpaper | `/usr/share/backgrounds/wraindrock/wraindrock-wallpaper.png` + `[org.gnome.desktop.background]` in `zzzz-wraindrock.gschema.override` |
 | Plymouth boot splash | `/usr/share/plymouth/themes/wraindrock/` (two-step theme) + `Theme=wraindrock` in `/etc/plymouth/plymouthd.conf` |
 | GRUB boot menu theme | `/usr/share/grub/themes/wraindrock/` assets + `/usr/bin/wraindrock-grub-theme`, which copies them to `/boot/grub2/themes/wraindrock/` and writes a marked `/boot/grub2/custom.cfg` (opt-in) |
 | default hostname | `DEFAULT_HOSTNAME` (no `/etc/hostname` is shipped; an installer or user file still wins) |
