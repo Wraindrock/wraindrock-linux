@@ -19,6 +19,15 @@ Everything else, including the RPM set, matches Bluefin DX package for package.
 `/usr/share/wraindrock/delta.json` records every difference, and CI fails the
 build if the image carries anything that is not in that manifest.
 
+## Screenshots
+
+Real frames from the CI virtual-machine runs: the unattended installer, and the
+first boot after it (our wallpaper behind GNOME Initial Setup).
+
+| Installer | First boot |
+| --- | --- |
+| ![Anaconda installer](docs/screenshots/installer.png) | ![First boot](docs/screenshots/first-boot.png) |
+
 ## Install
 
 Two supported paths.
