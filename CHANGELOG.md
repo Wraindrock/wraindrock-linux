@@ -5,20 +5,38 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 image versions are the upstream channel plus an immutable build tag, see
 [docs/architecture.md](docs/architecture.md).
 
+## [0.8.3] - 2026-10-18
+
+### Fixed
+
+- The default interactive ISO entry could not actually install: without a
+  kickstart Anaconda never learns where the bootc payload is and reports
+  "Error setting up repositories". `tests/iso-menu.sh` now remasters the ISO
+  with `/interactive.ks` (payload location plus the registry `bootc switch`),
+  replaces the two visible GRUB menus, replays the El Torito/GPT boot images
+  and byte-patches the menu copies embedded in the EFI images. Anaconda's hub
+  now opens with the payload ready and asks for disk, partitioning and users.
+- The disk workflow captures the interactive path with
+  `tests/iso-interactive-shots.sh` and uploads those screenshots with the VM
+  evidence.
+
+### Changed
+
+- Docs describe the interactive entry as a partial kickstart; language is
+  picked at first boot.
+
 ## [0.8.2] - 2026-10-18
 
 ### Fixed
 
 - The installer no longer force-installs. bootc-image-builder bakes an
-  unattended kickstart into the ISO, so `tests/iso-menu.sh` rewrites both the
-  UEFI and BIOS GRUB menus in place: the default entry
-  **Install Wraindrock (interactive, choose disks)** has no kickstart, and
-  **Install Wraindrock - erase first disk (unattended)** keeps it as an
-  explicit choice. The rewrite pads the menus to their original byte length,
-  so the ISO9660 extents, El Torito/GPT images and the signed `grubx64.efi`
-  are untouched.
-- The disk workflow asserts both menu entries and exactly one kickstart entry
-  per menu; the ISO VM test presses Down+Enter to select the unattended entry.
+  unattended kickstart into the ISO, so the ISO gets a two-entry boot menu:
+  **Install Wraindrock (interactive, choose disks)** (default) and **Install
+  Wraindrock - erase first disk (unattended)**. Both pass a kickstart: the
+  interactive one only names the bootc payload, so Anaconda's own hub still
+  asks for the disk, partitioning and user account.
+- The disk workflow asserts both menu entries and two kickstart entries per
+  menu; the ISO VM test presses Down+Enter to select the unattended entry.
 
 ## [0.8.1] - 2026-10-18
 

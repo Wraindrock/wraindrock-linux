@@ -65,8 +65,9 @@ sudo dd if=install.iso of=/dev/sdX bs=8M status=progress oflag=direct conv=fsync
 ```
 
 The boot menu offers two entries. The default, **Install Wraindrock
-(interactive, choose disks)**, opens Anaconda's hub so you pick the disk and
-partitioning. The second, **Install Wraindrock - erase first disk
+(interactive, choose disks)**, opens Anaconda's hub so you pick the disk,
+partitioning and user account yourself; its kickstart only tells Anaconda where
+the image payload is. The second, **Install Wraindrock - erase first disk
 (unattended)**, clears the first disk without asking — use that one only on a
 scratch machine, with data disks detached, or in a VM.
 

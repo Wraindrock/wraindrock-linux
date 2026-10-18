@@ -54,7 +54,9 @@ sudo dd if=install.iso of=/dev/sdX bs=8M status=progress oflag=direct conv=fsync
 The boot menu offers two entries:
 
 - **Install Wraindrock (interactive, choose disks)** — the default. Anaconda's
-  hub opens so you choose the target disk and partitioning yourself.
+  hub opens so you choose the target disk, partitioning and user account
+  yourself. Its partial kickstart only supplies the bootc payload location;
+  language is picked at first boot.
 - **Install Wraindrock - erase first disk (unattended)** — keeps the generated
   kickstart: it clears the first disk and installs without prompting. Use it
   only on a scratch machine, with data disks detached, or in a VM.

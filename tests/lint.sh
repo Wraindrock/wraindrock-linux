@@ -366,7 +366,9 @@ if [[ -r .github/workflows/disk.yml ]]; then
                   'wraindrock-linux-disk' 'oras push' 'oras manifest fetch' \
                   'immutable artifact tags are never overwritten' \
                   'tests/iso-menu.sh' \
+                  'tests/iso-interactive-shots.sh' \
                   'Install Wraindrock (interactive, choose disks)' \
+                  'vm-interactive' \
                   'f27adb935022d94df8dc77719c322dda592c78a0d57a6f7dcdd8d900b248c454'; do
         if grep -Fq -e "${needle}" .github/workflows/disk.yml; then
             pass "disk workflow contains ${needle}"
@@ -412,6 +414,29 @@ for needle in 'Install finished' 'once=d' 'screen_ok' 'png-stats.py'; do
         pass "vm-test.sh handles: ${needle}"
     else
         fail "tests/vm-test.sh is missing: ${needle}"
+    fi
+done
+for fixture in anaconda-hub.png anaconda-destination.png \
+               anaconda-partitioning.png boot-menu.png; do
+    if [[ -s "tests/fixtures/${fixture}" ]]; then
+        pass "interactive installer fixture: ${fixture}"
+    else
+        fail "tests/fixtures/${fixture} is missing"
+    fi
+done
+for needle in 'interactive.ks' 'ostreecontainer --url=/run/install/repo/container' \
+              '-boot_image any replay' 'xorriso'; do
+    if grep -Fq -e "${needle}" tests/iso-menu.sh; then
+        pass "iso-menu.sh handles: ${needle}"
+    else
+        fail "tests/iso-menu.sh is missing: ${needle}"
+    fi
+done
+for needle in 'anaconda-hub.png' 'input-send-event' 'interactive-hub.png'; do
+    if grep -Fq -e "${needle}" tests/iso-interactive-shots.sh; then
+        pass "iso-interactive-shots.sh handles: ${needle}"
+    else
+        fail "tests/iso-interactive-shots.sh is missing: ${needle}"
     fi
 done
 

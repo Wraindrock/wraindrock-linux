@@ -156,10 +156,14 @@ jobs:
 
       - name: Add the interactive/unattended boot-menu choice
         # bootc-image-builder always injects a kickstart, which erases the first
-        # disk without asking. Patch both GRUB menus so the default entry is the
-        # interactive installer and the unattended one is an explicit choice.
+        # disk without asking. Remaster the ISO so the default entry starts the
+        # interactive installer (a partial kickstart only supplies the payload
+        # location) and the unattended entry stays an explicit choice.
         run: |
           set -euo pipefail
+          # The podman storage loopback is no longer needed once the ISO exists.
+          sudo umount /var/lib/containers/storage 2>/dev/null || true
+          sudo rm -f /mnt/podman-storage.img /var/tmp/podman-storage.img
           iso=$(find output/bootiso -name '*.iso' -print -quit)
           bash tests/iso-menu.sh "${iso}"
 
@@ -189,14 +193,20 @@ jobs:
           test -f /mnt/iso/EFI/BOOT/BOOTX64.EFI || { echo "::error::ISO has no EFI bootloader"; exit 1; }
           test -d /mnt/iso/images || { echo "::error::ISO has no images/ payload"; exit 1; }
           # The boot menu must offer the choice: interactive by default, plus one
-          # explicit unattended entry that keeps the generated kickstart.
+          # explicit unattended entry. Both entries use a kickstart now: the
+          # interactive one only points Anaconda at the bootc payload.
+          test -f /mnt/iso/interactive.ks || { echo "::error::ISO has no interactive kickstart"; exit 1; }
           for menu in /mnt/iso/EFI/BOOT/grub.cfg /mnt/iso/boot/grub2/grub.cfg; do
             grep -Fq "Install Wraindrock (interactive, choose disks)" "${menu}" \
               || { echo "::error::${menu} lacks the interactive entry"; exit 1; }
             grep -Fq "Install Wraindrock - erase first disk (unattended)" "${menu}" \
               || { echo "::error::${menu} lacks the unattended entry"; exit 1; }
-            [ "$(grep -cF 'inst.ks=' "${menu}")" = 1 ] \
-              || { echo "::error::${menu} must have exactly one kickstart entry"; exit 1; }
+            [ "$(grep -cF 'inst.ks=' "${menu}")" = 2 ] \
+              || { echo "::error::${menu} must have exactly two kickstart entries"; exit 1; }
+            grep -Fq '/interactive.ks' "${menu}" \
+              || { echo "::error::${menu} does not use the interactive kickstart"; exit 1; }
+            grep -Fq '/osbuild.ks' "${menu}" \
+              || { echo "::error::${menu} does not use the unattended kickstart"; exit 1; }
           done
           find /mnt/iso/EFI /mnt/iso/images -maxdepth 2 -type f | sort | head -20
           sudo umount /mnt/iso
@@ -226,6 +236,14 @@ jobs:
           qcow2=$(find output/qcow2 -name '*.qcow2' -print -quit)
           tests/vm-test.sh qcow2 "${qcow2}" --timeout 900 --out "${RUNNER_TEMP}/vm-qcow2"
           echo "screenshots: ${RUNNER_TEMP}/vm-qcow2"
+
+      - name: Capture the interactive installer screens
+        if: inputs.vm_test
+        run: |
+          set -euo pipefail
+          sudo chmod 666 /dev/kvm 2>/dev/null || true
+          iso=$(find output/bootiso -name '*.iso' -print -quit)
+          tests/iso-interactive-shots.sh "${iso}" "${RUNNER_TEMP}/vm-interactive"
 
       - name: Publish disk artifacts to GHCR
         id: publish
@@ -325,6 +343,7 @@ jobs:
             ${{ runner.temp }}/vm-iso/*.png
             ${{ runner.temp }}/vm-iso/serial.log
             ${{ runner.temp }}/vm-iso/qemu.log
+            ${{ runner.temp }}/vm-interactive/*.png
             ${{ runner.temp }}/vm-qcow2/*.png
             ${{ runner.temp }}/vm-qcow2/serial.log
             ${{ runner.temp }}/vm-qcow2/qemu.log

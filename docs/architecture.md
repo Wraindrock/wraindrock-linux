@@ -258,8 +258,10 @@ These are design decisions, not backlog items:
 1. **A custom installer UX before v0.3.** `bootc switch` on an existing Fedora
    Atomic system remains the upgrade path. v0.3 adds bootc-image-builder's stock
    Anaconda ISO with a two-entry boot menu: interactive (default) or unattended
-   (erase first disk). A custom installer UX, partitioning UI and encryption
-   flow stay out of scope.
+   (erase first disk). The interactive entry uses a partial kickstart that only
+   names the bootc payload; the installed system's own Anaconda UI does the
+   partitioning and asks for users. A custom installer UX and encryption flow
+   stay out of scope.
 2. **A package manager that mutates the live root.** `rpm-ostree install` layers
    are a user escape hatch on the installed system, not a Wraindrock feature. The
    image is the unit of change.
