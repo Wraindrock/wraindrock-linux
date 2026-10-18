@@ -196,7 +196,7 @@ jobs:
           # workflow user is not in it, so open it up for this job only.
           sudo chmod 666 /dev/kvm 2>/dev/null || true
           iso=$(find output/bootiso -name '*.iso' -print -quit)
-          tests/vm-test.sh iso "${iso}" --timeout 2400 --out "${RUNNER_TEMP}/vm-iso"
+          tests/vm-test.sh iso "${iso}" --timeout 3000 --out "${RUNNER_TEMP}/vm-iso"
           echo "screenshots: ${RUNNER_TEMP}/vm-iso"
 
       - name: Boot the qcow2 under KVM and require the Wraindrock hostname

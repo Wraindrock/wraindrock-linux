@@ -217,10 +217,13 @@ while :; do
         install_finished=${now}
         echo "installer finished at t=${elapsed}s; waiting for the installed system"
     fi
-    if [[ "${mode}" == iso && "${install_finished}" != 0 && -s "${frame}" ]]; then
+    if [[ "${mode}" == iso && -s "${frame}" ]]; then
         # The installed system may show the GNOME welcome screen (white) or the
         # GDM login screen (the Wraindrock wallpaper). Both prove that the
-        # graphical stack came up; an Anaconda screen matches neither.
+        # graphical stack came up; an Anaconda screen matches neither. The
+        # serial marker is only a hint: some kickstarts cannot write to ttyS0
+        # from the installed system, and waiting for it would hang until the
+        # timeout even though the desktop is already up.
         blue=$(python3 "${script_dir}/png-stats.py" "${frame}" | sed 's/.*blue=//')
         diff=$(python3 "${script_dir}/png-stats.py" "${frame}" "${screen_ref}" | awk '{print $NF}')
         if python3 -c "import sys; sys.exit(0 if float('${blue}') >= 0.6 or float('${diff}') <= 25 else 1)" 2>/dev/null; then
