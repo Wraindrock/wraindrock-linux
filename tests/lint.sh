@@ -58,8 +58,8 @@ if [[ -r ${env_file} ]]; then
     else
         fail "IMAGE_NAME must be lowercase [a-z0-9._-]"
     fi
-    if [[ ${BASE_IMAGE:-} == ghcr.io/ublue-os/bluefin-dx:* ]]; then
-        pass "BASE_IMAGE tracks Bluefin DX"
+    if [[ ${BASE_IMAGE:-} == ghcr.io/ublue-os/bluefin-dx-nvidia-open:* ]]; then
+        pass "BASE_IMAGE tracks Bluefin DX NVIDIA"
     else
         fail "BASE_IMAGE (${BASE_IMAGE:-}) does not track Bluefin DX"
     fi
@@ -248,27 +248,39 @@ for needle in 'ConditionPathExists=!/var/lib/wraindrock/hostname-seeded' \
 done
 
 echo "software defaults"
-for asset in build_files/software/wraindrock.preinstall build_files/software/mimeapps.list build_files/software/rpms.tsv; do
+for asset in build_files/software/flatpaks.txt build_files/software/mimeapps.list build_files/software/rpms.tsv; do
     if [[ -s ${asset} ]]; then
         pass "${asset} exists"
     else
         fail "${asset} is missing"
     fi
 done
-preinstall_count=$(grep -c '^\[Flatpak Preinstall ' build_files/software/wraindrock.preinstall || true)
-if [[ ${preinstall_count} == 9 ]]; then
-    pass "preinstall file declares 9 Flatpaks"
+flatpak_count=$(grep -v '^#' build_files/software/flatpaks.txt | sed '/^[[:space:]]*$/d' | wc -l)
+if [[ ${flatpak_count} == 41 ]]; then
+    pass "flatpaks.txt declares 41 Flatpaks"
 else
-    fail "preinstall file declares ${preinstall_count} Flatpaks, want 9"
+    fail "flatpaks.txt declares ${flatpak_count} Flatpaks, want 41"
+fi
+if grep -Ev '^#|^[[:space:]]*$' build_files/software/flatpaks.txt \
+        | grep -Eqv '^[A-Za-z0-9_-]+(\.[A-Za-z0-9_-]+)+$'; then
+    fail "flatpaks.txt contains a malformed app ID"
+else
+    pass "flatpaks.txt app IDs are well formed"
 fi
 for app in io.podman_desktop.PodmanDesktop com.tencent.WeChat \
-    com.github.flxzt.rnote it.mijorus.gearlever org.gnome.Builder; do
-    if grep -Fxq "[Flatpak Preinstall ${app}]" build_files/software/wraindrock.preinstall; then
-        pass "preinstall file lists ${app}"
+    com.github.flxzt.rnote it.mijorus.gearlever org.gnome.Builder \
+    org.gnome.Calculator org.mozilla.thunderbird org.gnome.DejaDup; do
+    if grep -Fxq "${app}" build_files/software/flatpaks.txt; then
+        pass "flatpaks.txt lists ${app}"
     else
-        fail "preinstall file is missing ${app}"
+        fail "flatpaks.txt is missing ${app}"
     fi
 done
+if grep -Eq 'org\.mozilla\.firefox|app\.zen_browser\.zen|Gtk3theme' build_files/software/flatpaks.txt; then
+    fail "flatpaks.txt still preinstalls Firefox, Zen or theme extensions"
+else
+    pass "flatpaks.txt skips Firefox, Zen and theme extensions"
+fi
 for scheme in text/html application/xhtml+xml x-scheme-handler/http x-scheme-handler/https; do
     if grep -Fxq "${scheme}=helium.desktop" build_files/software/mimeapps.list; then
         pass "Helium is the default for ${scheme}"
@@ -289,7 +301,7 @@ for name in helium-bin clash-verge rayburst sing-box; do
         fail "rpms.tsv pin for ${name} is incomplete"
     fi
 done
-for needle in "wraindrock.preinstall" "mimeapps.list" "rpms.tsv" "rpm -i" "sha256sum -c" \
+for needle in "flatpaks.txt" "mimeapps.list" "rpms.tsv" "rpm -i" "sha256sum -c" \
     "rpm_base_set_file" "rpmdb.sqlite-wal"; do
     if grep -Fq -- "${needle}" build_files/build.sh; then
         pass "build.sh handles ${needle}"
@@ -308,7 +320,8 @@ for needle in 'base-os-release' 'delta.json' 'zzzz-wraindrock.gschema.override' 
               'wraindrock-wallpaper.png' 'Theme=wraindrock' \
               'plymouth/animation-' 'grub/theme.txt' 'wraindrock-grub-theme' \
               'wraindrock-hostname-seed' 'install -d -m 0755 /opt' \
-              'org.gnome.desktop.input-sources' 'libpinyin'; do
+              'org.gnome.desktop.input-sources' 'libpinyin' \
+              'nvidia-driver' 'qemu-system-x86-core'; do
     if grep -Fq "${needle}" build_files/build.sh; then
         pass "build.sh handles ${needle}"
     else

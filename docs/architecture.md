@@ -10,15 +10,18 @@ and what the project deliberately does not do.
 The base feedstock is Universal Blue's Bluefin DX:
 
 ```
-ghcr.io/ublue-os/bluefin-dx:stable
+ghcr.io/ublue-os/bluefin-dx-nvidia-open:stable
 ```
 
 Bluefin DX is itself a bootc image: a GNOME desktop with developer tooling,
 uBlue's update and application plumbing, and (in `-nvidia` variants) prebuilt
 kernel modules. We consume it as an OCI base layer, pin the resolved digest at
 build time, and record it in the image. The identity contract the build requires
-is `ID=bluefin` with `VARIANT_ID=bluefin-dx*` — the host this was developed on is
-`bluefin-dx-nvidia-open`.
+is `ID=bluefin` with `VARIANT_ID=bluefin-dx-nvidia-open`. Choosing the NVIDIA
+variant is deliberate: the open driver stack (`nvidia-driver`, `kmod-nvidia`,
+`nvidia-container-toolkit`) and the virtualisation stack (QEMU/KVM, libvirt,
+virt-manager, Incus) are inherited artifacts, not our own builds. The build
+asserts them so a silent base change cannot ship without them.
 
 Wraindrock does not own the desktop, kernel, firmware or driver stack. Those
 belong to Fedora and Universal Blue, and that is the point: the project is a

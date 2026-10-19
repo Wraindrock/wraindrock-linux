@@ -78,14 +78,18 @@ bootc status                         # Booted: ghcr.io/wraindrock/wraindrock-lin
 cat /usr/lib/os-release              # NAME="Wraindrock", ID=bluefin
 cat /usr/share/wraindrock/delta.json # every intended difference
 hostnamectl                          # wraindrock on a fresh install
-flatpak list --system                # the nine declared preinstalls
-rpm -q clash-verge rayburst sing-box # Clash Verge, Rayburst, SFL
+flatpak list --system                # the 41 declared preinstalls
+rpm -q helium-bin clash-verge rayburst sing-box  # baked apps
+nvidia-smi                           # NVIDIA open driver
+virsh --version && incus version     # KVM/libvirt and Incus
 gsettings get org.gnome.desktop.background picture-uri
 gsettings get org.gnome.desktop.input-sources sources  # IBus + libpinyin
 plymouth-set-default-theme           # wraindrock
 sudo wraindrock-grub-theme status    # opt-in
 ```
 
+The first boot downloads the Flatpaks in the background; give it network and a
+few GB of free space, and `systemctl status flatpak-preinstall` shows progress.
 The four RPMs are part of the image and update with it. For a package you
 need newer before an image update, use
 `sudo rpm-ostree override replace <path-or-url-to-rpm>`; removing the override

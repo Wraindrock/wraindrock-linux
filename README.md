@@ -16,6 +16,8 @@ owns the identity, the presentation and a short list of personal defaults.
 - A fresh install seeds the hostname to `wraindrock`.
 - The default input method is **IBus** with the `libpinyin` engine (no Fcitx);
   the Noto CJK fonts come from the base.
+- **NVIDIA open drivers**, QEMU/KVM with virt-manager, libvirt, Incus, Docker
+  and Distrobox come from the Bluefin DX NVIDIA base.
 
 Everything else matches Bluefin DX package for package, except the four
 software packages listed below. `/usr/share/wraindrock/delta.json` records every
@@ -24,20 +26,24 @@ that manifest.
 
 ## Software
 
-The first boot installs nine Flatpaks from Flathub (needs the network):
+The first boot installs **41 Flatpaks** (needs the network and a few GB):
+Bluefin's core and DX applications — GNOME apps, Thunderbird, Podman Desktop,
+GNOME Builder, DevToolbox, Clapgrep, Embellish, Bazaar, Flatseal, DistroShelf
+and the rest of the maintained set — plus WeChat, Rnote and Gear Lever. Firefox
+is deliberately not preinstalled; `flatpak install org.mozilla.firefox` adds it.
+The two adw-gtk3 theme extensions and Tavern (no longer on Flathub) are skipped.
 
-| Bluefin DX | Wraindrock |
-| --- | --- |
-| Podman Desktop, GNOME Builder, DevToolbox, Clapgrep, Embellish, Tavern | WeChat, Rnote, Gear Lever |
+**Helium is the default browser** for links and HTML. Four programs have no
+Flatpak, so their upstream RPMs are baked in at pinned versions: Helium
+0.19.4.1 (from the official `imput/helium` COPR), Clash Verge Rev 2.5.8,
+Rayburst 4.0.1 and sing-box (SFL) 1.14.3. Each upstream release is caught by the
+daily upstream-watch workflow, which bumps the pin and publishes a new signed
+image tag — the apps do not wait for a Fedora major release.
 
-**Helium is the default browser** for links and HTML; Firefox stays installed
-and selectable. Four programs have no Flatpak, so their upstream RPMs are baked
-in at pinned versions: Helium 0.19.4.1 (from the official `imput/helium` COPR),
-Clash Verge Rev 2.5.8, Rayburst 4.0.1 and sing-box (SFL) 1.14.3. Each upstream
-release is caught by the daily upstream-watch workflow, which bumps the pin and
-publishes a new signed image tag — the apps do not wait for a Fedora major
-release. Bluefin's other 36 Flatpaks stay one command away:
-`ujust install-system-flatpaks`.
+KVM (`virt-manager`, `libvirt`, `qemu-system-x86`), Incus and Docker are part of
+the inherited Bluefin DX base, so virtual machines work out of the box. The
+NVIDIA open driver stack (`nvidia-driver`, `kmod-nvidia`,
+`nvidia-container-toolkit`) is inherited from the NVIDIA base variant as well.
 
 Input: **IBus + libpinyin** is the system default (Super+Space switches between
 US and Chinese); Fcitx is not installed. Noto Sans CJK ships in the base.

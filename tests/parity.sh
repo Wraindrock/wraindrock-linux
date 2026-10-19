@@ -289,23 +289,29 @@ if in_image "${IMAGE}" "test -s ${preinstall}"; then
 else
     fail "first-boot Flatpak preinstall file is missing"
 fi
+# The declaration lives in build_files/software/flatpaks.txt; the image must
+# carry exactly that set.
+flatpak_list="build_files/software/flatpaks.txt"
+mapfile -t expected_apps < <(grep -v '^#' "${flatpak_list}" | sed '/^[[:space:]]*$/d')
 preinstall_count="$(in_image "${IMAGE}" "grep -c '^\[Flatpak Preinstall ' ${preinstall}")"
-if [[ ${preinstall_count} == 9 ]]; then
-    pass "preinstall file declares 9 Flatpaks"
+if [[ ${preinstall_count} -eq ${#expected_apps[@]} ]]; then
+    pass "preinstall file declares ${preinstall_count} Flatpaks"
 else
-    fail "preinstall file declares ${preinstall_count} Flatpaks (expected 9)"
+    fail "preinstall file declares ${preinstall_count} Flatpaks (expected ${#expected_apps[@]})"
 fi
-for app in de.leopoldluley.Clapgrep io.github.getnf.embellish \
-    io.podman_desktop.PodmanDesktop me.iepure.devtoolbox org.gnome.Builder \
-    com.github.tuna_os.Tavern com.tencent.WeChat \
-    com.github.flxzt.rnote it.mijorus.gearlever; do
+for app in "${expected_apps[@]}"; do
     if in_image "${IMAGE}" "grep -Fxq '[Flatpak Preinstall ${app}]' ${preinstall}"; then
         :
     else
         fail "preinstall file is missing ${app}"
     fi
 done
-pass "preinstall file lists the Bluefin DX and Wraindrock app IDs"
+pass "preinstall file lists every app in flatpaks.txt"
+if in_image "${IMAGE}" "grep -q 'org.mozilla.firefox' ${preinstall}"; then
+    fail "the preinstall file installs Firefox, which the user asked to skip"
+else
+    pass "Firefox is not preinstalled"
+fi
 
 if in_image "${IMAGE}" \
     "grep -Fxq 'x-scheme-handler/https=helium.desktop' /etc/xdg/mimeapps.list"; then
@@ -695,6 +701,26 @@ if in_image "${IMAGE}" 'bootc --version'; then
     pass "bootc CLI is present"
 else
     fail "bootc CLI is missing"
+fi
+
+# --- drivers and virtualisation (inherited from the NVIDIA base) ------------
+if in_image "${IMAGE}" \
+    'rpm -q nvidia-driver nvidia-container-toolkit kmod-nvidia >/dev/null 2>&1 \
+        && test -x /usr/bin/nvidia-smi'; then
+    pass "NVIDIA driver stack is present"
+else
+    fail "NVIDIA driver stack is missing"
+fi
+if in_image "${IMAGE}" \
+    'rpm -q qemu-system-x86-core libvirt-daemon-kvm virt-manager >/dev/null 2>&1'; then
+    pass "QEMU/KVM, libvirt and virt-manager are present"
+else
+    fail "the virtualisation stack is incomplete"
+fi
+if in_image "${IMAGE}" 'rpm -q incus docker-ce distrobox >/dev/null 2>&1'; then
+    pass "Incus, Docker and Distrobox are present"
+else
+    fail "the container stack is incomplete"
 fi
 
 echo

@@ -5,6 +5,23 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 image versions are the upstream channel plus an immutable build tag, see
 [docs/architecture.md](docs/architecture.md).
 
+## [0.12.0] - 2026-10-19
+
+### Changed
+
+- Base rebased to `ghcr.io/ublue-os/bluefin-dx-nvidia-open:stable`, so the
+  NVIDIA open driver stack (nvidia-driver, kmod-nvidia,
+  nvidia-container-toolkit) and the virtualisation stack (QEMU/KVM, libvirt,
+  virt-manager, Incus, Docker, Distrobox) are inherited and asserted at build
+  time.
+
+### Added
+
+- The first boot now installs 41 Flatpaks: Bluefin's full core and DX set (minus
+  Firefox, the unavailable Tavern and the two theme extensions) plus WeChat,
+  Rnote and Gear Lever. The declaration lives in
+  `build_files/software/flatpaks.txt`; the preinstall file is generated from it.
+
 ## [0.11.0] - 2026-10-19
 
 ### Added

@@ -64,17 +64,21 @@ journald and dbus cannot build their mount namespaces without it.
 upstream already provides.
 
 - [x] Flatpak preinstalls through uBlue's supported mechanism
-      (`/usr/share/flatpak/preinstall.d/wraindrock.preinstall`): Bluefin DX's six
-      developer apps plus WeChat, Rnote and Gear Lever; Helium (pinned RPM from
-      the official COPR) is the default browser via `/etc/xdg/mimeapps.list`;
-      Firefox stays installed.
-      The other 36 Bluefin Flatpaks remain `ujust install-system-flatpaks`.
+      (`/usr/share/flatpak/preinstall.d/wraindrock.preinstall`, generated from
+      `build_files/software/flatpaks.txt`): 41 apps = Bluefin's core and DX set
+      (GNOME apps, Thunderbird, Podman Desktop, Builder, DevToolbox, Clapgrep,
+      Embellish, Bazaar, Flatseal, DistroShelf, Mission Center, Refine, …) plus
+      WeChat, Rnote and Gear Lever. Firefox is skipped by explicit request,
+      Tavern is no longer on Flathub and the two adw-gtk3 theme extensions are
+      not app refs. Helium (pinned RPM from the official COPR) is the default
+      browser via `/etc/xdg/mimeapps.list`.
 - [x] Four RPMs baked at pinned versions with sha256 checks: Helium 0.19.4.1
       (official `imput/helium` COPR), Clash Verge Rev 2.5.8, Rayburst 4.0.1,
       sing-box (SFL) 1.14.3; declared in delta.json schema 2 under `rpm.added`.
       The daily `upstream-watch` workflow refreshes `rpms.tsv` and dispatches a
       build per upstream release, so apps track their own cadence
-- [ ] Homebrew bundle for CLI tooling (uBlue ships Brew; we only list formulae)
+- [ ] Homebrew bundle for CLI tooling: uBlue's Brew is inherited, but no
+      formulae are preinstalled yet (deliberately left user-controlled)
 - [ ] GNOME defaults via `gschema.override` (theme, fonts, clock, input method)
 - [x] CJK fonts (Noto Sans CJK, already in the base) + **IBus + libpinyin**
       as the declared system default (Fcitx is not installed)
@@ -88,11 +92,13 @@ apps "for taste" without a documented reason.
 **Goal:** no custom driver or virtualization work; consume what uBlue already
 builds and signs.
 
-- [ ] KVM/virt-manager package list copied from upstream Bluefin DX recipes
-      (not hand-picked), declared as an RPM delta with its own parity allowance
-- [ ] `-nvidia` image variant from `ublue-os/akmods` prebuilt modules, with
-      Secure Boot/MOK handled the way upstream does it
-- [ ] Hard limit: no self-built kernel modules, no out-of-tree patches
+- [x] KVM/virt-manager inherited from Bluefin DX (QEMU/KVM, libvirt-daemon-kvm,
+      virt-manager, Incus, Docker, Distrobox) and asserted by the build — no
+      hand-picked list, nothing rebuilt
+- [x] NVIDIA open driver stack inherited from `bluefin-dx-nvidia-open:stable`
+      (prebuilt `kmod-nvidia` + `nvidia-driver` + `nvidia-container-toolkit`);
+      Secure Boot/MOK is handled exactly as upstream Bluefin does
+- [x] Hard limit kept: no self-built kernel modules, no out-of-tree patches
 
 **Non-goals:** supporting every GPU; NVIDIA is a variant, never the default
 image.

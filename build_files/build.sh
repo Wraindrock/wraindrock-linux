@@ -43,12 +43,21 @@ grep -qx 'ID=bluefin' "${os_release}" \
     || die "base is not Bluefin (ID=bluefin missing)"
 grep -qx "VERSION_ID=${FEDORA_VERSION}" "${os_release}" \
     || die "base is not Bluefin ${FEDORA_VERSION} (VERSION_ID mismatch)"
-grep -Eq '^VARIANT_ID=bluefin-dx' "${os_release}" \
-    || die "base is not Bluefin DX (VARIANT_ID=bluefin-dx* missing)"
+grep -Eq '^VARIANT_ID=bluefin-dx-nvidia-open' "${os_release}" \
+    || die "base is not Bluefin DX NVIDIA (VARIANT_ID=bluefin-dx-nvidia-open missing)"
 base_variant_id="$(sed -n 's/^VARIANT_ID=//p' "${os_release}" | tail -n 1)"
 
 [[ -x /usr/bin/bootc ]] || die "base does not ship the bootc CLI"
 [[ -d /usr/lib/bootc ]] || die "base is not a bootc image (/usr/lib/bootc missing)"
+
+# v0.6: the drivers and the virtualisation stack are inherited from this base
+# variant. Assert them here so a silent base change cannot ship without them.
+rpm -q kmod-nvidia nvidia-driver nvidia-container-toolkit >/dev/null 2>&1 \
+    || die "base is missing the NVIDIA driver stack"
+[[ -x /usr/bin/nvidia-smi ]] || die "base is missing nvidia-smi"
+rpm -q qemu-system-x86-core libvirt-daemon-kvm virt-manager >/dev/null 2>&1 \
+    || die "base is missing the QEMU/KVM stack"
+command -v flatpak >/dev/null 2>&1 || die "base is missing flatpak"
 
 # --- 2. provenance ----------------------------------------------------------
 # Copy the pristine os-release before branding: parity diffs against this copy.
@@ -238,8 +247,17 @@ grep -q '^WantedBy=sysinit.target$' /usr/lib/systemd/system/wraindrock-hostname-
 # package is recorded in delta.json and parity refuses anything undeclared.
 
 install -d -m 0755 /usr/share/flatpak/preinstall.d /etc/xdg
-install -m 0644 "${script_dir}/software/wraindrock.preinstall" \
-    /usr/share/flatpak/preinstall.d/wraindrock.preinstall
+flatpak_list="${script_dir}/software/flatpaks.txt"
+[[ -s ${flatpak_list} ]] || die "the Flatpak list is missing"
+{
+    printf '# Installed on first boot by flatpak-preinstall.service.\n'
+    printf '# Generated from build_files/software/flatpaks.txt; do not edit.\n'
+    while IFS= read -r app; do
+        [[ -n ${app} && ${app} != \#* ]] || continue
+        printf '\n[Flatpak Preinstall %s]\nBranch=stable\nIsRuntime=false\n' "${app}"
+    done < "${flatpak_list}"
+} > /usr/share/flatpak/preinstall.d/wraindrock.preinstall
+chmod 0644 /usr/share/flatpak/preinstall.d/wraindrock.preinstall
 install -m 0644 "${script_dir}/software/mimeapps.list" /etc/xdg/mimeapps.list
 
 # Pins live in software/rpms.tsv so the upstream-watch workflow can refresh
@@ -442,7 +460,7 @@ say "base os-release preserved at /usr/share/wraindrock/base-os-release"
 say "identity applied: $(unquote "$(field PRETTY_NAME)")"
 say "boot splash installed: ${plymouth_dir} (theme: wraindrock)"
 say "GRUB theme helper installed: /usr/bin/wraindrock-grub-theme (opt-in)"
-say "first-boot Flatpaks: 10 declared in /usr/share/flatpak/preinstall.d/wraindrock.preinstall"
+say "first-boot Flatpaks: $(grep -vc '^#' "${flatpak_list}") declared in /usr/share/flatpak/preinstall.d/wraindrock.preinstall"
 say "baked RPMs: $(wc -l < "${rpm_added_file}") (clash-verge, rayburst, sing-box)"
 say "delta manifest written to /usr/share/wraindrock/delta.json"
 say "rpm database written by design; WAL checkpointed, sidecars in place"
