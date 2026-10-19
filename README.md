@@ -139,7 +139,7 @@ scratch machine, with data disks detached, or in a VM.
 cat /usr/lib/os-release              # NAME="Wraindrock", ID=bluefin
 cat /usr/share/wraindrock/delta.json # every intended difference
 hostnamectl                          # wraindrock
-flatpak list --system                # nine preinstalled apps after first boot
+flatpak list --system                # the 41 declared preinstalls
 rpm -q helium-bin clash-verge rayburst sing-box # the four baked packages
 cosign verify \
   --certificate-identity-regexp '^https://github.com/Wraindrock/wraindrock-linux/' \

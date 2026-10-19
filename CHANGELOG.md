@@ -5,6 +5,27 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 image versions are the upstream channel plus an immutable build tag, see
 [docs/architecture.md](docs/architecture.md).
 
+## [0.14.0] - 2026-10-20
+
+### Added
+
+- The live ISO is now named `Wraindrock-Live.iso` (Fedora-style), not
+  `install.iso`, throughout the disk workflow and documentation.
+- `tools/release-iso.sh` builds a deterministic split archive (1.85 GiB parts,
+  under GitHub's 2 GiB limit) plus a self-extracting `-extract.sh` that
+  verifies every part, joins them, unpacks the ISO and re-checks its sha256.
+- `.github/workflows/release-iso.yml` publishes that archive as a GitHub
+  Release from a CI runner (the home uplink is far too slow for 6.7 GiB), and
+  fails if the release is left as a draft.
+- Release `44.20261019T132911Z.55` carries `Wraindrock-Live.iso`
+  (`sha256:84039f3b…`) in four parts plus the extractor and `SHA256SUMS`.
+
+### Changed
+
+- v0.7 (C/D dev/test data partitions) is explicitly deferred for stability.
+- Documentation sweep: removed the obsolete pre-rebase local ISOs and corrected
+  the remaining "nine Flatpaks" verification hint to 41.
+
 ## [0.13.2] - 2026-10-19
 
 ### Fixed

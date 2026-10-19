@@ -91,6 +91,10 @@ upstream already provides.
 **Non-goals:** a second package manager, a mutable `/usr`, removing upstream
 apps "for taste" without a documented reason.
 
+**Delivered:** image `.55` (base `bluefin-dx-nvidia-open`, 2,251 RPMs, 41
+Flatpaks declared, IBus/libpinyin default, Helium default browser) and the
+`44.20261019T132911Z.55` split ISO release.
+
 ## v0.6 — KVM and NVIDIA by reusing uBlue
 
 **Goal:** no custom driver or virtualization work; consume what uBlue already
@@ -104,10 +108,17 @@ builds and signs.
       Secure Boot/MOK is handled exactly as upstream Bluefin does
 - [x] Hard limit kept: no self-built kernel modules, no out-of-tree patches
 
+**Delivered:** inherited from the NVIDIA base variant and asserted at build
+time; no module we build ourselves.
+
 **Non-goals:** supporting every GPU; NVIDIA is a variant, never the default
 image.
 
-## v0.7 — dev/test data partitions (C/D)
+## v0.7 — dev/test data partitions (C/D) — deferred
+
+**Status:** deliberately paused. The C/D layout touches partitioning and the
+installer, so it is kept out of the stable line for now; v1.0 does not require
+it.
 
 **Goal:** the C/D partitions are *data*, not boot slots. Development, container
 builds and VM images live there; the OS stays atomic and rollbackable.
