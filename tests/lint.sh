@@ -368,8 +368,8 @@ else
 fi
 
 echo "documentation"
-for doc in README.md docs/architecture.md docs/install.md docs/roadmap.md \
-           docs/rollback.md SECURITY.md CHANGELOG.md; do
+for doc in README.md docs/architecture.md docs/install.md docs/releases.md \
+           docs/roadmap.md docs/rollback.md SECURITY.md CHANGELOG.md; do
     if [[ -s ${doc} ]]; then
         pass "${doc} exists"
     else
@@ -440,6 +440,15 @@ if grep -Fq 'disk.yml' README.md; then
     pass "README documents the disk-image workflow"
 else
     fail "README does not mention disk.yml"
+fi
+
+if grep -Fq 'Wraindrock-Live.iso' README.md \
+        && grep -Fq 'docs/releases.md' README.md \
+        && grep -Fq 'wraindrock-linux-disk' docs/releases.md \
+        && grep -Fq 'gh release download' docs/install.md; then
+    pass "download paths and the release inventory are documented"
+else
+    fail "download docs are incomplete (README, install.md, releases.md)"
 fi
 
 echo "workflow"

@@ -6,8 +6,8 @@
 #       artifacts/release
 #
 # Produces, in the output directory:
-#   wraindrock-44-install-<version>.zip.part-NN   split parts (< 2 GiB each)
-#   wraindrock-44-install-<version>-extract.sh    self-extracting verifier
+#   Wraindrock-Live-<version>.zip.part-NN         split parts (< 2 GiB each)
+#   Wraindrock-Live-<version>-extract.sh          self-extracting verifier
 #   SHA256SUMS                                    hashes of every file above
 #
 # The extractor checks every part, concatenates them back into the zip, unpacks

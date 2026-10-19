@@ -5,6 +5,18 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 image versions are the upstream channel plus an immutable build tag, see
 [docs/architecture.md](docs/architecture.md).
 
+## [0.14.1] - 2026-10-20
+
+### Documentation
+
+- README gained an explicit **Download** section: the GitHub Release assets,
+  their sizes, the self-extracting script (Linux/macOS/WSL) and the Windows
+  `copy /b` route, plus the equivalent `oras pull` from GHCR.
+- `docs/install.md` now spells out both download paths and the checksum step.
+- New `docs/releases.md` inventories the published image tags, every disk
+  artifact tag (including the pre-rename `install.iso` builds) and the GitHub
+  Releases, with verification commands.
+
 ## [0.14.0] - 2026-10-20
 
 ### Added

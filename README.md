@@ -90,6 +90,63 @@ The first menu entry installs interactively: choose the disk, the layout
 Initial Setup on first boot. The second entry erases the first disk without
 asking.
 
+## Download
+
+Every build publishes the same three things; pick one:
+
+| Artifact | Where | Use when |
+| --- | --- | --- |
+| Split live ISO | [GitHub Releases](https://github.com/Wraindrock/wraindrock-linux/releases) | Installing from a USB stick |
+| Disk OCI artifact | `ghcr.io/wraindrock/wraindrock-linux-disk:<version>` | You prefer `oras`/registry pulls (qcow2 + ISO + checksums) |
+| System image | `ghcr.io/wraindrock/wraindrock-linux:44` | Switching an existing Bluefin DX install |
+
+Both disk artifacts come from `.github/workflows/disk.yml`; releases are cut by
+`.github/workflows/release-iso.yml` from the published ISO layer.
+
+The latest release is [`44.20261019T132911Z.55`](https://github.com/Wraindrock/wraindrock-linux/releases/tag/44.20261019T132911Z.55): `Wraindrock-Live.iso`
+(6,869,286,912 bytes, `sha256:84039f3b01689959490fe68c0d9c2fa5b084d9078ee84e9d9ac928b97c15a3cb`),
+split into four parts under 2 GiB, plus a self-extracting `-extract.sh` and
+`SHA256SUMS`. The image channel currently points at `.59`; `.57`–`.59` are
+docs/workflow rebuilds with the same system content as `.55`.
+
+### From the GitHub Release
+
+Download the four parts, `-extract.sh` and `SHA256SUMS` into one directory
+(browser, or `gh release download`):
+
+```bash
+gh release download 44.20261019T132911Z.55 -R Wraindrock/wraindrock-linux
+chmod +x Wraindrock-Live-44.20261019T132911Z.55-extract.sh
+./Wraindrock-Live-44.20261019T132911Z.55-extract.sh
+```
+
+The script verifies each part against `SHA256SUMS`, joins them, unpacks
+`Wraindrock-Live.iso` next to the parts, and re-checks the ISO hash.
+
+On Windows, join the parts with `copy /b` and open the resulting zip with
+PeaZip, 7-Zip or WinRAR:
+
+```bat
+copy /b Wraindrock-Live-44.20261019T132911Z.55.zip.part-00+Wraindrock-Live-44.20261019T132911Z.55.zip.part-01+Wraindrock-Live-44.20261019T132911Z.55.zip.part-02+Wraindrock-Live-44.20261019T132911Z.55.zip.part-03 Wraindrock-Live.zip
+```
+
+### From GHCR (with `oras`)
+
+```bash
+oras pull ghcr.io/wraindrock/wraindrock-linux-disk:44.20261019T132911Z.55 -o disk
+cd disk && sha256sum -c SHA256SUMS
+```
+
+Both routes give the same file. Verify it before writing:
+
+```bash
+sha256sum Wraindrock-Live.iso   # must print 84039f3b01689959490fe68c0d9c2fa5b084d9078ee84e9d9ac928b97c15a3cb
+```
+
+Older immutable builds remain published, but prefer the latest release. See
+[docs/releases.md](docs/releases.md) for the full inventory (image tags, disk
+artifact tags, release assets).
+
 ## Install
 
 Two supported paths.
@@ -107,21 +164,14 @@ The switch only adds a boot deployment; `/home`, flatpaks and containers stay
 put. Read [docs/install.md](docs/install.md) for preflight checks and
 [docs/rollback.md](docs/rollback.md) for the way back.
 
-### 2. Download the ISO
+### 2. Write the ISO
 
-The ISO is built from the same image by `.github/workflows/disk.yml` and
-published as an immutable OCI artifact set on GHCR:
+Get `Wraindrock-Live.iso` from [Download](#download), verify its sha256, then
+write it to a USB stick:
 
 ```bash
-oras pull ghcr.io/wraindrock/wraindrock-linux-disk:<version>
-sha256sum -c SHA256SUMS
 sudo dd if=Wraindrock-Live.iso of=/dev/sdX bs=8M status=progress oflag=direct conv=fsync
 ```
-
-Or download the split, self-extracting release from
-[Releases](https://github.com/Wraindrock/wraindrock-linux/releases): keep the
-parts and the `-extract.sh` file together, run the script, and it verifies every
-part, joins them, unpacks `Wraindrock-Live.iso` and re-checks its sha256.
 
 The boot menu offers two entries. The default, **Install Wraindrock
 (interactive, choose disks)**, opens Anaconda's hub so you pick the disk,
@@ -165,6 +215,7 @@ which build you ran. Updates: `sudo bootc update && sudo systemctl reboot`.
 - Install, verification, troubleshooting: [docs/install.md](docs/install.md)
 - Rollback and escape hatches: [docs/rollback.md](docs/rollback.md)
 - Roadmap: [docs/roadmap.md](docs/roadmap.md)
+- Published images, disk artifacts and releases: [docs/releases.md](docs/releases.md)
 - Build, test and patch rules: [CONTRIBUTING.md](CONTRIBUTING.md)
 
 ## License

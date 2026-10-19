@@ -42,19 +42,35 @@ To pin one exact build, switch to its immutable tag
 
 ## 2. Download the ISO
 
-The ISO is built from the same image by `.github/workflows/disk.yml` and
-published as an immutable OCI artifact set on GHCR:
+Two equivalent sources; every build publishes both. The full inventory is in
+[releases.md](releases.md).
+
+**GitHub Release (split, self-extracting).** Download the four parts, the
+`-extract.sh` file and `SHA256SUMS` into one directory, then:
 
 ```bash
-oras pull ghcr.io/wraindrock/wraindrock-linux-disk:<version>
-sha256sum -c SHA256SUMS
-sudo dd if=Wraindrock-Live.iso of=/dev/sdX bs=8M status=progress oflag=direct conv=fsync
+gh release download <version> -R Wraindrock/wraindrock-linux
+chmod +x Wraindrock-Live-<version>-extract.sh
+./Wraindrock-Live-<version>-extract.sh
 ```
 
-Or download the split, self-extracting release from the
-[Releases page](https://github.com/Wraindrock/wraindrock-linux/releases): keep
-the parts and the `-extract.sh` file together, run the script, and it verifies
-every part, joins them, unpacks `Wraindrock-Live.iso` and re-checks its sha256.
+The extractor verifies every part, joins them, unpacks `Wraindrock-Live.iso`
+beside the parts, and re-checks the ISO sha256. On Windows, `copy /b` the parts
+in order and open the zip with PeaZip, 7-Zip or WinRAR.
+
+**GHCR OCI artifact.** The same files are stored as one immutable artifact:
+
+```bash
+oras pull ghcr.io/wraindrock/wraindrock-linux-disk:<version> -o disk
+cd disk && sha256sum -c SHA256SUMS
+```
+
+Check the ISO hash against the release notes (the latest release carries
+`sha256:84039f3b…`), then write it:
+
+```bash
+sudo dd if=Wraindrock-Live.iso of=/dev/sdX bs=8M status=progress oflag=direct conv=fsync
+```
 
 The boot menu offers two entries:
 
