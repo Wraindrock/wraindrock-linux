@@ -14,8 +14,6 @@ owns the identity, the presentation and a short list of personal defaults.
 - The GDM logo, a 4K dark wallpaper, a Plymouth boot splash and an opt-in GRUB
   theme replace upstream's presentation.
 - A fresh install seeds the hostname to `wraindrock`.
-- The default input method is **IBus** with the `libpinyin` engine (no Fcitx);
-  the Noto CJK fonts come from the base.
 - **NVIDIA open drivers**, QEMU/KVM with virt-manager, libvirt, Incus, Docker
   and Distrobox come from the Bluefin DX NVIDIA base.
 
@@ -40,6 +38,10 @@ cannot drift apart silently.
   boot and wired into Logo Menu.
 - Flatpak defaults are Bluefin's: the Flathub remote, the first-boot app set,
   the Bazaar `host-etc` preset, and `flatpak-preinstall.service`.
+- **IBus** is the input-method framework, exactly as in GNOME and Bluefin — we
+  install nothing and switch nothing. Our only input change is preloading the
+  `libpinyin` engine in the source list (and `show-all-sources`), so Chinese
+  typing works on first login; the framework itself is upstream's.
 - GNOME look, fonts, dock, keybindings and favourite apps come from Bluefin's
   `zz0-bluefin-modifications.gschema.override`; we only override the wallpaper,
   the login logo and the input-method default.
@@ -65,7 +67,7 @@ the inherited Bluefin DX base, so virtual machines work out of the box. The
 NVIDIA open driver stack (`nvidia-driver`, `kmod-nvidia`,
 `nvidia-container-toolkit`) is inherited from the NVIDIA base variant as well.
 
-Input: **IBus + libpinyin** is the system default (Super+Space switches between
+Input: **IBus** is inherited and **libpinyin** is preloaded (Super+Space switches between
 US and Chinese); Fcitx is not installed. Noto Sans CJK ships in the base.
 
 ## Screenshots

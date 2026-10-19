@@ -5,6 +5,15 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 image versions are the upstream channel plus an immutable build tag, see
 [docs/architecture.md](docs/architecture.md).
 
+## [0.13.1] - 2026-10-19
+
+### Fixed
+
+- Documentation no longer claims IBus as our choice: GNOME and Bluefin already
+  default to the IBus framework. The image only preloads the `libpinyin`
+  engine (and `show-all-sources`) in the inherited framework; no input-method
+  stack is installed or replaced.
+
 ## [0.13.0] - 2026-10-19
 
 ### Changed

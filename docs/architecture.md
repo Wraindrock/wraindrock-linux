@@ -137,7 +137,7 @@ wallpaper and boot splash in v0.3):
 | Plymouth boot splash | `/usr/share/plymouth/themes/wraindrock/` (two-step theme) + `Theme=wraindrock` in `/etc/plymouth/plymouthd.conf` |
 | GRUB boot menu theme | `/usr/share/grub/themes/wraindrock/` assets + `/usr/bin/wraindrock-grub-theme`, which copies them to `/boot/grub2/themes/wraindrock/` and writes a marked `/boot/grub2/custom.cfg` (opt-in) |
 | default hostname | `DEFAULT_HOSTNAME` (no `/etc/hostname` is shipped; an installer or user file still wins) |
-| default input method | `[org.gnome.desktop.input-sources]` in `zzzz-wraindrock.gschema.override` selects IBus + `libpinyin`; no Fcitx is installed, and a user's own `input-sources` value wins |
+| input method | IBus is inherited from GNOME/Bluefin (no Fcitx in the image). The only addition is `libpinyin` preloaded in `[org.gnome.desktop.input-sources]` in `zzzz-wraindrock.gschema.override`; a user's own value wins |
 
 The logo assets are generated outlines, not `<text>`: rendering does not depend
 on Cantarell or any other font being present. GDM merges gschema overrides in name order, and Bluefin ships its own
