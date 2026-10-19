@@ -47,6 +47,9 @@ oras pull ghcr.io/wraindrock/wraindrock-linux-disk:44.20261019T132911Z.55 -o dis
 cd disk && sha256sum -c SHA256SUMS
 ```
 
+The pre-rename `wrainrock-*` packages were deleted on 2026-10-20; only the two
+`wraindrock-*` packages remain public.
+
 ## GitHub Releases
 
 | Release | ISO | Assets |
