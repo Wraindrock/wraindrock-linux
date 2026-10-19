@@ -51,6 +51,11 @@ sha256sum -c SHA256SUMS
 sudo dd if=Wraindrock-Live.iso of=/dev/sdX bs=8M status=progress oflag=direct conv=fsync
 ```
 
+Or download the split, self-extracting release from the
+[Releases page](https://github.com/Wraindrock/wraindrock-linux/releases): keep
+the parts and the `-extract.sh` file together, run the script, and it verifies
+every part, joins them, unpacks `Wraindrock-Live.iso` and re-checks its sha256.
+
 The boot menu offers two entries:
 
 - **Install Wraindrock (interactive, choose disks)** — the default. Anaconda's
@@ -66,9 +71,9 @@ The boot menu offers two entries:
 
 Boot the stick on a UEFI machine, pick an entry and let Anaconda install; the
 system reboots into GDM. On the first boot the network must be up: the system
-installs nine Flatpaks in the background (Podman Desktop, GNOME Builder,
-DevToolbox, Clapgrep, Embellish, Tavern, WeChat, Rnote, Gear
-Lever). Helium is the default browser; Firefox remains installed. The
+installs 41 Flatpaks in the background (Podman Desktop, GNOME Builder,
+DevToolbox, Clapgrep, Embellish, WeChat, Rnote, Gear Lever, …). Helium is the
+default browser; Firefox is not preinstalled. The
 GRUB menu theme stays opt-in: `sudo wraindrock-grub-theme enable`.
 
 ## Verify after reboot
