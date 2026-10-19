@@ -63,8 +63,8 @@ oras pull ghcr.io/wraindrock/wraindrock-linux-disk:<version> -o disk
 cd disk && sha256sum -c SHA256SUMS
 ```
 
-Check the ISO hash against the release notes (the latest release carries
-`sha256:84039f3b…`), then write it:
+The helper verifies the ISO hash; compare it with the release notes, then write
+it:
 
 ```bash
 sudo dd if=Wraindrock-Live.iso of=/dev/sdX bs=8M status=progress oflag=direct conv=fsync

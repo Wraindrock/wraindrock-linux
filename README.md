@@ -103,11 +103,9 @@ Every build publishes the same three things; pick one:
 Both disk artifacts come from `.github/workflows/disk.yml`; releases are cut by
 `.github/workflows/release-iso.yml` from the published ISO layer.
 
-The latest release is [`44.20261019T132911Z.55`](https://github.com/Wraindrock/wraindrock-linux/releases/tag/44.20261019T132911Z.55): `Wraindrock-Live.iso`
-(6,869,286,912 bytes, `sha256:84039f3b01689959490fe68c0d9c2fa5b084d9078ee84e9d9ac928b97c15a3cb`),
-split into four parts under 2 GiB, plus a self-extracting `-extract.sh` and
-`SHA256SUMS`. The image channel currently points at `.59`; `.57`–`.59` are
-docs/workflow rebuilds with the same system content as `.55`.
+The newest release is on the [Releases page](https://github.com/Wraindrock/wraindrock-linux/releases);
+its notes list the ISO size and sha256. Each release ships the ISO split
+into under-2 GiB parts, a self-extracting `-extract.sh` and `SHA256SUMS`.
 
 ### From the GitHub Release
 
@@ -137,14 +135,14 @@ $out.Dispose()
 ### From GHCR (with `oras`)
 
 ```bash
-oras pull ghcr.io/wraindrock/wraindrock-linux-disk:44.20261019T132911Z.55 -o disk
+oras pull ghcr.io/wraindrock/wraindrock-linux-disk:<version> -o disk
 cd disk && sha256sum -c SHA256SUMS
 ```
 
 Both routes give the same file. Verify it before writing:
 
 ```bash
-sha256sum Wraindrock-Live.iso   # must print 84039f3b01689959490fe68c0d9c2fa5b084d9078ee84e9d9ac928b97c15a3cb
+sha256sum Wraindrock-Live.iso   # compare with the hash printed by the helper
 ```
 
 Older immutable builds remain published, but prefer the latest release. See

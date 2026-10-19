@@ -452,10 +452,10 @@ else
     fail "download docs do not mention tools/get-live-iso.sh"
 fi
 
-if grep -Eq 'VERSION=44\.' README.md docs/install.md docs/releases.md; then
-    fail "download docs must not pin a release version"
+if grep -Eq '44\.20[0-9]{6}T[0-9]{6}Z\.' README.md docs/install.md; then
+    fail "user download docs must not pin a release version"
 else
-    pass "download docs do not pin a version"
+    pass "user download docs do not pin a version"
 fi
 
 if [[ -x tools/get-live-iso.sh ]] && grep -Fq 'releases/latest' tools/get-live-iso.sh \
