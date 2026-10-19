@@ -24,6 +24,26 @@ software packages listed below. `/usr/share/wraindrock/delta.json` records every
 difference, and CI fails the build if the image carries anything that is not in
 that manifest.
 
+## Bluefin defaults we keep
+
+The desktop is upstream Bluefin's, so its defaults are inherited rather than
+re-implemented — and the parity test compares the base and the image so they
+cannot drift apart silently.
+
+- 13 GNOME extensions are installed in `/usr/share/gnome-shell/extensions`;
+  8 are enabled by default: AppIndicator support, Bazaar integration,
+  Blur my Shell, Dash to Dock, Gradia integration, GSConnect, Logo Menu and
+  Search Light. The other five (`apps-menu`, `caffeine`, `places-menu`,
+  `window-list`, `launch-new-instance`) stay installed but off, exactly as
+  upstream ships them.
+- Extension Manager (`com.mattjakeman.ExtensionManager`) is installed on first
+  boot and wired into Logo Menu.
+- Flatpak defaults are Bluefin's: the Flathub remote, the first-boot app set,
+  the Bazaar `host-etc` preset, and `flatpak-preinstall.service`.
+- GNOME look, fonts, dock, keybindings and favourite apps come from Bluefin's
+  `zz0-bluefin-modifications.gschema.override`; we only override the wallpaper,
+  the login logo and the input-method default.
+
 ## Software
 
 The first boot installs **41 Flatpaks** (needs the network and a few GB):

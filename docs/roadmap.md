@@ -79,7 +79,11 @@ upstream already provides.
       build per upstream release, so apps track their own cadence
 - [ ] Homebrew bundle for CLI tooling: uBlue's Brew is inherited, but no
       formulae are preinstalled yet (deliberately left user-controlled)
-- [ ] GNOME defaults via `gschema.override` (theme, fonts, clock, input method)
+- [x] Bluefin's desktop defaults inherited rather than re-implemented: the 13
+      GNOME extensions with Bluefin's 8-enabled/5-off split, Extension Manager,
+      the Flathub remote and the Bazaar `host-etc` Flatpak preset. Parity
+      compares base and image so upstream updates carry through
+- [ ] Remaining GNOME preferences of our own (theme, fonts, clock)
 - [x] CJK fonts (Noto Sans CJK, already in the base) + **IBus + libpinyin**
       as the declared system default (Fcitx is not installed)
 - [x] Every addition lands in `delta.json`; the delta invariant stays enforced

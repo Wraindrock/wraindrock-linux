@@ -723,6 +723,62 @@ else
     fail "the container stack is incomplete"
 fi
 
+# --- Bluefin desktop defaults (inherited, not reimplemented) ----------------
+# The desktop layer is upstream Bluefin's: the extension set, which of them are
+# enabled, the Extension Manager, the Flathub remote and the Flatpak presets
+# come from the base image. Compare against the base instead of pinning a list,
+# so a Bluefin update moves both sides together.
+extension_list='ls /usr/share/gnome-shell/extensions | LC_ALL=C sort'
+in_image "${BASE}" "${extension_list}" > "${tmpdir}/base.extensions"
+in_image "${IMAGE}" "${extension_list}" > "${tmpdir}/image.extensions"
+if diff -q "${tmpdir}/base.extensions" "${tmpdir}/image.extensions" >/dev/null; then
+    pass "GNOME extension set is Bluefin's ($(wc -l < "${tmpdir}/image.extensions") extensions)"
+else
+    fail "GNOME extension set differs from the base"
+    diff -u "${tmpdir}/base.extensions" "${tmpdir}/image.extensions" | head -20 || true
+fi
+
+enabled_query='GSETTINGS_BACKEND=memory gsettings get org.gnome.shell enabled-extensions'
+base_enabled="$(in_image "${BASE}" "${enabled_query}")"
+image_enabled="$(in_image "${IMAGE}" "${enabled_query}")"
+if [[ -n ${image_enabled} && ${image_enabled} == "${base_enabled}" ]]; then
+    pass "enabled GNOME extensions match Bluefin's default"
+else
+    fail "enabled GNOME extensions differ from the base"
+    printf '      base:  %s\n      image: %s\n' "${base_enabled}" "${image_enabled}" >&2
+fi
+
+if in_image "${IMAGE}" \
+    'grep -q "\[Flatpak Preinstall com.mattjakeman.ExtensionManager\]" \
+        /usr/share/flatpak/preinstall.d/wraindrock.preinstall'; then
+    pass "Extension Manager is part of the first-boot Flatpaks"
+else
+    fail "Extension Manager is missing from the Flatpak preinstall file"
+fi
+
+if in_image "${IMAGE}" 'test -s /etc/flatpak/remotes.d/flathub.flatpakrepo'; then
+    pass "Flathub is the configured Flatpak remote"
+else
+    fail "the Flathub remote is missing"
+fi
+
+if in_image "${IMAGE}" \
+    'grep -qx "filesystems=host-etc" \
+        /usr/share/ublue-os/flatpak-overrides/io.github.kolunmi.Bazaar \
+        && grep -q "flatpak-overrides/io.github.kolunmi.Bazaar" \
+            /usr/lib/tmpfiles.d/bazaar-flatpak.conf'; then
+    pass "Bluefin's Flatpak preset (Bazaar host-etc) is present"
+else
+    fail "Bluefin's Flatpak preset is missing"
+fi
+
+if in_image "${IMAGE}" \
+    'test -L /etc/systemd/system/multi-user.target.wants/flatpak-preinstall.service'; then
+    pass "flatpak-preinstall.service is enabled"
+else
+    fail "flatpak-preinstall.service is not enabled"
+fi
+
 echo
 if [[ ${failures} -ne 0 ]]; then
     printf '%s parity check(s) failed\n' "${failures}" >&2

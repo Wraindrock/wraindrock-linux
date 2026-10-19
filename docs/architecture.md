@@ -17,7 +17,15 @@ Bluefin DX is itself a bootc image: a GNOME desktop with developer tooling,
 uBlue's update and application plumbing, and (in `-nvidia` variants) prebuilt
 kernel modules. We consume it as an OCI base layer, pin the resolved digest at
 build time, and record it in the image. The identity contract the build requires
-is `ID=bluefin` with `VARIANT_ID=bluefin-dx-nvidia-open`. Choosing the NVIDIA
+is `ID=bluefin` with `VARIANT_ID=bluefin-dx-nvidia-open`.
+
+Bluefin's desktop defaults are inherited rather than copied: the GNOME
+extension set and its enabled subset, Extension Manager, the Flathub remote,
+the Flatpak presets in `/usr/share/ublue-os/flatpak-overrides`, and the GNOME
+look/keybinding overrides in `zz0-bluefin-modifications.gschema.override`.
+Parity compares the base image and ours for the extension set and the enabled
+list, so a Bluefin update moves both sides together; no extension is pinned
+locally. Choosing the NVIDIA
 variant is deliberate: the open driver stack (`nvidia-driver`, `kmod-nvidia`,
 `nvidia-container-toolkit`) and the virtualisation stack (QEMU/KVM, libvirt,
 virt-manager, Incus) are inherited artifacts, not our own builds. The build

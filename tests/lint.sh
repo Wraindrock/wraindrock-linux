@@ -354,6 +354,18 @@ if grep -Fq 'delta' tests/parity.sh; then
 else
     fail "parity.sh does not check the delta manifest"
 fi
+if grep -Fq "enabled GNOME extensions match Bluefin's default" tests/parity.sh \
+        && grep -Fq 'extension_list=' tests/parity.sh; then
+    pass "parity.sh compares the GNOME extension set and enabled state with the base"
+else
+    fail "parity.sh does not verify the inherited GNOME extension defaults"
+fi
+if grep -Fq 'Extension Manager' README.md \
+        && grep -Fq 'zz0-bluefin-modifications.gschema.override' README.md; then
+    pass "README documents the inherited Bluefin desktop defaults"
+else
+    fail "README does not document the inherited Bluefin desktop defaults"
+fi
 
 echo "documentation"
 for doc in README.md docs/architecture.md docs/install.md docs/roadmap.md \

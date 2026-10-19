@@ -5,6 +5,17 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 image versions are the upstream channel plus an immutable build tag, see
 [docs/architecture.md](docs/architecture.md).
 
+## [0.13.0] - 2026-10-19
+
+### Changed
+
+- Bluefin's desktop defaults are inherited explicitly instead of being left
+  implicit: the 13 upstream GNOME extensions and Bluefin's 8-enabled/5-off
+  split, Extension Manager, the Flathub remote, the Bazaar `host-etc` Flatpak
+  preset and the `flatpak-preinstall.service` enablement. Parity compares the
+  base and the image (extension set and enabled list) so upstream changes flow
+  through and still cannot drift.
+
 ## [0.12.0] - 2026-10-19
 
 ### Changed
