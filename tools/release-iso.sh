@@ -2,7 +2,7 @@
 # ---------------------------------------------------------------------------
 # Turn an installer ISO into a split, self-extracting release:
 #
-#   tools/release-iso.sh artifacts/iso/install.iso 44.20261019T101118Z.54 \
+#   tools/release-iso.sh artifacts/iso/Wraindrock-Live.iso 44.20261019T132911Z.55 \
 #       artifacts/release
 #
 # Produces, in the output directory:
