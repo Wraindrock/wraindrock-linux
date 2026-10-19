@@ -153,6 +153,12 @@ jobs:
             --type anaconda-iso "${{ inputs.image_ref }}"
           iso=$(find output -type f -name '*.iso' | head -1)
           [ -n "${iso}" ] || { echo "::error::no ISO produced"; exit 1; }
+          # Fedora-style live media name, not BIB's generic install.iso.
+          target="$(dirname "${iso}")/Wraindrock-Live.iso"
+          if [ "${iso}" != "${target}" ]; then
+            mv -f "${iso}" "${target}"
+          fi
+          echo "ISO: ${target}"
 
       - name: Add the interactive/unattended boot-menu choice
         # bootc-image-builder always injects a kickstart, which erases the first
@@ -303,7 +309,7 @@ jobs:
               os.path.basename(layer["annotations"]["org.opencontainers.image.title"]): layer
               for layer in manifest["layers"]
           }
-          assert set(layers) == {"disk.qcow2", "install.iso", "SHA256SUMS"}, layers
+          assert set(layers) == {"disk.qcow2", "Wraindrock-Live.iso", "SHA256SUMS"}, layers
           sums = {}
           with open("output/SHA256SUMS", encoding="utf-8") as handle:
               for line in handle:

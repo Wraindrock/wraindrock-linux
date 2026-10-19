@@ -115,7 +115,7 @@ published as an immutable OCI artifact set on GHCR:
 ```bash
 oras pull ghcr.io/wraindrock/wraindrock-linux-disk:<version>
 sha256sum -c SHA256SUMS
-sudo dd if=install.iso of=/dev/sdX bs=8M status=progress oflag=direct conv=fsync
+sudo dd if=Wraindrock-Live.iso of=/dev/sdX bs=8M status=progress oflag=direct conv=fsync
 ```
 
 The boot menu offers two entries. The default, **Install Wraindrock

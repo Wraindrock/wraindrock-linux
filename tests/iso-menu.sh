@@ -19,7 +19,7 @@
 # times; a changed upstream layout fails the build instead of producing a
 # half-broken ISO.
 #
-#   tests/iso-menu.sh path/to/install.iso
+#   tests/iso-menu.sh path/to/Wraindrock-Live.iso
 set -euo pipefail
 
 iso="${1:?usage: iso-menu.sh ISO}"
