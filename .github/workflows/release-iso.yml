@@ -145,9 +145,9 @@ jobs:
           version="${{ inputs.version }}"
           gh release view "${version}" --json assets \
             -q '.assets[] | "\(.name) \(.size) \(.state)"'
-          expected=$(cd artifacts/release && sha256sum ./* | sort)
+          expected=$(cd artifacts/release && sha256sum ./* | awk '{print $2}' | sed 's|^\./||' | sort)
           actual=$(gh release view "${version}" --json assets -q '.assets[].name' | sort)
-          diff <(printf '%s\n' "${expected}" | awk '{print $2}' | sed 's/^/./') \
-               <(printf '%s\n' "${actual}" | sed 's/^/./') \
+          diff <(printf '%s\n' "${expected}") <(printf '%s\n' "${actual}") \
             || { echo '::error::release assets do not match the generated files'; exit 1; }
           echo "release ${version} carries $(printf '%s\n' "${actual}" | wc -l) assets"
+          gh release view "${version}" --json assets -q '.assets[] | "\(.name) \(.size)"' 
