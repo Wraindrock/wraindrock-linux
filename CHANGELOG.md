@@ -5,6 +5,15 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 image versions are the upstream channel plus an immutable build tag, see
 [docs/architecture.md](docs/architecture.md).
 
+## [0.13.2] - 2026-10-19
+
+### Fixed
+
+- Documentation distinguishes keyboard layouts from input methods: the English
+  (US) layout is inherited, and the only addition is the `libpinyin` IBus input
+  method next to it. Super+Space switches between the layout and the input
+  method, not between two layouts.
+
 ## [0.13.1] - 2026-10-19
 
 ### Fixed

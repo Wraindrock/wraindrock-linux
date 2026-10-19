@@ -67,8 +67,11 @@ the inherited Bluefin DX base, so virtual machines work out of the box. The
 NVIDIA open driver stack (`nvidia-driver`, `kmod-nvidia`,
 `nvidia-container-toolkit`) is inherited from the NVIDIA base variant as well.
 
-Input: **IBus** is inherited and **libpinyin** is preloaded (Super+Space switches between
-US and Chinese); Fcitx is not installed. Noto Sans CJK ships in the base.
+Input: the keyboard layout and the input method are separate entries in the
+input-source list. Bluefin's English (US) layout stays; we add the **libpinyin
+input method** on top, so Super+Space switches between typing English (US) and
+Chinese (pinyin). The IBus framework itself is inherited from GNOME/Bluefin —
+Fcitx is not installed, and Noto Sans CJK ships in the base.
 
 ## Screenshots
 
