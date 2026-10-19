@@ -111,30 +111,27 @@ docs/workflow rebuilds with the same system content as `.55`.
 
 ### From the GitHub Release
 
-Download the four parts, `-extract.sh` and `SHA256SUMS` into one directory —
-from the release page in a browser, or with plain `curl` (no GitHub account
-needed):
+Download the parts, `-extract.sh` and `SHA256SUMS` from the release page in a
+browser, or with the helper, which always resolves the newest release (no
+GitHub account needed):
 
 ```bash
-VERSION=44.20261019T132911Z.55
-BASE="https://github.com/Wraindrock/wraindrock-linux/releases/download/${VERSION}"
-for part in 00 01 02 03; do
-  curl -fLO "${BASE}/Wraindrock-Live-${VERSION}.zip.part-${part}"
-done
-curl -fLO "${BASE}/Wraindrock-Live-${VERSION}-extract.sh"
-curl -fLO "${BASE}/SHA256SUMS"
-chmod +x "Wraindrock-Live-${VERSION}-extract.sh"
-"./Wraindrock-Live-${VERSION}-extract.sh"
+curl -fsSL https://raw.githubusercontent.com/Wraindrock/wraindrock-linux/main/tools/get-live-iso.sh | bash
 ```
 
-The script verifies each part against `SHA256SUMS`, joins them, unpacks
-`Wraindrock-Live.iso` next to the parts, and re-checks the ISO hash.
+It prints the resolved version, downloads every part with `curl`, verifies them
+against `SHA256SUMS`, unpacks `Wraindrock-Live.iso` and re-checks its sha256.
+Pass `--out DIR` as `bash -s -- --out DIR`, or `--dry-run` to only see what it
+would fetch. To read it first: `curl -fsSLO <same URL>` then `bash get-live-iso.sh`.
 
-On Windows, join the parts with `copy /b` and open the resulting zip with
+On Windows, join the part files in name order and open the resulting zip with
 PeaZip, 7-Zip or WinRAR:
 
-```bat
-copy /b Wraindrock-Live-44.20261019T132911Z.55.zip.part-00+Wraindrock-Live-44.20261019T132911Z.55.zip.part-01+Wraindrock-Live-44.20261019T132911Z.55.zip.part-02+Wraindrock-Live-44.20261019T132911Z.55.zip.part-03 Wraindrock-Live.zip
+```powershell
+$parts = Get-ChildItem Wraindrock-Live-*.zip.part-* | Sort-Object Name
+$out = [IO.File]::Create("$PWD\Wraindrock-Live.zip")
+$parts | ForEach-Object { $s = [IO.File]::OpenRead($_.FullName); $s.CopyTo($out); $s.Dispose() }
+$out.Dispose()
 ```
 
 ### From GHCR (with `oras`)

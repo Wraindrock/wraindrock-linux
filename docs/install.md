@@ -45,25 +45,16 @@ To pin one exact build, switch to its immutable tag
 Two equivalent sources; every build publishes both. The full inventory is in
 [releases.md](releases.md).
 
-**GitHub Release (split, self-extracting).** Download the four parts, the
-`-extract.sh` file and `SHA256SUMS` from the release page (browser, or plain
-`curl`; no GitHub account is required):
+**GitHub Release (split, self-extracting).** One command downloads the newest
+release, verifies every part, joins them and unpacks `Wraindrock-Live.iso`
+(no GitHub account required):
 
 ```bash
-VERSION=<version>
-BASE="https://github.com/Wraindrock/wraindrock-linux/releases/download/${VERSION}"
-for part in 00 01 02 03; do
-  curl -fLO "${BASE}/Wraindrock-Live-${VERSION}.zip.part-${part}"
-done
-curl -fLO "${BASE}/Wraindrock-Live-${VERSION}-extract.sh"
-curl -fLO "${BASE}/SHA256SUMS"
-chmod +x "Wraindrock-Live-${VERSION}-extract.sh"
-"./Wraindrock-Live-${VERSION}-extract.sh"
+curl -fsSL https://raw.githubusercontent.com/Wraindrock/wraindrock-linux/main/tools/get-live-iso.sh | bash
 ```
 
-The extractor verifies every part, joins them, unpacks `Wraindrock-Live.iso`
-beside the parts, and re-checks the ISO sha256. On Windows, `copy /b` the parts
-in order and open the zip with PeaZip, 7-Zip or WinRAR.
+Add `--out DIR` (as `bash -s -- --out DIR`) to choose the directory, or
+`--dry-run` to print the resolved version and asset names first.
 
 **GHCR OCI artifact.** The same files are stored as one immutable artifact:
 

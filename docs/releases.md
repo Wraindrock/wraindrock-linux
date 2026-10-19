@@ -61,19 +61,11 @@ artifacts. New releases are cut by `.github/workflows/release-iso.yml`, which
 fetches the ISO layer from GHCR, builds the deterministic split archive and
 publishes it directly (no draft).
 
-Download from the release page in a browser, or with plain `curl` (no GitHub
-account needed):
+Download from the release page in a browser, or let the helper resolve the
+newest release and do the work (no GitHub account needed):
 
 ```bash
-VERSION=44.20261019T132911Z.55
-BASE="https://github.com/Wraindrock/wraindrock-linux/releases/download/${VERSION}"
-for part in 00 01 02 03; do
-  curl -fLO "${BASE}/Wraindrock-Live-${VERSION}.zip.part-${part}"
-done
-curl -fLO "${BASE}/Wraindrock-Live-${VERSION}-extract.sh"
-curl -fLO "${BASE}/SHA256SUMS"
-chmod +x "Wraindrock-Live-${VERSION}-extract.sh"
-"./Wraindrock-Live-${VERSION}-extract.sh"
+curl -fsSL https://raw.githubusercontent.com/Wraindrock/wraindrock-linux/main/tools/get-live-iso.sh | bash
 sha256sum Wraindrock-Live.iso
 ```
 

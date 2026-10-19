@@ -444,16 +444,31 @@ fi
 
 if grep -Eq '^gh (release|api|run|workflow|auth)\b' README.md docs/install.md docs/releases.md; then
     fail "user-facing docs must not require an authenticated gh CLI"
-elif grep -Fq 'releases/download' README.md docs/install.md docs/releases.md; then
-    pass "download docs use plain HTTPS, not an authenticated gh CLI"
+elif grep -Fq 'get-live-iso.sh' README.md \
+        && grep -Fq 'get-live-iso.sh' docs/install.md \
+        && grep -Fq 'get-live-iso.sh' docs/releases.md; then
+    pass "download docs point at the newest-release helper"
 else
-    fail "download docs do not show a direct HTTPS download"
+    fail "download docs do not mention tools/get-live-iso.sh"
+fi
+
+if grep -Eq 'VERSION=44\.' README.md docs/install.md docs/releases.md; then
+    fail "download docs must not pin a release version"
+else
+    pass "download docs do not pin a version"
+fi
+
+if [[ -x tools/get-live-iso.sh ]] && grep -Fq 'releases/latest' tools/get-live-iso.sh \
+        && grep -Fq -- '--dry-run' tools/get-live-iso.sh; then
+    pass "get-live-iso.sh resolves the newest release"
+else
+    fail "tools/get-live-iso.sh is missing or does not resolve releases/latest"
 fi
 
 if grep -Fq 'Wraindrock-Live.iso' README.md \
         && grep -Fq 'docs/releases.md' README.md \
         && grep -Fq 'wraindrock-linux-disk' docs/releases.md \
-        && grep -Fq 'releases/download' docs/install.md; then
+        && grep -Fq 'get-live-iso.sh' docs/install.md; then
     pass "download paths and the release inventory are documented"
 else
     fail "download docs are incomplete (README, install.md, releases.md)"
