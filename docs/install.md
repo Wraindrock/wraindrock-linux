@@ -46,12 +46,19 @@ Two equivalent sources; every build publishes both. The full inventory is in
 [releases.md](releases.md).
 
 **GitHub Release (split, self-extracting).** Download the four parts, the
-`-extract.sh` file and `SHA256SUMS` into one directory, then:
+`-extract.sh` file and `SHA256SUMS` from the release page (browser, or plain
+`curl`; no GitHub account is required):
 
 ```bash
-gh release download <version> -R Wraindrock/wraindrock-linux
-chmod +x Wraindrock-Live-<version>-extract.sh
-./Wraindrock-Live-<version>-extract.sh
+VERSION=<version>
+BASE="https://github.com/Wraindrock/wraindrock-linux/releases/download/${VERSION}"
+for part in 00 01 02 03; do
+  curl -fLO "${BASE}/Wraindrock-Live-${VERSION}.zip.part-${part}"
+done
+curl -fLO "${BASE}/Wraindrock-Live-${VERSION}-extract.sh"
+curl -fLO "${BASE}/SHA256SUMS"
+chmod +x "Wraindrock-Live-${VERSION}-extract.sh"
+"./Wraindrock-Live-${VERSION}-extract.sh"
 ```
 
 The extractor verifies every part, joins them, unpacks `Wraindrock-Live.iso`

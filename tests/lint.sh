@@ -442,10 +442,18 @@ else
     fail "README does not mention disk.yml"
 fi
 
+if grep -Eq '^gh (release|api|run|workflow|auth)\b' README.md docs/install.md docs/releases.md; then
+    fail "user-facing docs must not require an authenticated gh CLI"
+elif grep -Fq 'releases/download' README.md docs/install.md docs/releases.md; then
+    pass "download docs use plain HTTPS, not an authenticated gh CLI"
+else
+    fail "download docs do not show a direct HTTPS download"
+fi
+
 if grep -Fq 'Wraindrock-Live.iso' README.md \
         && grep -Fq 'docs/releases.md' README.md \
         && grep -Fq 'wraindrock-linux-disk' docs/releases.md \
-        && grep -Fq 'gh release download' docs/install.md; then
+        && grep -Fq 'releases/download' docs/install.md; then
     pass "download paths and the release inventory are documented"
 else
     fail "download docs are incomplete (README, install.md, releases.md)"

@@ -111,13 +111,20 @@ docs/workflow rebuilds with the same system content as `.55`.
 
 ### From the GitHub Release
 
-Download the four parts, `-extract.sh` and `SHA256SUMS` into one directory
-(browser, or `gh release download`):
+Download the four parts, `-extract.sh` and `SHA256SUMS` into one directory —
+from the release page in a browser, or with plain `curl` (no GitHub account
+needed):
 
 ```bash
-gh release download 44.20261019T132911Z.55 -R Wraindrock/wraindrock-linux
-chmod +x Wraindrock-Live-44.20261019T132911Z.55-extract.sh
-./Wraindrock-Live-44.20261019T132911Z.55-extract.sh
+VERSION=44.20261019T132911Z.55
+BASE="https://github.com/Wraindrock/wraindrock-linux/releases/download/${VERSION}"
+for part in 00 01 02 03; do
+  curl -fLO "${BASE}/Wraindrock-Live-${VERSION}.zip.part-${part}"
+done
+curl -fLO "${BASE}/Wraindrock-Live-${VERSION}-extract.sh"
+curl -fLO "${BASE}/SHA256SUMS"
+chmod +x "Wraindrock-Live-${VERSION}-extract.sh"
+"./Wraindrock-Live-${VERSION}-extract.sh"
 ```
 
 The script verifies each part against `SHA256SUMS`, joins them, unpacks
