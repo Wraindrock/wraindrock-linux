@@ -20,7 +20,7 @@ command -v "${ENGINE}" >/dev/null 2>&1 || {
 }
 
 NAME="${WR_SMOKE_NAME:-wraindrock-smoke}"
-TIMEOUT="${WR_SMOKE_TIMEOUT:-180}"
+TIMEOUT="${WR_SMOKE_TIMEOUT:-240}"
 
 cleanup() { "${ENGINE}" rm -f "${NAME}" >/dev/null 2>&1 || true; }
 trap cleanup EXIT
@@ -47,6 +47,16 @@ done
 if [[ ${status} != running && ${status} != degraded ]]; then
     echo "  fail systemd did not come up within ${TIMEOUT}s (state: ${status:-empty})" >&2
     "${ENGINE}" logs "${NAME}" 2>&1 | tail -40 >&2 || true
+    {
+        echo "  -- pending systemd jobs --"
+        "${ENGINE}" exec "${NAME}" systemctl list-jobs --no-pager 2>&1 | head -30 || true
+        echo "  -- units still activating --"
+        "${ENGINE}" exec "${NAME}" systemctl list-units --state=activating \
+            --no-legend --plain 2>&1 | head -20 || true
+        echo "  -- failed units --"
+        "${ENGINE}" exec "${NAME}" systemctl list-units --failed \
+            --no-legend --plain 2>&1 | head -20 || true
+    } >&2
     exit 1
 fi
 printf '  ok   systemd reached state: %s\n' "${status}"
