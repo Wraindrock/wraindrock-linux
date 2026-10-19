@@ -118,6 +118,11 @@ sha256sum -c SHA256SUMS
 sudo dd if=Wraindrock-Live.iso of=/dev/sdX bs=8M status=progress oflag=direct conv=fsync
 ```
 
+Or download the split, self-extracting release from
+[Releases](https://github.com/Wraindrock/wraindrock-linux/releases): keep the
+parts and the `-extract.sh` file together, run the script, and it verifies every
+part, joins them, unpacks `Wraindrock-Live.iso` and re-checks its sha256.
+
 The boot menu offers two entries. The default, **Install Wraindrock
 (interactive, choose disks)**, opens Anaconda's hub so you pick the disk,
 partitioning and user account yourself; its kickstart only tells Anaconda where

@@ -136,6 +136,9 @@ jobs:
               --notes-file /tmp/notes.md \
               ./artifacts/release/*
           fi
+          # gh leaves a release as a draft when the assets were uploaded to an
+          # earlier interrupted run; publishing is explicit and idempotent.
+          gh release edit "${version}" --draft=false
 
       - name: Verify the published assets
         env:
@@ -143,6 +146,8 @@ jobs:
         run: |
           set -euo pipefail
           version="${{ inputs.version }}"
+          draft=$(gh release view "${version}" --json isDraft -q '.isDraft')
+          [ "${draft}" = "false" ] || { echo '::error::release is still a draft'; exit 1; }
           gh release view "${version}" --json assets \
             -q '.assets[] | "\(.name) \(.size) \(.state)"'
           expected=$(cd artifacts/release && sha256sum ./* | awk '{print $2}' | sed 's|^\./||' | sort)
