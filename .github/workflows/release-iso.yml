@@ -1,0 +1,153 @@
+name: release-iso
+
+# Publish an already-built disk artifact as a split, self-extracting GitHub
+# Release. The heavy lifting (BIB, KVM) stays in disk.yml; this workflow only
+# re-downloads the ISO layer from GHCR inside the runner's fast network, which
+# is what makes a 7 GiB release practical from a slow home uplink.
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Disk artifact tag / image version, e.g. 44.20261019T132911Z.55"
+        required: true
+        type: string
+
+permissions:
+  contents: write
+  packages: read
+
+concurrency:
+  group: release-iso-${{ inputs.version }}
+  cancel-in-progress: false
+
+env:
+  VOLUME_SIZE: 1850M
+
+jobs:
+  release:
+    name: split and publish
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Fetch the ISO layer from GHCR
+        run: |
+          set -euo pipefail
+          version="${{ inputs.version }}"
+          owner=$(printf '%s' "${GITHUB_REPOSITORY_OWNER}" | tr '[:upper:]' '[:lower:]')
+          repo="${owner}/wraindrock-linux-disk"
+          token=$(curl -fsS "https://ghcr.io/token?service=ghcr.io&scope=repository:${repo}:pull" \
+            | python3 -c 'import json,sys; print(json.load(sys.stdin)["token"])')
+          curl -fsS -H "Authorization: Bearer ${token}" \
+            -H 'Accept: application/vnd.oci.image.manifest.v1+json' \
+            "https://ghcr.io/v2/${repo}/manifests/${version}" -o /tmp/disk-manifest.json
+          python3 - /tmp/disk-manifest.json > /tmp/iso-layer <<'PY'
+          import json
+          import sys
+
+          manifest = json.load(open(sys.argv[1], encoding="utf-8"))
+          for layer in manifest["layers"]:
+              title = layer.get("annotations", {}).get("org.opencontainers.image.title", "")
+              if title.endswith("/Wraindrock-Live.iso") or title == "Wraindrock-Live.iso":
+                  print(layer["digest"])
+                  break
+          else:
+              raise SystemExit("no Wraindrock-Live.iso layer in the manifest")
+          PY
+          digest=$(cat /tmp/iso-layer)
+          mkdir -p artifacts/iso
+          curl -fL --retry 5 --retry-delay 5 -H "Authorization: Bearer ${token}" \
+            "https://ghcr.io/v2/${repo}/blobs/${digest}" -o artifacts/iso/Wraindrock-Live.iso
+          printf '%s  %s\n' "${digest#sha256:}" artifacts/iso/Wraindrock-Live.iso | sha256sum -c -
+          ls -l artifacts/iso
+
+      - name: Build the split self-extracting archive
+        run: |
+          set -euo pipefail
+          bash tools/release-iso.sh artifacts/iso/Wraindrock-Live.iso \
+            "${{ inputs.version }}" artifacts/release "${VOLUME_SIZE}"
+          ls -l artifacts/release
+
+      - name: Publish the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          version="${{ inputs.version }}"
+          iso=artifacts/iso/Wraindrock-Live.iso
+          iso_sha=$(sha256sum "${iso}" | awk '{print $1}')
+          iso_size=$(stat -c %s "${iso}")
+          base="Wraindrock-Live-${version}"
+
+          cat > /tmp/notes.md <<EOF
+          Wraindrock Live — Bluefin DX remix, GNOME desktop.
+
+          - Image: \`ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/wraindrock-linux:44\`
+          - Version: \`${version}\`
+          - ISO: \`Wraindrock-Live.iso\`, sha256 \`${iso_sha}\`, ${iso_size} bytes
+
+          The ISO is split into parts of 1.94 GB (under GitHub's 2 GiB limit)
+          plus a self-extracting script.
+
+          ## Extract
+
+          Linux / macOS / WSL — keep every file in one directory and run:
+
+          \`\`\`bash
+          bash ${base}-extract.sh
+          \`\`\`
+
+          It verifies every part, joins them back into a zip, unpacks
+          \`Wraindrock-Live.iso\` and checks the ISO sha256.
+
+          Windows without WSL — join the parts in order and open the result with
+          PeaZip, 7-Zip or WinRAR:
+
+          \`\`\`bat
+          copy /b ${base}.zip.part-00+${base}.zip.part-01+${base}.zip.part-02+${base}.zip.part-03 ${base}.zip
+          \`\`\`
+
+          ## Install
+
+          Write the ISO to a USB stick of at least 8 GB (exFAT; FAT32 cannot hold
+          a file above 4 GB):
+
+          \`\`\`bash
+          sudo dd if=Wraindrock-Live.iso of=/dev/sdX bs=8M status=progress oflag=direct conv=fsync
+          \`\`\`
+
+          The GRUB menu has two entries: the default opens the interactive
+          installer (disks, encryption, users); the second entry erases the
+          first disk unattended, for scratch machines only.
+
+          First boot needs network: \`flatpak-preinstall.service\` installs 41
+          Flatpaks (several GB).
+          EOF
+
+          if gh release view "${version}" >/dev/null 2>&1; then
+            gh release edit "${version}" --title "Wraindrock Live ${version}" --notes-file /tmp/notes.md
+            gh release upload "${version}" ./artifacts/release/* --clobber
+          else
+            gh release create "${version}" \
+              --title "Wraindrock Live ${version}" \
+              --notes-file /tmp/notes.md \
+              ./artifacts/release/*
+          fi
+
+      - name: Verify the published assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          version="${{ inputs.version }}"
+          gh release view "${version}" --json assets \
+            -q '.assets[] | "\(.name) \(.size) \(.state)"'
+          expected=$(cd artifacts/release && sha256sum ./* | sort)
+          actual=$(gh release view "${version}" --json assets -q '.assets[].name' | sort)
+          diff <(printf '%s\n' "${expected}" | awk '{print $2}' | sed 's/^/./') \
+               <(printf '%s\n' "${actual}" | sed 's/^/./') \
+            || { echo '::error::release assets do not match the generated files'; exit 1; }
+          echo "release ${version} carries $(printf '%s\n' "${actual}" | wc -l) assets"

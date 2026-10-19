@@ -44,9 +44,12 @@ rm -f "${out_abs}/${base}".z?? "${out_abs}/${base}.zip" \
 
 printf 'compressing %s (%s bytes) and splitting into %s parts …\n' \
     "${iso_name}" "${iso_size}" "${volume}"
+# Deterministic archive: fixed mtime and no host-specific extra fields, so a
+# rebuilt release from the same ISO has the same bytes and hashes.
+touch -d @0 "${iso}"
 (
     cd "${iso_dir}"
-    zip -q -6 "${out_abs}/${base}.zip" "${iso_name}"
+    TZ=UTC zip -q -6 -X "${out_abs}/${base}.zip" "${iso_name}"
 )
 split -b "${volume}" -d -a 2 "${out_abs}/${base}.zip" "${out_abs}/${base}.zip.part-"
 rm -f "${out_abs}/${base}.zip"
@@ -66,7 +69,7 @@ extractor="${out_abs}/${base}-extract.sh"
 set -euo pipefail
 
 here="\$(cd "\$(dirname "\$0")" && pwd)"
-tmp="\$(mktemp -d)"
+tmp="\$(mktemp -d "\${here}/.wraindrock-extract.XXXXXX")"
 trap 'rm -rf "\${tmp}"' EXIT
 
 verify() {
