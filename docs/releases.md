@@ -14,10 +14,13 @@ never overwritten; always prefer the newest one.
 | `previous` | Where `44` pointed before the last release |
 | `44.<UTC>.<run>` | Immutable build; quote this when reporting a bug |
 
-Current channel: `44` → `44.20261019T163435Z.59`
-(`sha256:95dfbdc9c3ef6cb035890e44e09480a57a372a8c03e5c25744904f61b7dd120e`).
-`.57`–`.59` are documentation/workflow rebuilds; their system content matches
-`.55`, the build the current ISO was produced from.
+Current channel: `44` → `44.20261020T045729Z.69`
+(`sha256:f517b873143538fa7e7c51512280d5e727d57db59535c6abe077594490777902`).
+`.57`–`.59` were documentation rebuilds of `.55`; `.69` is the release that
+removed the appearance overrides, branded `/etc/system-release` and added the
+application folders. Later documentation commits may advance the channel again
+without changing system content — the immutable tag and `delta.json` are the
+honest reference.
 
 ```bash
 sudo bootc switch ghcr.io/wraindrock/wraindrock-linux:44
@@ -35,7 +38,7 @@ three layers: `file:disk.qcow2`, `file:Wraindrock-Live.iso` and
 44.20261018T010940Z.22   44.20261018T121004Z.37   44.20261019T052954Z.50
 44.20261018T031902Z.30   44.20261018T150250Z.43   44.20261019T132911Z.55
 44.20261018T071737Z.32   44.20261018T161148Z.47
-44.20261018T100652Z.35   44.20261018T233302Z.48
+44.20261018T100652Z.35   44.20261018T233302Z.48   44.20261020T045729Z.69
 ```
 
 Tags up to `.50` predate the rename and contain `install.iso`; `.55` and later
@@ -43,7 +46,7 @@ contain `Wraindrock-Live.iso`. They stay public for reproducibility, but use the
 newest.
 
 ```bash
-oras pull ghcr.io/wraindrock/wraindrock-linux-disk:44.20261019T132911Z.55 -o disk
+oras pull ghcr.io/wraindrock/wraindrock-linux-disk:44.20261020T045729Z.69 -o disk
 cd disk && sha256sum -c SHA256SUMS
 ```
 
@@ -54,6 +57,7 @@ The pre-rename `wrainrock-*` packages were deleted on 2026-10-20; only the two
 
 | Release | ISO | Assets |
 | --- | --- | --- |
+| [`44.20261020T045729Z.69`](https://github.com/Wraindrock/wraindrock-linux/releases/tag/44.20261020T045729Z.69) | `Wraindrock-Live.iso`, 6,868,303,872 B, `sha256:4578dc91b6bf344ef979bade21f74b1727ccb3ed8b29466c2948f2877862057d` | 4 parts (1.94 GB ×3 + 916 MB) + `-extract.sh` + `SHA256SUMS` |
 | [`44.20261019T132911Z.55`](https://github.com/Wraindrock/wraindrock-linux/releases/tag/44.20261019T132911Z.55) | `Wraindrock-Live.iso`, 6,869,286,912 B, `sha256:84039f3b01689959490fe68c0d9c2fa5b084d9078ee84e9d9ac928b97c15a3cb` | 4 parts (1.94 GB ×3 + 917 MB) + `-extract.sh` + `SHA256SUMS` |
 
 No earlier releases exist; builds before `.55` were published only as GHCR disk
