@@ -394,10 +394,12 @@ else
 fi
 
 if [[ -x tools/get-live-iso.sh ]] && grep -Fq 'releases/latest' tools/get-live-iso.sh \
-        && grep -Fq -- '--dry-run' tools/get-live-iso.sh; then
-    pass "get-live-iso.sh resolves the newest release"
+        && grep -Fq -- '--dry-run' tools/get-live-iso.sh \
+        && grep -Fq -- '--continue-at' tools/get-live-iso.sh \
+        && grep -Fq -- '--retry-all-errors' tools/get-live-iso.sh; then
+    pass "get-live-iso.sh resolves the newest release and resumes interrupted parts"
 else
-    fail "tools/get-live-iso.sh is missing or does not resolve releases/latest"
+    fail "tools/get-live-iso.sh is missing, does not resolve releases/latest, or cannot resume"
 fi
 
 if grep -Fq 'Wraindrock-Live.iso' README.md \

@@ -5,6 +5,17 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 image versions are the upstream channel plus an immutable build tag, see
 [docs/architecture.md](docs/architecture.md).
 
+## [0.15.1] - 2026-10-20
+
+### Fixed
+
+- `tools/get-live-iso.sh` now resumes interrupted downloads: each release part
+  is fetched with `curl --continue-at -` and `--retry-all-errors`, retried with
+  backoff, and falls back to HTTP/1.1 when a CDN resets the TLS connection.
+  Completed parts are verified against the release `SHA256SUMS` before reuse, so
+  re-running the documented one-liner continues from the last partial part
+  instead of starting over.
+
 ## [0.15.0] - 2026-10-20
 
 ### Changed
