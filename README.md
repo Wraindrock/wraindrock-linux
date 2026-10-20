@@ -11,8 +11,11 @@ owns the identity, the presentation and a short list of personal defaults.
 
 - `NAME` and `PRETTY_NAME` say **Wraindrock**; `ID`, `ID_LIKE`, `CPE_NAME` and
   the version fields stay upstream's so uBlue tooling keeps working.
-- The GDM logo, a 4K dark wallpaper, a Plymouth boot splash and an opt-in GRUB
-  theme replace upstream's presentation.
+- A 4K dark wallpaper replaces upstream's. Everything else visual — the logo,
+  GDM artwork, boot splash and boot-menu theme — is Bluefin's own.
+- The UEFI boot entry is labelled **Wraindrock** (not Fedora or Bluefin).
+- GNOME application folders group launchers by purpose: Wraindrock, Bluefin,
+  Virtualization, Proxies, Flatpak, AppImage, plus Bluefin's own folders.
 - A fresh install seeds the hostname to `wraindrock`.
 - **NVIDIA open drivers**, QEMU/KVM with virt-manager, libvirt, Incus, Docker
   and Distrobox come from the Bluefin DX NVIDIA base.
@@ -43,8 +46,8 @@ cannot drift apart silently.
   `libpinyin` engine in the source list (and `show-all-sources`), so Chinese
   typing works on first login; the framework itself is upstream's.
 - GNOME look, fonts, dock, keybindings and favourite apps come from Bluefin's
-  `zz0-bluefin-modifications.gschema.override`; we only override the wallpaper,
-  the login logo and the input-method default.
+  `zz0-bluefin-modifications.gschema.override`; we only override the wallpaper
+  and the input-method default.
 
 ## Software
 

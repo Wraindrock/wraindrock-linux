@@ -10,7 +10,7 @@
 #   * /usr/lib/os-release may differ only in the identity keys listed in the
 #     image's own delta manifest, with exactly the recorded values;
 #   * every added file is one the delta manifest declares;
-#   * the GDM logo and wallpaper overrides are compiled into the schema cache;
+#   * the wallpaper override is compiled into the schema cache;
 #   * the Plymouth boot splash is installed, selected, and complete.
 #
 #   tests/parity.sh ghcr.io/ublue-os/bluefin-dx:stable \
@@ -115,7 +115,6 @@ else
 fi
 expect_line "ID stays bluefin for uBlue tooling" 'ID=bluefin'
 expect_line "ID_LIKE is fedora" 'ID_LIKE="fedora"'
-expect_line "LOGO points at the Wraindrock icon" 'LOGO=wraindrock-logo-icon'
 expect_line "DEFAULT_HOSTNAME is wraindrock" 'DEFAULT_HOSTNAME="wraindrock"'
 expect_line "HOME_URL points at the project" \
     'HOME_URL="https://github.com/Wraindrock/wraindrock-linux"'
@@ -154,7 +153,7 @@ base = parse(sys.argv[1])
 image = parse(sys.argv[2])
 
 changed = {
-    "NAME", "PRETTY_NAME", "LOGO", "DEFAULT_HOSTNAME", "HOME_URL",
+    "NAME", "PRETTY_NAME", "DEFAULT_HOSTNAME", "HOME_URL",
     "DOCUMENTATION_URL", "SUPPORT_URL", "BUG_REPORT_URL",
 }
 added = set()
@@ -205,7 +204,7 @@ assert delta["base_digest"], delta
 changed = delta["os_release"]["changed"]
 added = delta["os_release"].get("added", {})
 assert set(changed) == {
-    "NAME", "PRETTY_NAME", "LOGO", "DEFAULT_HOSTNAME", "HOME_URL",
+    "NAME", "PRETTY_NAME", "DEFAULT_HOSTNAME", "HOME_URL",
     "DOCUMENTATION_URL", "SUPPORT_URL", "BUG_REPORT_URL",
 }, changed
 assert added == {}, added
@@ -215,35 +214,25 @@ assert image["ID_LIKE"] == "fedora", image
 
 assert delta["files"]["modified"] == [
     "/usr/lib/os-release",
+    "/etc/system-release",
     "/usr/share/glib-2.0/schemas/gschemas.compiled",
-    "/etc/plymouth/plymouthd.conf",
     "/usr/share/rpm/rpmdb.sqlite",
+    "/etc/dconf/db/distro",
     "/opt",
 ], delta["files"]
 expected_added = {
-    "/usr/share/icons/hicolor/scalable/apps/wraindrock-logo-icon.svg",
-    "/usr/share/pixmaps/wraindrock-gdm-logo.svg",
-    "/usr/share/pixmaps/wraindrock-gdm-logo.png",
     "/usr/share/glib-2.0/schemas/zzzz-wraindrock.gschema.override",
     "/usr/share/backgrounds/wraindrock/wraindrock-wallpaper.png",
     "/usr/share/wraindrock/base-os-release",
     "/usr/share/wraindrock/build-info.json",
     "/usr/share/wraindrock/delta.json",
-    "/usr/share/plymouth/themes/wraindrock/wraindrock.plymouth",
-    "/usr/share/plymouth/themes/wraindrock/background.png",
-    "/usr/share/grub/themes/wraindrock/theme.txt",
-    "/usr/share/grub/themes/wraindrock/background.png",
-    "/usr/bin/wraindrock-grub-theme",
     "/usr/libexec/wraindrock-hostname-seed",
     "/usr/lib/systemd/system/wraindrock-hostname-seed.service",
     "/usr/lib/systemd/system/sysinit.target.wants/wraindrock-hostname-seed.service",
     "/usr/share/wraindrock/base-rpm-set",
     "/usr/share/flatpak/preinstall.d/wraindrock.preinstall",
     "/etc/xdg/mimeapps.list",
-}
-expected_added |= {
-    f"/usr/share/plymouth/themes/wraindrock/animation-{i:04d}.png"
-    for i in range(1, 31)
+    "/etc/dconf/db/distro.d/10-wraindrock-folders",
 }
 assert set(delta["files"]["added"]) == expected_added, delta["files"]["added"]
 PY
@@ -376,21 +365,6 @@ while IFS=$'\t' read -r name version; do
     fi
 done < "${tmpdir}/rpm.versions"
 
-if in_image "${IMAGE}" \
-    "grep -qx \"logo='/usr/share/pixmaps/wraindrock-gdm-logo.png'\" \
-        /usr/share/glib-2.0/schemas/zzzz-wraindrock.gschema.override"; then
-    pass "GDM logo override points at the Wraindrock wordmark"
-else
-    fail "GDM logo override is missing or wrong"
-fi
-
-if in_image "${IMAGE}" \
-    'grep -aq wraindrock-gdm-logo /usr/share/glib-2.0/schemas/gschemas.compiled'; then
-    pass "GDM logo override is compiled into the schema cache"
-else
-    fail "compiled schema cache does not contain the GDM logo override"
-fi
-
 # --- default wallpaper ------------------------------------------------------
 wallpaper=/usr/share/backgrounds/wraindrock/wraindrock-wallpaper.png
 if in_image "${IMAGE}" "test -s ${wallpaper}"; then
@@ -443,170 +417,62 @@ for key in picture-uri picture-uri-dark; do
     fi
 done
 
-# --- Plymouth boot splash ---------------------------------------------------
-plymouth_dir=/usr/share/plymouth/themes/wraindrock
-theme_file=${plymouth_dir}/wraindrock.plymouth
-
-if in_image "${IMAGE}" "test -s ${theme_file}"; then
-    pass "Plymouth theme file is installed"
-else
-    fail "Plymouth theme file is missing"
-fi
-
-if in_image "${IMAGE}" "grep -qx 'ModuleName=two-step' ${theme_file}"; then
-    pass "Plymouth theme uses the two-step plugin (shipped by the base)"
-else
-    fail "Plymouth theme does not use the two-step plugin"
-fi
-
-if in_image "${IMAGE}" "grep -qx 'ImageDir=${plymouth_dir}' ${theme_file}"; then
-    pass "Plymouth theme points at its own asset directory"
-else
-    fail "Plymouth theme ImageDir is missing or wrong"
-fi
-
-if in_image "${IMAGE}" "grep -qx 'UseProgressBar=true' ${theme_file}"; then
-    pass "Plymouth theme keeps progress bars for offline updates"
-else
-    fail "Plymouth theme dropped the update progress bar"
-fi
-
-if in_image "${IMAGE}" "grep -qx 'Theme=wraindrock' /etc/plymouth/plymouthd.conf"; then
-    pass "Plymouth daemon config selects the Wraindrock theme"
-else
-    fail "Plymouth daemon config does not select the Wraindrock theme"
-fi
-
-if in_image "${IMAGE}" "test -s ${plymouth_dir}/background.png"; then
-    pass "Plymouth background is installed"
-else
-    fail "Plymouth background is missing"
-fi
-
-plymouth_bg_dims="$(in_image "${IMAGE}" \
-    "od -An -tu4 --endian=big -j16 -N8 ${plymouth_dir}/background.png 2>/dev/null || true")"
-read -r plymouth_bg_w plymouth_bg_h <<<"${plymouth_bg_dims}"
-if [[ ${plymouth_bg_w:-0} -eq 1920 && ${plymouth_bg_h:-0} -eq 1080 ]]; then
-    pass "Plymouth background is 1920x1080"
-else
-    fail "Plymouth background is ${plymouth_bg_w:-?}x${plymouth_bg_h:-?}, want 1920x1080"
-fi
-
-plymouth_frames="$(in_image "${IMAGE}" \
-    "ls ${plymouth_dir}/animation-*.png 2>/dev/null | wc -l" 2>/dev/null || true)"
-if [[ ${plymouth_frames:-0} -eq 30 ]]; then
-    pass "Plymouth animation has 30 frames"
-else
-    fail "Plymouth animation has ${plymouth_frames:-0} frames, want 30"
-fi
-
-if in_image "${IMAGE}" 'set -e
-    for f in /usr/share/plymouth/themes/wraindrock/animation-*.png; do
-        sig=$(head -c 8 "$f" | od -An -tx1 | tr -d " \n")
-        [ "$sig" = 89504e470d0a1a0a ] || exit 1
-    done'; then
-    pass "every Plymouth animation frame is a valid PNG"
-else
-    fail "a Plymouth animation frame is not a valid PNG"
-fi
-
-plymouth_frame_dims="$(in_image "${IMAGE}" \
-    "od -An -tu4 --endian=big -j16 -N8 ${plymouth_dir}/animation-0001.png 2>/dev/null || true")"
-read -r plymouth_frame_w plymouth_frame_h <<<"${plymouth_frame_dims}"
-if [[ ${plymouth_frame_w:-0} -eq 256 && ${plymouth_frame_h:-0} -eq 256 ]]; then
-    pass "Plymouth animation frames are 256x256"
-else
-    fail "Plymouth animation frame is ${plymouth_frame_w:-?}x${plymouth_frame_h:-?}, want 256x256"
-fi
-
-plymouth_themes="$(in_image "${IMAGE}" 'plymouth-set-default-theme -l 2>/dev/null || true')"
-if grep -qx 'wraindrock' <<<"${plymouth_themes}"; then
-    pass "plymouth-set-default-theme lists the Wraindrock theme"
-else
-    fail "plymouth-set-default-theme does not list wraindrock: ${plymouth_themes:-<none>}"
-fi
-
-# rpm must agree that the only tracked file we changed is os-release.
-# /usr/lib/os-release belongs to the variant identity package, not to
-# fedora-release-common. Look the package name up rather than hard-coding it:
-# base packaging drift in a future Bluefin release then fails with a clear
-# message instead of a puzzling diff.
-#
-# The mtime check is disabled: image layers store mtime 0 for files that are
-# hardlinks into the ostree repo, while rpm headers record the package build
-# time. A plain `rpm -V` would therefore report a T flag for every tracked file
-# of the package, drowning out the single content change we actually made.
-identity_package="$(in_image "${IMAGE}" 'rpm -q --whatprovides /usr/lib/os-release' || true)"
-if [[ -n ${identity_package} ]]; then
-    pass "release identity package owns /usr/lib/os-release (${identity_package})"
-else
-    fail "could not determine which package owns /usr/lib/os-release"
-fi
-
-if rpm_verify="$(in_image "${IMAGE}" "rpm -V --nomtime ${identity_package} || true")"; then
+# --- identity files ---------------------------------------------------------
+# We replace /usr/lib/os-release and /etc/system-release with the branded
+# values; both belong to the release package and are the only expected
+# modifications it reports.
+identity_package="$(in_image "${IMAGE}" 'rpm -q --whatprovides /usr/lib/os-release' 2>/dev/null || true)"
+if [[ -n ${identity_package} ]] && rpm_verify="$(in_image "${IMAGE}" "rpm -V --nomtime ${identity_package} || true")"; then
     verify_lines="$(printf '%s\n' "${rpm_verify}" | grep -c . || true)"
-    if [[ ${verify_lines} -eq 1 ]] && grep -q '/usr/lib/os-release' <<<"${rpm_verify}"; then
-        pass "rpm sees exactly one modified file: /usr/lib/os-release"
+    if [[ ${verify_lines} -eq 2 ]] \
+        && grep -q '/usr/lib/os-release' <<<"${rpm_verify}" \
+        && grep -q '/etc/system-release' <<<"${rpm_verify}"; then
+        pass "rpm sees exactly the two documented identity files changed"
     else
         fail "rpm verification reported unexpected changes: ${rpm_verify:-<none>}"
     fi
 else
-    fail "could not run rpm verification"
+    fail "could not run rpm verification for ${identity_package:-the release package}"
 fi
 
-# --- GRUB boot menu theme ---------------------------------------------------
-# The image ships an opt-in helper because bootc images cannot rewrite
-# /boot/grub2/grub.cfg (bootupd installs it as a static config). Exercise the
-# helper against throwaway boot trees inside the image.
-if in_image "${IMAGE}" 'wraindrock-grub-theme status --boot-dir /nonexistent' > /dev/null; then
-    pass "GRUB theme helper handles a missing GRUB directory"
+# --- UEFI boot entry name and app folders ----------------------------------
+system_release="$(in_image "${IMAGE}" 'cat /etc/system-release' 2>/dev/null || true)"
+if [[ ${system_release} == "Wraindrock release "* ]]; then
+    pass "/etc/system-release names the UEFI entry Wraindrock (${system_release})"
 else
-    fail "GRUB theme helper failed on a missing directory"
+    fail "/etc/system-release does not name the UEFI entry: ${system_release:-<missing>}"
 fi
 
-if grub_dims="$(in_image "${IMAGE}" 'od -An -tu4 --endian=big -j16 -N8 /usr/share/grub/themes/wraindrock/background.png' 2>/dev/null || true)"; then
-    read -r grub_w grub_h <<<"${grub_dims}"
-    if [[ ${grub_w:-} == 1920 && ${grub_h:-} == 1080 ]]; then
-        pass "GRUB theme background is 1920x1080"
+folders_file=/etc/dconf/db/distro.d/10-wraindrock-folders
+if in_image "${IMAGE}" "test -s ${folders_file}"; then
+    pass "application folders are declared"
+else
+    fail "application folders are missing"
+fi
+for folder in Virtualization Proxies Bluefin Wraindrock Flatpak AppImage; do
+    if in_image "${IMAGE}" "grep -q '\[org/gnome/desktop/app-folders/folders/${folder}\]' ${folders_file}"; then
+        pass "app folder declared: ${folder}"
     else
-        fail "GRUB theme background is ${grub_w:-?}x${grub_h:-?}, want 1920x1080"
+        fail "app folder missing: ${folder}"
     fi
+done
+if in_image "${IMAGE}" 'grep -aq "Wraindrock application folders" /etc/dconf/db/distro'; then
+    pass "app folders are compiled into the distro dconf database"
 else
-    fail "could not read the GRUB theme background"
+    fail "compiled distro dconf database does not contain the app folders"
 fi
 
-grub_test_script='set -eu
-fixture=$(mktemp -d)
-mkdir -p "$fixture/grub2"
-printf "insmod blscfg\nblscfg\nif [ -f \$prefix/custom.cfg ]; then source \$prefix/custom.cfg; fi\n" > "$fixture/grub2/grub.cfg"
-wraindrock-grub-theme enable --boot-dir "$fixture" > /dev/null
-test -s "$fixture/grub2/themes/wraindrock/theme.txt"
-test -s "$fixture/grub2/themes/wraindrock/background.png"
-test -s "$fixture/grub2/themes/wraindrock/unicode.pf2"
-grep -q "loadfont \${prefix}/themes/wraindrock/unicode.pf2" "$fixture/grub2/custom.cfg"
-grep -q "set theme=\${prefix}/themes/wraindrock/theme.txt" "$fixture/grub2/custom.cfg"
-wraindrock-grub-theme status --boot-dir "$fixture" | grep -q "managed by wraindrock-grub-theme"
-wraindrock-grub-theme enable --boot-dir "$fixture" > /dev/null
-printf "user snippet\n" > "$fixture/grub2/custom.cfg"
-if wraindrock-grub-theme enable --boot-dir "$fixture" > /dev/null 2>&1; then exit 1; fi
-grep -qx "user snippet" "$fixture/grub2/custom.cfg"
-fixture2=$(mktemp -d)
-mkdir -p "$fixture2/grub2"
-printf "blscfg\n" > "$fixture2/grub2/grub.cfg"
-if wraindrock-grub-theme enable --boot-dir "$fixture2" > /dev/null 2>&1; then exit 1; fi
-fixture3=$(mktemp -d)
-mkdir -p "$fixture3/grub2"
-printf "if [ -f \$prefix/custom.cfg ]; then source \$prefix/custom.cfg; fi\n" > "$fixture3/grub2/grub.cfg"
-wraindrock-grub-theme enable --boot-dir "$fixture3" > /dev/null
-if wraindrock-grub-theme disable --boot-dir "$fixture3" < /dev/null > /dev/null 2>&1; then exit 1; fi
-wraindrock-grub-theme disable --yes --boot-dir "$fixture3" > /dev/null
-test ! -e "$fixture3/grub2/custom.cfg"
-test ! -e "$fixture3/grub2/themes/wraindrock"'
-if in_image "${IMAGE}" "${grub_test_script}"; then
-    pass "GRUB theme helper: enable, idempotency, refusals, disable"
-else
-    fail "GRUB theme helper behavior is wrong"
-fi
+# Appearance customisation was deliberately removed; the wallpaper is the only
+# visual delta. These files must not come back silently.
+for gone in /usr/share/pixmaps/wraindrock-gdm-logo.png \
+    /usr/share/plymouth/themes/wraindrock/wraindrock.plymouth \
+    /usr/bin/wraindrock-grub-theme; do
+    if in_image "${IMAGE}" "test ! -e ${gone}"; then
+        pass "appearance personalisation removed: ${gone}"
+    else
+        fail "unexpected appearance file: ${gone}"
+    fi
+done
 
 # --- Hostname seeding -------------------------------------------------------
 # A fresh install inherits the base deployment's /etc and comes up as "fedora"

@@ -93,13 +93,8 @@ rm -rf "${rpm_db_tmp}"
     || die "the RPM database changed before the software step"
 
 # --- 3. identity ------------------------------------------------------------
-for asset in wraindrock-logo-icon.svg wraindrock-gdm-logo.svg \
-    wraindrock-gdm-logo.png wraindrock-wallpaper.png \
-    plymouth/wraindrock.plymouth plymouth/background.png \
-    plymouth/animation-0001.png plymouth/animation-0030.png \
-    grub/theme.txt grub/background.png; do
-    [[ -r ${branding_dir}/${asset} ]] || die "branding asset ${asset} is missing"
-done
+[[ -r ${branding_dir}/wraindrock-wallpaper.png ]] \
+    || die "wallpaper asset is missing"
 
 # 3a. os-release. Keep VERSION, VERSION_ID, OSTREE_VERSION and SUPPORT_END from
 # the base: update cadence and support window must stay honest. Only identity
@@ -107,7 +102,6 @@ done
 sed -i \
     -e 's/^NAME=.*/NAME="Wraindrock"/' \
     -e 's/^PRETTY_NAME="Bluefin/PRETTY_NAME="Wraindrock/' \
-    -e 's/^LOGO=.*/LOGO=wraindrock-logo-icon/' \
     -e 's/^DEFAULT_HOSTNAME=.*/DEFAULT_HOSTNAME="wraindrock"/' \
     -e 's|^HOME_URL=.*|HOME_URL="https://github.com/Wraindrock/wraindrock-linux"|' \
     -e 's|^DOCUMENTATION_URL=.*|DOCUMENTATION_URL="https://github.com/Wraindrock/wraindrock-linux/blob/main/docs/install.md"|' \
@@ -122,22 +116,12 @@ grep -Eq '^PRETTY_NAME="Wraindrock \(Version: [0-9]' "${os_release}" \
     || die "failed to brand PRETTY_NAME"
 grep -qx 'ID=bluefin' "${os_release}" || die "branding changed ID"
 grep -qx 'ID_LIKE="fedora"' "${os_release}" || die "base lost ID_LIKE"
-grep -qx 'LOGO=wraindrock-logo-icon' "${os_release}" || die "failed to brand LOGO"
 grep -qx 'DEFAULT_HOSTNAME="wraindrock"' "${os_release}" \
     || die "failed to brand DEFAULT_HOSTNAME"
 grep -qx "VERSION_ID=${FEDORA_VERSION}" "${os_release}" \
     || die "branding changed VERSION_ID"
 grep -qx "VARIANT_ID=${base_variant_id}" "${os_release}" \
     || die "branding changed VARIANT_ID"
-
-# 3b. icons. LOGO names an icon theme entry (Settings -> About); GDM reads the
-# wordmark by path from the gsettings override below.
-install -D -m 0644 "${branding_dir}/wraindrock-logo-icon.svg" \
-    /usr/share/icons/hicolor/scalable/apps/wraindrock-logo-icon.svg
-install -D -m 0644 "${branding_dir}/wraindrock-gdm-logo.svg" \
-    /usr/share/pixmaps/wraindrock-gdm-logo.svg
-install -D -m 0644 "${branding_dir}/wraindrock-gdm-logo.png" \
-    /usr/share/pixmaps/wraindrock-gdm-logo.png
 
 # 3c. Wallpaper. Fedora ships 10_org.gnome.desktop.background.fedora.gschema
 # override pointing at the f44 day/night images; our zz- override is merged
@@ -147,15 +131,10 @@ install -D -m 0644 "${branding_dir}/wraindrock-wallpaper.png" \
     /usr/share/backgrounds/wraindrock/wraindrock-wallpaper.png
 
 # 3d. GDM logo and default wallpaper. Override files are merged in name order,
-# so zz- wins over Fedora's 10_* override. The login screen stays legible on
-# its own background - see docs/architecture.md for the known dark-background
-# contrast caveat.
+# so zz- wins over Fedora's 10_* override.
 gschema_dir=/usr/share/glib-2.0/schemas
 override="${gschema_dir}/zzzz-wraindrock.gschema.override"
 cat > "${override}" <<'EOF'
-[org.gnome.login-screen]
-logo='/usr/share/pixmaps/wraindrock-gdm-logo.png'
-
 [org.gnome.desktop.background]
 picture-uri='file:///usr/share/backgrounds/wraindrock/wraindrock-wallpaper.png'
 picture-uri-dark='file:///usr/share/backgrounds/wraindrock/wraindrock-wallpaper.png'
@@ -170,7 +149,7 @@ show-all-sources=true
 EOF
 chmod 0644 "${override}"
 command -v glib-compile-schemas >/dev/null 2>&1 \
-    || die "glib-compile-schemas is required to apply the GDM logo"
+    || die "glib-compile-schemas is required to apply the defaults"
 glib-compile-schemas "${gschema_dir}"
 
 # The input-method default is only real if the compiled schema reports it.
@@ -183,42 +162,61 @@ if rpm -q fcitx5 >/dev/null 2>&1; then
     die "fcitx5 is installed; the default must stay IBus"
 fi
 
-# 3e. Plymouth boot splash. Fedora's theme plugins are all shipped in the base
-# image, so the splash needs no package change: a two-step theme plus the
-# daemon config is enough. plymouth's /usr/lib/plymouth/plymouth-populate-initrd
-# reads this config when a deployment regenerates its initramfs and copies the
-# selected theme into it.
-plymouth_dir=/usr/share/plymouth/themes/wraindrock
-install -d -m 0755 "${plymouth_dir}"
-install -m 0644 "${branding_dir}/plymouth/wraindrock.plymouth" "${plymouth_dir}/"
-install -m 0644 "${branding_dir}/plymouth/background.png" "${plymouth_dir}/"
-install -m 0644 "${branding_dir}"/plymouth/animation-????.png "${plymouth_dir}/"
-[[ -f ${plymouth_dir}/animation-0001.png && -f ${plymouth_dir}/animation-0030.png ]] \
-    || die "Plymouth animation frames not installed"
+# 3e. UEFI boot entry name. bootupd labels the firmware entry from
+# /etc/system-release when it exists (Bluefin's symlink says "Fedora release
+# ..."), falling back to os-release NAME. Ship a real file so installs and
+# bootloader updates name the entry "Wraindrock".
+system_release=/etc/system-release
+rm -f "${system_release}"
+printf 'Wraindrock release %s (Bluefin DX)\n' "${FEDORA_VERSION}" > "${system_release}"
+chmod 0644 "${system_release}"
+grep -Eq '^Wraindrock release [0-9]' "${system_release}" \
+    || die "failed to brand /etc/system-release"
 
-cat > /etc/plymouth/plymouthd.conf <<'PLYMOUTHD'
-# Wraindrock boot splash. The theme itself is shipped in
-# /usr/share/plymouth/themes/wraindrock; this file only selects it.
-[Daemon]
-Theme=wraindrock
-PLYMOUTHD
-chmod 0644 /etc/plymouth/plymouthd.conf
-grep -qx 'Theme=wraindrock' /etc/plymouth/plymouthd.conf \
-    || die "failed to select the Plymouth theme"
-
-# 3f. GRUB boot menu theme (opt-in at runtime). bootc systems get their
-# /boot/grub2/grub.cfg from bootupd as a static config during installation, so
-# an image update cannot change the menu by itself. Ship the theme and a small
-# helper; the helper copies it to /boot and uses bootupd's supported
-# custom.cfg hook. See docs/architecture.md.
-grub_theme_dir=/usr/share/grub/themes/wraindrock
-install -d -m 0755 "${grub_theme_dir}"
-install -m 0644 "${branding_dir}/grub/theme.txt" "${grub_theme_dir}/theme.txt"
-install -m 0644 "${branding_dir}/grub/background.png" "${grub_theme_dir}/background.png"
-[[ -f /usr/share/grub/unicode.pf2 ]] \
-    || die "base image is missing /usr/share/grub/unicode.pf2"
-install -D -m 0755 "${script_dir}/grub-theme/wraindrock-grub-theme" /usr/bin/wraindrock-grub-theme
-[[ -x /usr/bin/wraindrock-grub-theme ]] || die "GRUB theme helper not installed"
+# 3f. Application folders. GNOME groups launchers into folders; Bluefin ships
+# its own set through a distro dconf database. Add Wraindrock's taxonomy in the
+# same database and generate the Flatpak folder from the preinstall list, so
+# the two never drift. Users can still move apps between folders.
+dconf_dir=/etc/dconf/db/distro.d
+install -d -m 0755 "${dconf_dir}"
+folders_file="${dconf_dir}/10-wraindrock-folders"
+flatpak_list="${script_dir}/software/flatpaks.txt"
+[[ -s ${flatpak_list} ]] || die "the Flatpak list is missing"
+{
+    printf '# Wraindrock application folders.\n'
+    printf '[org/gnome/desktop/app-folders]\n'
+    printf "folder-children=['Games', 'GamingUtilities', 'Utilities', 'Development', 'Containers', 'Wine', 'Productivity', 'Virtualization', 'Proxies', 'Bluefin', 'Wraindrock', 'Flatpak', 'AppImage']\n"
+    printf "\n[org/gnome/desktop/app-folders/folders/Virtualization]\n"
+    printf "apps=['virt-manager.desktop', 'org.gnome.Boxes.desktop', 'io.podman_desktop.PodmanDesktop.desktop', 'com.github.marhkb.Pods.desktop', 'io.github.dvlv.boxbuddyrs.desktop']\n"
+    printf "name='Virtualization'\ntranslate=false\n"
+    printf "\n[org/gnome/desktop/app-folders/folders/Proxies]\n"
+    printf "apps=['Clash Verge.desktop', 'sing-box.desktop']\n"
+    printf "name='Proxies'\ntranslate=false\n"
+    printf "\n[org/gnome/desktop/app-folders/folders/Bluefin]\n"
+    printf "apps=['io.github.kolunmi.Bazaar.desktop', 'com.mattjakeman.ExtensionManager.desktop', 'org.gnome.tweaks.desktop', 'io.github.flattool.Warehouse.desktop', 'com.github.tchx84.Flatseal.desktop', 'ca.desrt.dconf-editor.desktop', 'app.devsuite.Ptyxis.desktop']\n"
+    printf "name='Bluefin'\ntranslate=false\n"
+    printf "\n[org/gnome/desktop/app-folders/folders/Wraindrock]\n"
+    printf "apps=['helium.desktop', 'Rayburst.desktop']\n"
+    printf "name='Wraindrock'\ntranslate=false\n"
+    printf "\n[org/gnome/desktop/app-folders/folders/AppImage]\n"
+    printf "apps=['it.mijorus.gearlever.desktop']\n"
+    printf "name='AppImage'\ntranslate=false\n"
+    printf "\n[org/gnome/desktop/app-folders/folders/Flatpak]\n"
+    printf 'apps=['
+    first=1
+    while IFS= read -r app; do
+        [[ -n ${app} && ${app} != \#* ]] || continue
+        [[ ${first} == 1 ]] || printf ', '
+        printf "'%s.desktop'" "${app}"
+        first=0
+    done < "${flatpak_list}"
+    printf "]\nname='Flatpak'\ntranslate=false\n"
+} > "${folders_file}"
+chmod 0644 "${folders_file}"
+command -v dconf >/dev/null 2>&1 || die "dconf is required to compile the app-folder database"
+dconf update
+grep -aq 'Wraindrock application folders' /etc/dconf/db/distro \
+    || die "the app-folder database was not compiled"
 
 # 3g. First-boot hostname seeding. bootc-image-builder's install path does not
 # apply DEFAULT_HOSTNAME: the installed system inherits the base deployment's
@@ -358,7 +356,6 @@ cat > /usr/share/wraindrock/delta.json <<EOF
     "changed": {
       "NAME": $(json_value "$(unquote "$(field NAME)")"),
       "PRETTY_NAME": $(json_value "$(unquote "$(field PRETTY_NAME)")"),
-      "LOGO": $(json_value "$(unquote "$(field LOGO)")"),
       "DEFAULT_HOSTNAME": $(json_value "$(unquote "$(field DEFAULT_HOSTNAME)")"),
       "HOME_URL": $(json_value "$(unquote "$(field HOME_URL)")"),
       "DOCUMENTATION_URL": $(json_value "$(unquote "$(field DOCUMENTATION_URL)")"),
@@ -373,52 +370,15 @@ cat > /usr/share/wraindrock/delta.json <<EOF
   "files": {
     "modified": [
       "/usr/lib/os-release",
+      "/etc/system-release",
       "/usr/share/glib-2.0/schemas/gschemas.compiled",
-      "/etc/plymouth/plymouthd.conf",
       "/usr/share/rpm/rpmdb.sqlite",
+      "/etc/dconf/db/distro",
       "/opt"
     ],
     "added": [
-      "/usr/share/icons/hicolor/scalable/apps/wraindrock-logo-icon.svg",
-      "/usr/share/pixmaps/wraindrock-gdm-logo.svg",
-      "/usr/share/pixmaps/wraindrock-gdm-logo.png",
       "/usr/share/glib-2.0/schemas/zzzz-wraindrock.gschema.override",
       "/usr/share/backgrounds/wraindrock/wraindrock-wallpaper.png",
-      "/usr/share/plymouth/themes/wraindrock/wraindrock.plymouth",
-      "/usr/share/plymouth/themes/wraindrock/background.png",
-      "/usr/share/plymouth/themes/wraindrock/animation-0001.png",
-      "/usr/share/plymouth/themes/wraindrock/animation-0002.png",
-      "/usr/share/plymouth/themes/wraindrock/animation-0003.png",
-      "/usr/share/plymouth/themes/wraindrock/animation-0004.png",
-      "/usr/share/plymouth/themes/wraindrock/animation-0005.png",
-      "/usr/share/plymouth/themes/wraindrock/animation-0006.png",
-      "/usr/share/plymouth/themes/wraindrock/animation-0007.png",
-      "/usr/share/plymouth/themes/wraindrock/animation-0008.png",
-      "/usr/share/plymouth/themes/wraindrock/animation-0009.png",
-      "/usr/share/plymouth/themes/wraindrock/animation-0010.png",
-      "/usr/share/plymouth/themes/wraindrock/animation-0011.png",
-      "/usr/share/plymouth/themes/wraindrock/animation-0012.png",
-      "/usr/share/plymouth/themes/wraindrock/animation-0013.png",
-      "/usr/share/plymouth/themes/wraindrock/animation-0014.png",
-      "/usr/share/plymouth/themes/wraindrock/animation-0015.png",
-      "/usr/share/plymouth/themes/wraindrock/animation-0016.png",
-      "/usr/share/plymouth/themes/wraindrock/animation-0017.png",
-      "/usr/share/plymouth/themes/wraindrock/animation-0018.png",
-      "/usr/share/plymouth/themes/wraindrock/animation-0019.png",
-      "/usr/share/plymouth/themes/wraindrock/animation-0020.png",
-      "/usr/share/plymouth/themes/wraindrock/animation-0021.png",
-      "/usr/share/plymouth/themes/wraindrock/animation-0022.png",
-      "/usr/share/plymouth/themes/wraindrock/animation-0023.png",
-      "/usr/share/plymouth/themes/wraindrock/animation-0024.png",
-      "/usr/share/plymouth/themes/wraindrock/animation-0025.png",
-      "/usr/share/plymouth/themes/wraindrock/animation-0026.png",
-      "/usr/share/plymouth/themes/wraindrock/animation-0027.png",
-      "/usr/share/plymouth/themes/wraindrock/animation-0028.png",
-      "/usr/share/plymouth/themes/wraindrock/animation-0029.png",
-      "/usr/share/plymouth/themes/wraindrock/animation-0030.png",
-      "/usr/share/grub/themes/wraindrock/theme.txt",
-      "/usr/share/grub/themes/wraindrock/background.png",
-      "/usr/bin/wraindrock-grub-theme",
       "/usr/libexec/wraindrock-hostname-seed",
       "/usr/lib/systemd/system/wraindrock-hostname-seed.service",
       "/usr/lib/systemd/system/sysinit.target.wants/wraindrock-hostname-seed.service",
@@ -427,7 +387,8 @@ cat > /usr/share/wraindrock/delta.json <<EOF
       "/usr/share/wraindrock/build-info.json",
       "/usr/share/wraindrock/delta.json",
       "/usr/share/flatpak/preinstall.d/wraindrock.preinstall",
-      "/etc/xdg/mimeapps.list"
+      "/etc/xdg/mimeapps.list",
+      "/etc/dconf/db/distro.d/10-wraindrock-folders"
     ]
   }
 }
@@ -458,8 +419,7 @@ chmod 0644 /usr/share/wraindrock/build-info.json
 say "provenance written for ${IMAGE_NAME:-unknown} (${rpm_count} packages, ${rpm_base_count} in base)"
 say "base os-release preserved at /usr/share/wraindrock/base-os-release"
 say "identity applied: $(unquote "$(field PRETTY_NAME)")"
-say "boot splash installed: ${plymouth_dir} (theme: wraindrock)"
-say "GRUB theme helper installed: /usr/bin/wraindrock-grub-theme (opt-in)"
+say "UEFI boot entry name: $(tr -d '\n' < /etc/system-release)"
 say "first-boot Flatpaks: $(grep -vc '^#' "${flatpak_list}") declared in /usr/share/flatpak/preinstall.d/wraindrock.preinstall"
 say "baked RPMs: $(wc -l < "${rpm_added_file}") (clash-verge, rayburst, sing-box)"
 say "delta manifest written to /usr/share/wraindrock/delta.json"

@@ -87,8 +87,8 @@ Boot the stick on a UEFI machine, pick an entry and let Anaconda install; the
 system reboots into GDM. On the first boot the network must be up: the system
 installs 41 Flatpaks in the background (Podman Desktop, GNOME Builder,
 DevToolbox, Clapgrep, Embellish, WeChat, Rnote, Gear Lever, …). Helium is the
-default browser; Firefox is not preinstalled. The
-GRUB menu theme stays opt-in: `sudo wraindrock-grub-theme enable`.
+default browser; Firefox is not preinstalled. Visual presentation (logo, boot
+splash, boot-menu theme) stays upstream Bluefin's.
 
 ## Verify after reboot
 
@@ -103,8 +103,8 @@ nvidia-smi                           # NVIDIA open driver
 virsh --version && incus version     # KVM/libvirt and Incus
 gsettings get org.gnome.desktop.background picture-uri
 gsettings get org.gnome.desktop.input-sources sources  # IBus + libpinyin
-plymouth-set-default-theme           # wraindrock
-sudo wraindrock-grub-theme status    # opt-in
+cat /etc/system-release              # Wraindrock release ...
+efibootmgr                           # firmware entry named Wraindrock
 ```
 
 The first boot downloads the Flatpaks in the background; give it network and a
@@ -156,11 +156,3 @@ filesystem. The booted deployment is intact.
 The ESP is full or EFI variables are read-only. Free ESP space and retry; if
 the firmware mounts EFI variables read-only, fix that first — deployments
 cannot be staged otherwise.
-
-### The GRUB menu still looks like upstream
-
-The theme is opt-in. `sudo wraindrock-grub-theme enable` writes a managed
-`custom.cfg`; `sudo wraindrock-grub-theme disable --yes` removes it. If enable
-reports that the config does not source `custom.cfg`, run
-`sudo bootupctl migrate-static-grub-config` first (it keeps
-`/boot/grub2/grub.cfg.backup`).

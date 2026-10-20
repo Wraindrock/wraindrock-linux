@@ -16,7 +16,7 @@ Silverblue 44.
 
 **Goal:** make the image *Wraindrock* without touching the OS machinery.
 
-- [x] os-release display fields, logo icon, GDM wordmark, hostname
+- [x] os-release display fields and hostname
 - [x] `delta.json` manifest; parity relaxes to "base plus exactly the delta"
 - [x] No package changes
 
@@ -26,8 +26,8 @@ Silverblue 44.
 a fresh machine can be installed without an existing system.
 
 - [x] Default wallpaper (desktop + GDM)
-- [x] Plymouth boot splash (`two-step`, no package change)
-- [x] Opt-in GRUB menu theme via `/usr/bin/wraindrock-grub-theme`
+- [x] Plymouth boot splash (removed again in v0.15: upstream's is better)
+- [x] Opt-in GRUB menu theme (removed again in v0.15)
       (bootc cannot rewrite an installed bootloader config)
 - [x] qcow2 + Anaconda ISO in CI (interactive default, unattended option);
       KVM install + boot tests
@@ -43,7 +43,7 @@ Wraindrock should only own its identity and its preferences.
 - [x] Base assertions now require `ID=bluefin` and `VARIANT_ID=bluefin-dx*`
 - [x] `ID`, `ID_LIKE`, `CPE_NAME` and version fields stay upstream's; uBlue
       tooling keys off `ID=bluefin`, so rebranding it would break uBlue
-- [x] Identity delta reduced to `NAME`, `PRETTY_NAME`, `LOGO`,
+- [x] Identity delta reduced to `NAME`, `PRETTY_NAME`,
       `DEFAULT_HOSTNAME`, project URLs
 - [x] Parity baseline is Bluefin DX; RPM set must stay identical
 - [x] Hostname seeding accepts `bluefin` as the base default to replace

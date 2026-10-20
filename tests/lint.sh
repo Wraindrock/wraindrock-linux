@@ -18,7 +18,6 @@ while IFS= read -r file; do shell_files+=("$file"); done < <(
     find . -path ./.git -prune -o -type f -name '*.sh' -print | sort
 )
 # The GRUB theme helper is a bash script without a .sh suffix.
-shell_files+=("build_files/grub-theme/wraindrock-grub-theme")
 # Same for the first-boot hostname seeder.
 shell_files+=("build_files/hostname/wraindrock-hostname-seed")
 for file in "${shell_files[@]}"; do
@@ -100,47 +99,25 @@ else
 fi
 
 echo "branding"
-for asset in \
-    build_files/branding/wraindrock-logo-icon.svg \
-    build_files/branding/wraindrock-gdm-logo.svg \
-    build_files/branding/wraindrock-gdm-logo.png \
-    build_files/branding/wraindrock-wallpaper.svg \
-    build_files/branding/wraindrock-wallpaper.png \
-    build_files/branding/plymouth/wraindrock.plymouth \
-    build_files/branding/plymouth/background.png \
-    build_files/branding/plymouth/wraindrock-boot-background.svg \
-    build_files/branding/plymouth/wraindrock-boot-frame.svg \
-    build_files/branding/grub/theme.txt \
-    build_files/branding/grub/background.png; do
+for asset in build_files/branding/wraindrock-wallpaper.svg \
+             build_files/branding/wraindrock-wallpaper.png; do
     if [[ -s ${asset} ]]; then
         pass "${asset} exists"
     else
         fail "${asset} is missing"
     fi
 done
-for svg in \
-    build_files/branding/wraindrock-logo-icon.svg \
-    build_files/branding/wraindrock-gdm-logo.svg \
-    build_files/branding/wraindrock-wallpaper.svg \
-    build_files/branding/plymouth/wraindrock-boot-background.svg \
-    build_files/branding/plymouth/wraindrock-boot-frame.svg; do
-    if grep -q '<text' "${svg}"; then
-        fail "${svg} renders text at runtime (use outlines instead)"
-    else
-        pass "${svg} is font-independent"
-    fi
-done
-if grep -Fiq '#3C6EB4' build_files/branding/wraindrock-logo-icon.svg &&
-   grep -Fiq '#3C6EB4' build_files/branding/wraindrock-gdm-logo.svg &&
-   grep -Fiq '#3C6EB4' build_files/branding/wraindrock-wallpaper.svg &&
-   grep -Fiq '3c6eb4' build_files/branding/plymouth/wraindrock-boot-frame.svg &&
-   grep -Fiq '3c6eb4' build_files/branding/plymouth/wraindrock.plymouth &&
-   grep -Fiq '3c6eb4' build_files/branding/grub/theme.txt; then
-    pass "branding assets use the documented Wraindrock blue"
+if grep -q '<text' build_files/branding/wraindrock-wallpaper.svg; then
+    fail "wallpaper SVG renders text at runtime"
 else
-    fail "branding assets lost the Wraindrock blue outline"
+    pass "wallpaper SVG is font-independent"
 fi
-if python3 - <<'PY'
+if grep -Fiq '3c6eb4' build_files/branding/wraindrock-wallpaper.svg; then
+    pass "wallpaper uses the documented Wraindrock blue"
+else
+    fail "wallpaper lost the Wraindrock blue"
+fi
+if python3 - <<'PYWP'
 import struct
 
 with open("build_files/branding/wraindrock-wallpaper.png", "rb") as handle:
@@ -148,85 +125,43 @@ with open("build_files/branding/wraindrock-wallpaper.png", "rb") as handle:
 assert data[:8] == b"\x89PNG\r\n\x1a\n", "not a PNG"
 width, height = struct.unpack(">II", data[16:24])
 assert (width, height) == (3840, 2160), f"wallpaper is {width}x{height}"
-PY
+PYWP
 then
     pass "wallpaper is a 3840x2160 PNG"
 else
     fail "wallpaper is not a 3840x2160 PNG"
 fi
 
-plymouth_frames=$(find build_files/branding/plymouth -name 'animation-*.png' | wc -l)
-if [[ ${plymouth_frames} -eq 30 ]]; then
-    pass "Plymouth theme ships 30 animation frames"
+echo "identity and application folders"
+if grep -Fq "Wraindrock release" build_files/build.sh; then
+    pass "build.sh brands /etc/system-release (bootupd UEFI entry name)"
 else
-    fail "Plymouth theme ships ${plymouth_frames} animation frames, want 30"
+    fail "build.sh does not brand /etc/system-release"
 fi
-if [[ -s build_files/branding/plymouth/animation-0001.png &&
-      -s build_files/branding/plymouth/animation-0030.png ]]; then
-    pass "Plymouth animation frames are numbered from 0001 to 0030"
+if grep -Fq "10-wraindrock-folders" build_files/build.sh; then
+    pass "build.sh declares the application folders"
 else
-    fail "Plymouth animation frames are missing or misnumbered"
+    fail "build.sh does not declare application folders"
 fi
-if python3 - <<'PY'
-import glob
-import struct
-
-
-def dims(path):
-    with open(path, "rb") as handle:
-        data = handle.read(24)
-    assert data[:8] == b"\x89PNG\r\n\x1a\n", path
-    return struct.unpack(">II", data[16:24])
-
-
-assert dims("build_files/branding/plymouth/background.png") == (1920, 1080)
-frames = sorted(glob.glob("build_files/branding/plymouth/animation-*.png"))
-assert len(frames) == 30, len(frames)
-assert dims(frames[0]) == (256, 256), dims(frames[0])
-assert dims(frames[-1]) == (256, 256), dims(frames[-1])
-PY
-then
-    pass "Plymouth assets are 1920x1080 background + 256x256 frames"
-else
-    fail "Plymouth assets have unexpected dimensions"
-fi
-
-echo "GRUB boot menu theme"
-if [[ -x build_files/grub-theme/wraindrock-grub-theme ]]; then
-    pass "GRUB theme helper is executable"
-else
-    fail "GRUB theme helper is missing or not executable"
-fi
-for needle in 'custom.cfg' 'set theme=' '--boot-dir' \
-              'refusing to modify' 'loadfont'; do
-    if grep -Fq -e "${needle}" build_files/grub-theme/wraindrock-grub-theme; then
-        pass "GRUB theme helper handles ${needle}"
+for folder in Virtualization Proxies Bluefin Wraindrock Flatpak AppImage; do
+    if grep -Fq "app-folders/folders/${folder}]" build_files/build.sh; then
+        pass "build.sh declares app folder ${folder}"
     else
-        fail "GRUB theme helper is missing ${needle}"
+        fail "build.sh is missing app folder ${folder}"
     fi
 done
-for needle in 'desktop-image: "background.png"' 'title-text: "Wraindrock"' \
-              '+ boot_menu' 'id = "__timeout__"'; do
-    if grep -Fq "${needle}" build_files/branding/grub/theme.txt; then
-        pass "GRUB theme contains ${needle}"
+if grep -Fq 'flatpak_list' build_files/build.sh; then
+    pass "the Flatpak folder is generated from the preinstall list"
+else
+    fail "the Flatpak folder is not generated from the preinstall list"
+fi
+for stale in plymouth grub-theme wraindrock-gdm-logo; do
+    if grep -Fq "${stale}" build_files/build.sh; then
+        fail "build.sh still has removed appearance code: ${stale}"
     else
-        fail "GRUB theme is missing ${needle}"
+        pass "build.sh no longer ships ${stale}"
     fi
 done
-if python3 - <<'PYGRUB'
-import struct
-
-with open("build_files/branding/grub/background.png", "rb") as handle:
-    data = handle.read(24)
-assert data[:8] == b"\x89PNG\r\n\x1a\n", "not a PNG"
-width, height = struct.unpack(">II", data[16:24])
-assert (width, height) == (1920, 1080), f"background is {width}x{height}"
-PYGRUB
-then
-    pass "GRUB theme background is a 1920x1080 PNG"
-else
-    fail "GRUB theme background is not a 1920x1080 PNG"
-fi
 
 echo "first-boot hostname seeding"
 for needle in 'DEFAULT_HOSTNAME' 'state_dir=/var/lib/wraindrock' \
@@ -317,9 +252,9 @@ fi
 
 echo "build invariants"
 for needle in 'base-os-release' 'delta.json' 'zzzz-wraindrock.gschema.override' \
-              'wraindrock-wallpaper.png' 'Theme=wraindrock' \
-              'plymouth/animation-' 'grub/theme.txt' 'wraindrock-grub-theme' \
-              'wraindrock-hostname-seed' 'install -d -m 0755 /opt' \
+              'wraindrock-wallpaper.png' 'Wraindrock release' \
+              '10-wraindrock-folders' 'wraindrock-hostname-seed' \
+              'install -d -m 0755 /opt' \
               'org.gnome.desktop.input-sources' 'libpinyin' \
               'nvidia-driver' 'qemu-system-x86-core'; do
     if grep -Fq "${needle}" build_files/build.sh; then
@@ -382,11 +317,16 @@ if grep -Fq "bootc switch" docs/install.md &&
 else
     fail "docs/install.md does not document a bootc switch command"
 fi
-if grep -Fq 'wraindrock-grub-theme' docs/architecture.md &&
-   grep -Fq 'wraindrock-grub-theme' docs/install.md; then
-    pass "docs document the GRUB theme helper"
+if grep -Fq 'system-release' docs/architecture.md &&
+   grep -Fq 'system-release' docs/install.md; then
+    pass "docs document the UEFI boot entry name"
 else
-    fail "docs do not document the GRUB theme helper"
+    fail "docs do not document /etc/system-release"
+fi
+if grep -Fq '10-wraindrock-folders' docs/architecture.md; then
+    pass "architecture doc describes the application folders"
+else
+    fail "docs/architecture.md does not describe the application folders"
 fi
 if grep -Fq 'delta.json' docs/architecture.md &&
    grep -Fq 'delta.json' docs/install.md; then
@@ -398,11 +338,6 @@ if grep -Fq 'wraindrock-wallpaper' docs/architecture.md; then
     pass "architecture doc describes the wallpaper override"
 else
     fail "docs/architecture.md does not describe the wallpaper"
-fi
-if grep -Fq 'plymouth' docs/architecture.md; then
-    pass "architecture doc describes the Plymouth theme"
-else
-    fail "docs/architecture.md does not describe the Plymouth theme"
 fi
 
 if grep -Fq 'interactive' docs/install.md &&

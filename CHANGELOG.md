@@ -5,6 +5,29 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 image versions are the upstream channel plus an immutable build tag, see
 [docs/architecture.md](docs/architecture.md).
 
+## [0.15.0] - 2026-10-20
+
+### Changed
+
+- Removed every visual customisation except the wallpaper: the logo icon, the
+  GDM wordmark, the Plymouth boot splash and the opt-in GRUB theme are gone.
+  Bluefin's own presentation is better and stays upstream's. The wallpaper
+  remains so deployments are still easy to tell apart.
+- `/etc/system-release` is branded `Wraindrock release <ver> (Bluefin DX)`.
+  bootupd derives the UEFI firmware entry label from that file, so installs and
+  bootloader updates now name the boot entry **Wraindrock** instead of Fedora.
+- GNOME application folders are declared in
+  `/etc/dconf/db/distro.d/10-wraindrock-folders`: Virtualization, Proxies,
+  Bluefin, Wraindrock, Flatpak and AppImage, layered on top of Bluefin's
+  existing folders. The Flatpak folder is generated from `flatpaks.txt`.
+
+### Removed
+
+- `build_files/branding/plymouth/`, `build_files/branding/grub/`,
+  `build_files/grub-theme/`, the logo/GDM assets, the Plymouth theme and its
+  `/etc/plymouth/plymouthd.conf`, and the GRUB theme helper. `delta.json` no
+  longer lists them, and parity asserts they never reappear.
+
 ## [0.14.1] - 2026-10-20
 
 ### Documentation

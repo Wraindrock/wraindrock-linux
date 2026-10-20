@@ -87,21 +87,21 @@ Bluefin DX and keeps the falsifiable part machine-checkable:
 The parity test diffs `rpm -qa` with `comm` and requires the actual additions to
 equal `rpm.added`, the removals to be empty, and the additions to be the four
 known packages. For os-release it parses both files and allows only the changed
-keys `NAME`, `PRETTY_NAME`, `LOGO`, `DEFAULT_HOSTNAME` and the four URLs. A removed, added or changed key outside that set fails the build;
+keys `NAME`, `PRETTY_NAME`, `DEFAULT_HOSTNAME` and the four URLs. A removed, added or changed key outside that set fails the build;
 each declared value is then cross-checked against the actual file, so the
-manifest cannot drift into a polite fiction. The test also proves the GDM
+manifest cannot drift into a polite fiction. The test also proves the wallpaper
 override is compiled into `gschemas.compiled` and that `rpm -V --nomtime` on the
 package owning `/usr/lib/os-release` (looked up dynamically — Bluefin owns it,
-not a Fedora identity package) reports exactly one modified file,
-`/usr/lib/os-release`. (`--nomtime` is required: image layers store mtime 0 for
+not a Fedora identity package) reports exactly the two documented identity
+files, `/usr/lib/os-release` and `/etc/system-release`. (`--nomtime` is required: image layers store mtime 0 for
 ostree hardlinks while rpm headers record build time, so the timestamp check
 would flag every file and hide the real diff.)
 
 Adding a customization therefore means adding it to the manifest **and**
 teaching the test about it — never relaxing the diff.
 
-The manifest also covers the files the build itself adds: the branding,
-boot-splash, hostname-seeding, GRUB-helper and software files sit next to the
+The manifest also covers the files the build itself adds: the identity,
+wallpaper, hostname-seeding, application-folder and software files sit next to the
 `/usr/share/wraindrock/` provenance files in `files.added`, and parity requires
 that set to match exactly. Because four RPMs are baked, the image's RPM
 database *is* written by design; the build asserts the sqlite WAL is
@@ -124,64 +124,44 @@ unit is exercised in parity against a fixture with a temporary root.
 
 ### Branding
 
-The delta is identity and presentation only on purpose (identity in v0.2,
-wallpaper and boot splash in v0.3):
+Visual personalisation was deliberately **removed** in v0.15: Bluefin's own
+logo, GDM artwork, Plymouth splash and boot-menu theme are better than what this
+image shipped, and they are upstream's to maintain. The wallpaper stays because
+it is the one change that helps tell deployments apart. The delta is identity,
+the wallpaper, boot-entry naming and desktop grouping:
 
 | Change | Mechanism |
 | --- | --- |
-| display name, pretty name, logo, default hostname | `sed` on `/usr/lib/os-release` |
-| `ID`, `ID_LIKE`, `CPE_NAME`, version fields | left at upstream values — uBlue tooling keys off `ID=bluefin`, and the CPE keeps naming Universal Blue |
-| logo icon (`Settings` → `About`) | `/usr/share/icons/hicolor/scalable/apps/wraindrock-logo-icon.svg` |
-| GDM login logo | `/usr/share/pixmaps/wraindrock-gdm-logo.{svg,png}` + `zzzz-wraindrock.gschema.override` |
+| display name, pretty name, default hostname | `sed` on `/usr/lib/os-release` |
+| `LOGO`, `ID`, `ID_LIKE`, `CPE_NAME`, version fields | left at upstream values — the icon stays Fedora's, uBlue tooling keys off `ID=bluefin`, and the CPE keeps naming Universal Blue |
 | default desktop + GDM wallpaper | `/usr/share/backgrounds/wraindrock/wraindrock-wallpaper.png` + `[org.gnome.desktop.background]` in `zzzz-wraindrock.gschema.override` |
-| Plymouth boot splash | `/usr/share/plymouth/themes/wraindrock/` (two-step theme) + `Theme=wraindrock` in `/etc/plymouth/plymouthd.conf` |
-| GRUB boot menu theme | `/usr/share/grub/themes/wraindrock/` assets + `/usr/bin/wraindrock-grub-theme`, which copies them to `/boot/grub2/themes/wraindrock/` and writes a marked `/boot/grub2/custom.cfg` (opt-in) |
+| UEFI boot entry name | `/etc/system-release` rewritten to `Wraindrock release <ver> (Bluefin DX)`; bootupd derives the firmware label from it (`get_product_name`), falling back to os-release `NAME` |
+| application folders | `/etc/dconf/db/distro.d/10-wraindrock-folders` defines Virtualization, Proxies, Bluefin, Wraindrock, Flatpak and AppImage and extends `folder-children`; the Flatpak folder is generated from the preinstall list; `dconf update` compiles the distro database |
 | default hostname | `DEFAULT_HOSTNAME` (no `/etc/hostname` is shipped; an installer or user file still wins) |
 | input method | IBus is inherited from GNOME/Bluefin (no Fcitx in the image). Keyboard layouts and input methods are distinct entries in the source list; the English (US) layout stays and the only addition is the `libpinyin` input method in `[org.gnome.desktop.input-sources]` (`zzzz-wraindrock.gschema.override`). A user's own value wins |
 
-The logo assets are generated outlines, not `<text>`: rendering does not depend
-on Cantarell or any other font being present. GDM merges gschema overrides in name order, and Bluefin ships its own
-`zz0-`/`zz1-` overrides, so ours is named `zzzz-` to sort last; upstream
-files are left untouched. The wallpaper works the same way: Fedora's
-`10_org.gnome.desktop.background.fedora.gschema.override` points at its own
-day/night images, and our later-sorted `zz-` file replaces both `picture-uri` and
-`picture-uri-dark` with the Wraindrock PNG. GDM's login screen reads the same
-`org.gnome.desktop.background` defaults, so the greeter background follows
-without a separate mechanism. Known caveat: the wordmark is black, so it has
-low contrast on the dark login wallpaper; a light login-screen variant is a
-follow-up, not part of this step.
+The wallpaper override sorts after both Fedora's `10_*` and Bluefin's
+`zz0-`/`zz1-` overrides (ours is `zzzz-`), and replaces `picture-uri` and
+`picture-uri-dark`. GDM's greeter reads the same
+`org.gnome.desktop.background` defaults, so the login background follows without
+a separate mechanism.
 
-The boot splash uses Plymouth's `two-step` plugin, which the base image already
-ships; there is no `script.so`, so a script theme would mean a package change
-and is deliberately not done. The theme is
-`/usr/share/plymouth/themes/wraindrock/`: a 1920x1080 gradient background, 30
-animation frames (256x256 PNGs, thin outlined `W` plus a rotating blue arc) and
-`wraindrock.plymouth`. `/etc/plymouth/plymouthd.conf` selects it. When a
-deployment regenerates its initramfs, plymouth's
-`/usr/lib/plymouth/plymouth-populate-initrd` reads that config and copies the
-theme and its plugin into the initrd. CI asserts the files, the config and that
-`plymouth-set-default-theme -l` lists the theme; it cannot assert the rendered
-splash or the initrd contents — verify those by rebooting after `bootc switch`.
+The UEFI label matters because bootupd's `update_firmware()` takes the label
+from `/etc/system-release` and strips everything from the word `release`; with
+Fedora's symlink it would name the firmware entry "Fedora". The file is replaced
+with a real file owned by no package path, so it is declared under
+`files.modified` and parity expects it alongside `os-release`.
 
-GRUB is different: on bootc systems `/boot/grub2/grub.cfg` is a static config
-that bootupd writes at install time, and image updates do not regenerate it, so
-the image cannot theme an existing boot menu by itself. It ships the theme
-assets plus a helper that acts only when the user runs it.
-`wraindrock-grub-theme enable` copies the theme to
-`/boot/grub2/themes/wraindrock/` (the boot filesystem is readable even with an
-encrypted root) and writes `/boot/grub2/custom.cfg`, which bootupd's
-`configs.d/41_custom.cfg` sources. The helper refuses to overwrite a
-`custom.cfg` it did not write, refuses systems whose GRUB config has no
-`custom.cfg` hook, and does nothing on systemd-boot hosts. The delta records the
-shipped assets; the `/boot` copy is user state, not image state, and is not
-listed in `delta.json`.
+The application folders are declarative dconf, so a user can still move
+launchers; the Flatpak list comes from `build_files/software/flatpaks.txt`, the
+same file that drives first-boot installation, which keeps the two lists from
+drifting. Bluefin's own folders (Games, Utilities, Development, Containers,
+Wine, Productivity) are kept and listed first in `folder-children`.
 
-`gtk-update-icon-cache` is deliberately not run: the hicolor theme resolves
-scalable SVGs without a cache, and skipping it avoids a generated
-`icon-theme.cache` that would be one more unowned delta. `glib-compile-schemas`
-*is* run, because GSettings only reads compiled schemas; that rewrites
-`/usr/share/glib-2.0/schemas/gschemas.compiled`, which the delta lists under
-`files.modified`.
+`glib-compile-schemas` *is* run, because GSettings only reads compiled schemas;
+that rewrites `/usr/share/glib-2.0/schemas/gschemas.compiled`, which the delta
+lists under `files.modified`. `dconf update` does the same for the distro
+database. `gtk-update-icon-cache` is not run.
 
 ### Software
 
