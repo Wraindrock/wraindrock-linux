@@ -456,7 +456,7 @@ for folder in Virtualization Proxies Bluefin Wraindrock Flatpak AppImage; do
         fail "app folder missing: ${folder}"
     fi
 done
-if in_image "${IMAGE}" 'grep -aq "Wraindrock application folders" /etc/dconf/db/distro'; then
+if in_image "${IMAGE}" 'grep -aq 'Virtualization' /etc/dconf/db/distro'; then
     pass "app folders are compiled into the distro dconf database"
 else
     fail "compiled distro dconf database does not contain the app folders"

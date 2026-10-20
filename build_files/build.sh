@@ -215,7 +215,7 @@ flatpak_list="${script_dir}/software/flatpaks.txt"
 chmod 0644 "${folders_file}"
 command -v dconf >/dev/null 2>&1 || die "dconf is required to compile the app-folder database"
 dconf update
-grep -aq 'Wraindrock application folders' /etc/dconf/db/distro \
+grep -aq 'Virtualization' /etc/dconf/db/distro \
     || die "the app-folder database was not compiled"
 
 # 3g. First-boot hostname seeding. bootc-image-builder's install path does not
