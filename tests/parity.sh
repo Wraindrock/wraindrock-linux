@@ -418,22 +418,29 @@ for key in picture-uri picture-uri-dark; do
 done
 
 # --- identity files ---------------------------------------------------------
-# We replace /usr/lib/os-release and /etc/system-release with the branded
-# values; both belong to the release package and are the only expected
-# modifications it reports.
-identity_package="$(in_image "${IMAGE}" 'rpm -q --whatprovides /usr/lib/os-release' 2>/dev/null || true)"
-if [[ -n ${identity_package} ]] && rpm_verify="$(in_image "${IMAGE}" "rpm -V --nomtime ${identity_package} || true")"; then
-    verify_lines="$(printf '%s\n' "${rpm_verify}" | grep -c . || true)"
-    if [[ ${verify_lines} -eq 2 ]] \
-        && grep -q '/usr/lib/os-release' <<<"${rpm_verify}" \
-        && grep -q '/etc/system-release' <<<"${rpm_verify}"; then
-        pass "rpm sees exactly the two documented identity files changed"
-    else
-        fail "rpm verification reported unexpected changes: ${rpm_verify:-<none>}"
+# /usr/lib/os-release and /etc/system-release come from different release
+# packages; each is replaced on purpose. Verify each package reports exactly
+# its own branded file and nothing else.
+check_identity_file() {
+    local path="$1" label="$2"
+    local package
+    package="$(in_image "${IMAGE}" "rpm -q --whatprovides ${path}" 2>/dev/null | head -n 1 || true)"
+    if [[ -z ${package} ]]; then
+        fail "could not determine which package owns ${path}"
+        return
     fi
-else
-    fail "could not run rpm verification for ${identity_package:-the release package}"
-fi
+    local verify
+    verify="$(in_image "${IMAGE}" "rpm -V --nomtime ${package} || true")"
+    local lines
+    lines="$(printf '%s\n' "${verify}" | grep -c . || true)"
+    if [[ ${lines} -eq 1 ]] && grep -q "${path}" <<<"${verify}"; then
+        pass "rpm sees only the branded ${label} changed (${package})"
+    else
+        fail "rpm verification for ${path} reported: ${verify:-<none>}"
+    fi
+}
+check_identity_file /usr/lib/os-release "os-release"
+check_identity_file /etc/system-release "system-release"
 
 # --- UEFI boot entry name and app folders ----------------------------------
 system_release="$(in_image "${IMAGE}" 'cat /etc/system-release' 2>/dev/null || true)"
