@@ -14,12 +14,13 @@ never overwritten; always prefer the newest one.
 | `previous` | Where `44` pointed before the last release |
 | `44.<UTC>.<run>` | Immutable build; quote this when reporting a bug |
 
-Current channel: `44` → `44.20261021T134851Z.78`
-(`sha256:770ef0abb3986b348235414e2f01339450a35aee82ef0d8ce735af2aa2c8fe6c`,
-revision `6e1726d`).
+Current channel: `44` → `44.20261021T145746Z.80`
+(`sha256:b7989639994fd75623b5b66862b7b34ec3de63cd419ec82890e2b873fa64abcb`,
+revision `a0e6563`).
 `.57`–`.59` were documentation rebuilds of `.55`; `.69` removed the appearance
 overrides, branded `/etc/system-release` and added application folders; `.78`
-gives every app exactly one folder. Documentation, tool and test commits are
+gave every app exactly one folder; `.80` curated the default dock and added the
+`uBlue` folder. Documentation, tool and test commits are
 linted but do not rebuild the image, so the channel can lag `main`; it advances
 on image-affecting pushes and on the nightly build. The immutable tag and
 `delta.json` are the honest reference.
@@ -60,6 +61,7 @@ The pre-rename `wrainrock-*` packages were deleted on 2026-10-20; only the two
 
 | Release | ISO | Assets |
 | --- | --- | --- |
+| [`44.20261021T134851Z.78`](https://github.com/Wraindrock/wraindrock-linux/releases/tag/44.20261021T134851Z.78) | `Wraindrock-Live.iso`, 6,867,451,904 B, `sha256:453a664bedfa435f622ef07f12f4b57fd0bd8cfa2455f3f8a3f38391bfd0d291` | 4 parts (1.94 GB ×3 + 915 MB) + `-extract.sh` + `SHA256SUMS` |
 | [`44.20261020T045729Z.69`](https://github.com/Wraindrock/wraindrock-linux/releases/tag/44.20261020T045729Z.69) | `Wraindrock-Live.iso`, 6,868,303,872 B, `sha256:4578dc91b6bf344ef979bade21f74b1727ccb3ed8b29466c2948f2877862057d` | 4 parts (1.94 GB ×3 + 916 MB) + `-extract.sh` + `SHA256SUMS` |
 | [`44.20261019T132911Z.55`](https://github.com/Wraindrock/wraindrock-linux/releases/tag/44.20261019T132911Z.55) | `Wraindrock-Live.iso`, 6,869,286,912 B, `sha256:84039f3b01689959490fe68c0d9c2fa5b084d9078ee84e9d9ac928b97c15a3cb` | 4 parts (1.94 GB ×3 + 917 MB) + `-extract.sh` + `SHA256SUMS` |
 
