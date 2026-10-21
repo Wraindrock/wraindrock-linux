@@ -75,6 +75,9 @@ sha256sum Wraindrock-Live.iso
 
 ## Verifying
 
+Documentation-only pushes are linted but deliberately not rebuilt (see
+`docs/architecture.md`), so a release entry can be newer than the channel tag.
+
 ```bash
 sha256sum -c SHA256SUMS                     # parts or artifacts
 sha256sum Wraindrock-Live.iso               # must match the release notes
