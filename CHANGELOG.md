@@ -5,6 +5,17 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 image versions are the upstream channel plus an immutable build tag, see
 [docs/architecture.md](docs/architecture.md).
 
+## [0.17.0] - 2026-10-22
+
+### Changed
+
+- The dock defaults to Helium, Rnote, Files, Bazaar, Mission Center and Terminal,
+  in that order.
+- A `uBlue` folder holds Community, Documentation and System Update. Community
+  and Documentation are Bluefin's link launchers; "System Update" is Bluefin's
+  `ujust update` app (the request said "Steam update"; Bluefin ships no Steam
+  Update launcher, so the system-update entry is what was meant).
+
 ## [0.16.1] - 2026-10-21
 
 ### Fixed

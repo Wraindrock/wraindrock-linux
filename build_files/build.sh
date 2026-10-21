@@ -139,6 +139,11 @@ cat > "${override}" <<'EOF'
 picture-uri='file:///usr/share/backgrounds/wraindrock/wraindrock-wallpaper.png'
 picture-uri-dark='file:///usr/share/backgrounds/wraindrock/wraindrock-wallpaper.png'
 
+# Default dock: the user's working set, in this order. Left and right are the
+# same list; a user's own favorite-apps setting always wins.
+[org.gnome.shell]
+favorite-apps=['helium.desktop', 'com.github.flxzt.rnote.desktop', 'org.gnome.Nautilus.desktop', 'io.github.kolunmi.Bazaar.desktop', 'io.missioncenter.MissionCenter.desktop', 'org.gnome.Ptyxis.desktop']
+
 # IBus (not Fcitx) is the input method; libpinyin is the Chinese engine. The
 # engine already ships in the base, so only the default needs declaring. A
 # user's own input-sources setting always wins.
@@ -156,6 +161,10 @@ glib-compile-schemas "${gschema_dir}"
 GSETTINGS_BACKEND=memory gsettings get org.gnome.desktop.input-sources sources \
     | grep -q "libpinyin" \
     || die "the compiled schemas do not report the IBus libpinyin default"
+expected_dock="['helium.desktop', 'com.github.flxzt.rnote.desktop', 'org.gnome.Nautilus.desktop', 'io.github.kolunmi.Bazaar.desktop', 'io.missioncenter.MissionCenter.desktop', 'org.gnome.Ptyxis.desktop']"
+actual_dock="$(GSETTINGS_BACKEND=memory gsettings get org.gnome.shell favorite-apps)"
+[[ ${actual_dock} == "${expected_dock}" ]] \
+    || die "the compiled schemas do not report the dock defaults: ${actual_dock}"
 rpm -q ibus ibus-libpinyin google-noto-sans-cjk-fonts >/dev/null 2>&1 \
     || die "IBus, libpinyin or the CJK fonts are missing from the base"
 if rpm -q fcitx5 >/dev/null 2>&1; then

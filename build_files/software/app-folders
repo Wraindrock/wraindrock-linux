@@ -12,7 +12,7 @@
 # folder; tests/folders.py enforces that on the merged definition.
 
 [org/gnome/desktop/app-folders]
-folder-children=['Games', 'GamingUtilities', 'Utilities', 'Development', 'Containers', 'Wine', 'Productivity', 'Virtualization', 'Proxies', 'Wraindrock']
+folder-children=['Games', 'GamingUtilities', 'Utilities', 'Development', 'Containers', 'Wine', 'Productivity', 'Virtualization', 'Proxies', 'Wraindrock', 'uBlue']
 
 [org/gnome/desktop/app-folders/folders/Virtualization]
 apps=['virt-manager.desktop', 'org.gnome.Boxes.desktop', 'io.podman_desktop.PodmanDesktop.desktop']
@@ -27,6 +27,11 @@ translate=false
 [org/gnome/desktop/app-folders/folders/Wraindrock]
 apps=['helium.desktop', 'Rayburst.desktop']
 name='Wraindrock'
+translate=false
+
+[org/gnome/desktop/app-folders/folders/uBlue]
+apps=['discourse.desktop', 'documentation.desktop', 'system-update.desktop']
+name='uBlue'
 translate=false
 
 # Bluefin's folders keep their upstream apps and categories. Their exclusion

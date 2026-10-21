@@ -14,13 +14,15 @@ never overwritten; always prefer the newest one.
 | `previous` | Where `44` pointed before the last release |
 | `44.<UTC>.<run>` | Immutable build; quote this when reporting a bug |
 
-Current channel: `44` → `44.20261021T045220Z.73`
-(`sha256:a047093110110d2b1d958e9d6c5f40cf7e0774afcdcf6c33486ecd6bdb71fb65`).
-`.57`–`.59` were documentation rebuilds of `.55`; `.69` is the release that
-removed the appearance overrides, branded `/etc/system-release` and added the
-application folders. Documentation and tool commits are linted but do not rebuild the image, so the
-channel can lag `main`; it advances on image-affecting pushes and on the nightly
-build. The immutable tag and `delta.json` are the honest reference.
+Current channel: `44` → `44.20261021T134851Z.78`
+(`sha256:770ef0abb3986b348235414e2f01339450a35aee82ef0d8ce735af2aa2c8fe6c`,
+revision `6e1726d`).
+`.57`–`.59` were documentation rebuilds of `.55`; `.69` removed the appearance
+overrides, branded `/etc/system-release` and added application folders; `.78`
+gives every app exactly one folder. Documentation, tool and test commits are
+linted but do not rebuild the image, so the channel can lag `main`; it advances
+on image-affecting pushes and on the nightly build. The immutable tag and
+`delta.json` are the honest reference.
 
 ```bash
 sudo bootc switch ghcr.io/wraindrock/wraindrock-linux:44
@@ -39,7 +41,7 @@ three layers: `file:disk.qcow2`, `file:Wraindrock-Live.iso` and
 44.20261018T031902Z.30   44.20261018T150250Z.43   44.20261019T132911Z.55
 44.20261018T071737Z.32   44.20261018T161148Z.47
 44.20261018T100652Z.35   44.20261018T233302Z.48   44.20261020T045729Z.69
-44.20261021T045220Z.73
+44.20261021T045220Z.73   44.20261021T134851Z.78
 ```
 
 Tags up to `.50` predate the rename and contain `install.iso`; `.55` and later
@@ -47,7 +49,7 @@ contain `Wraindrock-Live.iso`. They stay public for reproducibility, but use the
 newest.
 
 ```bash
-oras pull ghcr.io/wraindrock/wraindrock-linux-disk:44.20261021T045220Z.73 -o disk
+oras pull ghcr.io/wraindrock/wraindrock-linux-disk:44.20261021T134851Z.78 -o disk
 cd disk && sha256sum -c SHA256SUMS
 ```
 

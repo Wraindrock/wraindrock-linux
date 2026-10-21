@@ -148,7 +148,7 @@ if [[ -s build_files/software/app-folders ]]; then
 else
     fail "build_files/software/app-folders is missing"
 fi
-for folder in Virtualization Proxies Wraindrock; do
+for folder in Virtualization Proxies Wraindrock uBlue; do
     if grep -Fq "app-folders/folders/${folder}]" build_files/software/app-folders; then
         pass "app folder declared: ${folder}"
     else
@@ -162,6 +162,11 @@ for gone in Flatpak AppImage Bluefin; do
         pass "no channel folder ${gone}"
     fi
 done
+if grep -Fq "favorite-apps=['helium.desktop'" build_files/build.sh; then
+    pass "build.sh declares the default dock"
+else
+    fail "build.sh does not declare the default dock"
+fi
 if python3 tests/folders.py tests/fixtures/bluefin-folders.conf build_files/software/app-folders >/dev/null; then
     pass "every explicitly grouped app has exactly one folder"
 else

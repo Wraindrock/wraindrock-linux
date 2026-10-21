@@ -463,13 +463,22 @@ else
     head -20 "${tmpdir}/folders.diff" || true
 fi
 
+# --- default dock -----------------------------------------------------------
+expected_dock="['helium.desktop', 'com.github.flxzt.rnote.desktop', 'org.gnome.Nautilus.desktop', 'io.github.kolunmi.Bazaar.desktop', 'io.missioncenter.MissionCenter.desktop', 'org.gnome.Ptyxis.desktop']"
+dock="$(in_image "${IMAGE}" 'GSETTINGS_BACKEND=memory gsettings get org.gnome.shell favorite-apps' 2>/dev/null || true)"
+if [[ ${dock} == "${expected_dock}" ]]; then
+    pass "default dock is the curated list in order"
+else
+    fail "default dock differs: ${dock:-<missing>}"
+fi
+
 folders_file=/etc/dconf/db/distro.d/10-wraindrock-folders
 if in_image "${IMAGE}" "test -s ${folders_file}"; then
     pass "application folders are declared"
 else
     fail "application folders are missing"
 fi
-for folder in Virtualization Proxies Wraindrock; do
+for folder in Virtualization Proxies Wraindrock uBlue; do
     if in_image "${IMAGE}" "grep -q '\[org/gnome/desktop/app-folders/folders/${folder}\]' ${folders_file}"; then
         pass "app folder declared: ${folder}"
     else
@@ -484,7 +493,8 @@ for gone in Flatpak AppImage Bluefin; do
     fi
 done
 for app in 'virt-manager.desktop' 'io.podman_desktop.PodmanDesktop.desktop' \
-    'Clash Verge.desktop' 'helium.desktop'; do
+    'Clash Verge.desktop' 'helium.desktop' 'discourse.desktop' \
+    'documentation.desktop' 'system-update.desktop'; do
     if in_image "${IMAGE}" "grep -Fq \"'${app}'\" ${folders_file}"; then
         pass "re-homed app is listed: ${app}"
     else

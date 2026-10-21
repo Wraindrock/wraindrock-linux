@@ -147,7 +147,8 @@ the wallpaper, boot-entry naming and desktop grouping:
 | `LOGO`, `ID`, `ID_LIKE`, `CPE_NAME`, version fields | left at upstream values — the icon stays Fedora's, uBlue tooling keys off `ID=bluefin`, and the CPE keeps naming Universal Blue |
 | default desktop + GDM wallpaper | `/usr/share/backgrounds/wraindrock/wraindrock-wallpaper.png` + `[org.gnome.desktop.background]` in `zzzz-wraindrock.gschema.override` |
 | UEFI boot entry name | `/etc/system-release` rewritten to `Wraindrock release <ver> (Bluefin DX)`; bootupd derives the firmware label from it (`get_product_name`), falling back to os-release `NAME` |
-| application folders | `/etc/dconf/db/distro.d/10-wraindrock-folders` extends `folder-children` with Virtualization, Proxies and Wraindrock, lists their apps explicitly, and excludes those apps from Bluefin's folders; one home per app; `dconf update` compiles the distro database |
+| default dock | `[org.gnome.shell] favorite-apps` in `zzzz-wraindrock.gschema.override`: Helium, Rnote, Files, Bazaar, Mission Center, Terminal; a user's own value wins |
+| application folders | `/etc/dconf/db/distro.d/10-wraindrock-folders` extends `folder-children` with Virtualization, Proxies, Wraindrock and uBlue, lists their apps explicitly, and excludes re-homed apps from Bluefin's folders; one home per app; `dconf update` compiles the distro database |
 | default hostname | `DEFAULT_HOSTNAME` (no `/etc/hostname` is shipped; an installer or user file still wins) |
 | input method | IBus is inherited from GNOME/Bluefin (no Fcitx in the image). Keyboard layouts and input methods are distinct entries in the source list; the English (US) layout stays and the only addition is the `libpinyin` input method in `[org.gnome.desktop.input-sources]` (`zzzz-wraindrock.gschema.override`). A user's own value wins |
 
