@@ -1,0 +1,54 @@
+# Wraindrock application folders (dconf).
+#
+# Bluefin ships seven folders in 01-bluefin-folders and keeps ownership of
+# their apps/categories. This file only:
+#   * extends folder-children with the Wraindrock folders,
+#   * defines those folders with explicit apps lists and no categories,
+#   * excludes the apps we re-home from every Bluefin folder.
+#
+# GNOME puts an app in every folder where it matches
+# (apps ∪ categories) − excluded-apps, so moving an app requires excluding it
+# from the folder it would otherwise match. An app must live in exactly one
+# folder; tests/folders.py enforces that on the merged definition.
+
+[org/gnome/desktop/app-folders]
+folder-children=['Games', 'GamingUtilities', 'Utilities', 'Development', 'Containers', 'Wine', 'Productivity', 'Virtualization', 'Proxies', 'Wraindrock']
+
+[org/gnome/desktop/app-folders/folders/Virtualization]
+apps=['virt-manager.desktop', 'org.gnome.Boxes.desktop', 'io.podman_desktop.PodmanDesktop.desktop']
+name='Virtualization'
+translate=false
+
+[org/gnome/desktop/app-folders/folders/Proxies]
+apps=['Clash Verge.desktop', 'sing-box.desktop']
+name='Proxies'
+translate=false
+
+[org/gnome/desktop/app-folders/folders/Wraindrock]
+apps=['helium.desktop', 'Rayburst.desktop']
+name='Wraindrock'
+translate=false
+
+# Bluefin's folders keep their upstream apps and categories. Their exclusion
+# lists are repeated here with the re-homed apps appended, because a later
+# dconf drop-in replaces a key rather than extending it.
+[org/gnome/desktop/app-folders/folders/GamingUtilities]
+excluded-apps=['virt-manager.desktop', 'org.gnome.Boxes.desktop', 'io.podman_desktop.PodmanDesktop.desktop', 'Clash Verge.desktop', 'sing-box.desktop', 'helium.desktop', 'Rayburst.desktop']
+
+[org/gnome/desktop/app-folders/folders/Utilities]
+excluded-apps=['virt-manager.desktop', 'org.gnome.Boxes.desktop', 'io.podman_desktop.PodmanDesktop.desktop', 'Clash Verge.desktop', 'sing-box.desktop', 'helium.desktop', 'Rayburst.desktop']
+
+[org/gnome/desktop/app-folders/folders/Games]
+excluded-apps=['steam.desktop', 'net.lutris.Lutris.desktop', 'io.github.benjamimgois.goverlay.desktop', 'com.vysp3r.ProtonPlus.desktop', 'io.github.fastrizwaan.WineZGUI.desktop', 'virt-manager.desktop', 'org.gnome.Boxes.desktop', 'io.podman_desktop.PodmanDesktop.desktop', 'Clash Verge.desktop', 'sing-box.desktop', 'helium.desktop', 'Rayburst.desktop']
+
+[org/gnome/desktop/app-folders/folders/Containers]
+excluded-apps=['virt-manager.desktop', 'org.gnome.Boxes.desktop', 'io.podman_desktop.PodmanDesktop.desktop', 'Clash Verge.desktop', 'sing-box.desktop', 'helium.desktop', 'Rayburst.desktop']
+
+[org/gnome/desktop/app-folders/folders/Wine]
+excluded-apps=['virt-manager.desktop', 'org.gnome.Boxes.desktop', 'io.podman_desktop.PodmanDesktop.desktop', 'Clash Verge.desktop', 'sing-box.desktop', 'helium.desktop', 'Rayburst.desktop']
+
+[org/gnome/desktop/app-folders/folders/Development]
+excluded-apps=['org.gnome.Sysprof.desktop', 'virt-manager.desktop', 'org.gnome.Boxes.desktop', 'io.podman_desktop.PodmanDesktop.desktop', 'Clash Verge.desktop', 'sing-box.desktop', 'helium.desktop', 'Rayburst.desktop']
+
+[org/gnome/desktop/app-folders/folders/Productivity]
+excluded-apps=['virt-manager.desktop', 'org.gnome.Boxes.desktop', 'io.podman_desktop.PodmanDesktop.desktop', 'Clash Verge.desktop', 'sing-box.desktop', 'helium.desktop', 'Rayburst.desktop']

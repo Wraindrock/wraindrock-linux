@@ -5,6 +5,18 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 image versions are the upstream channel plus an immutable build tag, see
 [docs/architecture.md](docs/architecture.md).
 
+## [0.16.1] - 2026-10-21
+
+### Fixed
+
+- Apps no longer appear in several GNOME folders at once. GNOME matches
+  `(apps ∪ categories) − excluded-apps` per folder, and the previous `Flatpak`,
+  `AppImage` and `Bluefin` folders overlapped Bluefin's Utilities, Development
+  and Containers folders. The channel folders are gone; the drop-in now only
+  adds Virtualization, Proxies and Wraindrock with explicit apps lists, and
+  excludes the re-homed apps from every upstream folder. `tests/folders.py`
+  merges both definitions and fails when an app would get two homes.
+
 ## [0.16.0] - 2026-10-21
 
 ### Changed

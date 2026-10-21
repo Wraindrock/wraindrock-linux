@@ -147,7 +147,7 @@ the wallpaper, boot-entry naming and desktop grouping:
 | `LOGO`, `ID`, `ID_LIKE`, `CPE_NAME`, version fields | left at upstream values — the icon stays Fedora's, uBlue tooling keys off `ID=bluefin`, and the CPE keeps naming Universal Blue |
 | default desktop + GDM wallpaper | `/usr/share/backgrounds/wraindrock/wraindrock-wallpaper.png` + `[org.gnome.desktop.background]` in `zzzz-wraindrock.gschema.override` |
 | UEFI boot entry name | `/etc/system-release` rewritten to `Wraindrock release <ver> (Bluefin DX)`; bootupd derives the firmware label from it (`get_product_name`), falling back to os-release `NAME` |
-| application folders | `/etc/dconf/db/distro.d/10-wraindrock-folders` defines Virtualization, Proxies, Bluefin, Wraindrock, Flatpak and AppImage and extends `folder-children`; the Flatpak folder is generated from the preinstall list; `dconf update` compiles the distro database |
+| application folders | `/etc/dconf/db/distro.d/10-wraindrock-folders` extends `folder-children` with Virtualization, Proxies and Wraindrock, lists their apps explicitly, and excludes those apps from Bluefin's folders; one home per app; `dconf update` compiles the distro database |
 | default hostname | `DEFAULT_HOSTNAME` (no `/etc/hostname` is shipped; an installer or user file still wins) |
 | input method | IBus is inherited from GNOME/Bluefin (no Fcitx in the image). Keyboard layouts and input methods are distinct entries in the source list; the English (US) layout stays and the only addition is the `libpinyin` input method in `[org.gnome.desktop.input-sources]` (`zzzz-wraindrock.gschema.override`). A user's own value wins |
 
@@ -163,11 +163,14 @@ Fedora's symlink it would name the firmware entry "Fedora". The file is replaced
 with a real file owned by no package path, so it is declared under
 `files.modified` and parity expects it alongside `os-release`.
 
-The application folders are declarative dconf, so a user can still move
-launchers; the Flatpak list comes from `build_files/software/flatpaks.txt`, the
-same file that drives first-boot installation, which keeps the two lists from
-drifting. Bluefin's own folders (Games, Utilities, Development, Containers,
-Wine, Productivity) are kept and listed first in `folder-children`.
+Application folders are declarative dconf, so a user can still move launchers.
+Bluefin's seven folders (Games, GamingUtilities, Utilities, Development,
+Containers, Wine, Productivity) keep their upstream apps and categories; the
+drop-in adds one folder per purpose and excludes the re-homed apps from every
+upstream folder. GNOME matches `(apps ∪ categories) − excluded-apps` per folder,
+so listing an app in two places shows it twice; `tests/folders.py` merges the
+upstream definition with ours and fails if any app would land in more than one
+folder. Channel folders (`Flatpak`, `AppImage`) were removed for this reason.
 
 `glib-compile-schemas` *is* run, because GSettings only reads compiled schemas;
 that rewrites `/usr/share/glib-2.0/schemas/gschemas.compiled`, which the delta

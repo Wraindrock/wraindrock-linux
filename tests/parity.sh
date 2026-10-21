@@ -456,11 +456,26 @@ if in_image "${IMAGE}" "test -s ${folders_file}"; then
 else
     fail "application folders are missing"
 fi
-for folder in Virtualization Proxies Bluefin Wraindrock Flatpak AppImage; do
+for folder in Virtualization Proxies Wraindrock; do
     if in_image "${IMAGE}" "grep -q '\[org/gnome/desktop/app-folders/folders/${folder}\]' ${folders_file}"; then
         pass "app folder declared: ${folder}"
     else
         fail "app folder missing: ${folder}"
+    fi
+done
+for gone in Flatpak AppImage Bluefin; do
+    if in_image "${IMAGE}" "! grep -q '\[org/gnome/desktop/app-folders/folders/${gone}\]' ${folders_file}"; then
+        pass "channel folder dropped (no duplicate membership): ${gone}"
+    else
+        fail "channel folder still declared, apps may repeat: ${gone}"
+    fi
+done
+for app in 'virt-manager.desktop' 'io.podman_desktop.PodmanDesktop.desktop' \
+    'Clash Verge.desktop' 'helium.desktop'; do
+    if in_image "${IMAGE}" "grep -Fq \"'${app}'\" ${folders_file}"; then
+        pass "re-homed app is listed: ${app}"
+    else
+        fail "re-homed app is missing: ${app}"
     fi
 done
 if in_image "${IMAGE}" 'grep -aq 'Virtualization' /etc/dconf/db/distro'; then

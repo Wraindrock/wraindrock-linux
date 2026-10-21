@@ -138,22 +138,34 @@ if grep -Fq "Wraindrock release" build_files/build.sh; then
 else
     fail "build.sh does not brand /etc/system-release"
 fi
-if grep -Fq "10-wraindrock-folders" build_files/build.sh; then
-    pass "build.sh declares the application folders"
+if grep -Fq 'software/app-folders' build_files/build.sh; then
+    pass "build.sh installs the static application-folder drop-in"
 else
-    fail "build.sh does not declare application folders"
+    fail "build.sh does not install software/app-folders"
 fi
-for folder in Virtualization Proxies Bluefin Wraindrock Flatpak AppImage; do
-    if grep -Fq "app-folders/folders/${folder}]" build_files/build.sh; then
-        pass "build.sh declares app folder ${folder}"
+if [[ -s build_files/software/app-folders ]]; then
+    pass "the application-folder drop-in exists"
+else
+    fail "build_files/software/app-folders is missing"
+fi
+for folder in Virtualization Proxies Wraindrock; do
+    if grep -Fq "app-folders/folders/${folder}]" build_files/software/app-folders; then
+        pass "app folder declared: ${folder}"
     else
-        fail "build.sh is missing app folder ${folder}"
+        fail "app folder is missing: ${folder}"
     fi
 done
-if grep -Fq 'flatpak_list' build_files/build.sh; then
-    pass "the Flatpak folder is generated from the preinstall list"
+for gone in Flatpak AppImage Bluefin; do
+    if grep -Fq "app-folders/folders/${gone}]" build_files/software/app-folders; then
+        fail "channel folder ${gone} would duplicate apps"
+    else
+        pass "no channel folder ${gone}"
+    fi
+done
+if python3 tests/folders.py tests/fixtures/bluefin-folders.conf build_files/software/app-folders >/dev/null; then
+    pass "every explicitly grouped app has exactly one folder"
 else
-    fail "the Flatpak folder is not generated from the preinstall list"
+    fail "the application folders duplicate at least one app"
 fi
 for stale in plymouth grub-theme wraindrock-gdm-logo; do
     if grep -Fq "${stale}" build_files/build.sh; then

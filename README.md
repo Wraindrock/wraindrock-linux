@@ -14,8 +14,9 @@ owns the identity, the presentation and a short list of personal defaults.
 - A 4K dark wallpaper replaces upstream's. Everything else visual — the logo,
   GDM artwork, boot splash and boot-menu theme — is Bluefin's own.
 - The UEFI boot entry is labelled **Wraindrock** (not Fedora or Bluefin).
-- GNOME application folders group launchers by purpose: Wraindrock, Bluefin,
-  Virtualization, Proxies, Flatpak, AppImage, plus Bluefin's own folders.
+- GNOME application folders group launchers by purpose: Wraindrock,
+  Virtualization, Proxies, plus Bluefin's own folders. Each app appears in
+  exactly one folder.
 - A fresh install seeds the hostname to `wraindrock`.
 - **NVIDIA open drivers**, QEMU/KVM with virt-manager, libvirt, Incus, Docker
   and Distrobox come from the Bluefin DX NVIDIA base.

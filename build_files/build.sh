@@ -173,50 +173,19 @@ chmod 0644 "${system_release}"
 grep -Eq '^Wraindrock release [0-9]' "${system_release}" \
     || die "failed to brand /etc/system-release"
 
-# 3f. Application folders. GNOME groups launchers into folders; Bluefin ships
-# its own set through a distro dconf database. Add Wraindrock's taxonomy in the
-# same database and generate the Flatpak folder from the preinstall list, so
-# the two never drift. Users can still move apps between folders.
+# 3f. Application folders. Bluefin ships seven folders through a distro dconf
+# database. Our drop-in only adds the Wraindrock folders and excludes the apps
+# we re-home from Bluefin's folders, so every app appears in exactly one place.
 dconf_dir=/etc/dconf/db/distro.d
 install -d -m 0755 "${dconf_dir}"
 folders_file="${dconf_dir}/10-wraindrock-folders"
-flatpak_list="${script_dir}/software/flatpaks.txt"
-[[ -s ${flatpak_list} ]] || die "the Flatpak list is missing"
-{
-    printf '# Wraindrock application folders.\n'
-    printf '[org/gnome/desktop/app-folders]\n'
-    printf "folder-children=['Games', 'GamingUtilities', 'Utilities', 'Development', 'Containers', 'Wine', 'Productivity', 'Virtualization', 'Proxies', 'Bluefin', 'Wraindrock', 'Flatpak', 'AppImage']\n"
-    printf "\n[org/gnome/desktop/app-folders/folders/Virtualization]\n"
-    printf "apps=['virt-manager.desktop', 'org.gnome.Boxes.desktop', 'io.podman_desktop.PodmanDesktop.desktop', 'com.github.marhkb.Pods.desktop', 'io.github.dvlv.boxbuddyrs.desktop']\n"
-    printf "name='Virtualization'\ntranslate=false\n"
-    printf "\n[org/gnome/desktop/app-folders/folders/Proxies]\n"
-    printf "apps=['Clash Verge.desktop', 'sing-box.desktop']\n"
-    printf "name='Proxies'\ntranslate=false\n"
-    printf "\n[org/gnome/desktop/app-folders/folders/Bluefin]\n"
-    printf "apps=['io.github.kolunmi.Bazaar.desktop', 'com.mattjakeman.ExtensionManager.desktop', 'org.gnome.tweaks.desktop', 'io.github.flattool.Warehouse.desktop', 'com.github.tchx84.Flatseal.desktop', 'ca.desrt.dconf-editor.desktop', 'app.devsuite.Ptyxis.desktop']\n"
-    printf "name='Bluefin'\ntranslate=false\n"
-    printf "\n[org/gnome/desktop/app-folders/folders/Wraindrock]\n"
-    printf "apps=['helium.desktop', 'Rayburst.desktop']\n"
-    printf "name='Wraindrock'\ntranslate=false\n"
-    printf "\n[org/gnome/desktop/app-folders/folders/AppImage]\n"
-    printf "apps=['it.mijorus.gearlever.desktop']\n"
-    printf "name='AppImage'\ntranslate=false\n"
-    printf "\n[org/gnome/desktop/app-folders/folders/Flatpak]\n"
-    printf 'apps=['
-    first=1
-    while IFS= read -r app; do
-        [[ -n ${app} && ${app} != \#* ]] || continue
-        [[ ${first} == 1 ]] || printf ', '
-        printf "'%s.desktop'" "${app}"
-        first=0
-    done < "${flatpak_list}"
-    printf "]\nname='Flatpak'\ntranslate=false\n"
-} > "${folders_file}"
-chmod 0644 "${folders_file}"
+install -m 0644 "${script_dir}/software/app-folders" "${folders_file}"
 command -v dconf >/dev/null 2>&1 || die "dconf is required to compile the app-folder database"
 dconf update
 grep -aq 'Virtualization' /etc/dconf/db/distro \
     || die "the app-folder database was not compiled"
+grep -Eq "folder-children=.*'Wraindrock'" "${folders_file}" \
+    || die "the Wraindrock folder is not declared"
 
 # 3g. First-boot hostname seeding. bootc-image-builder's install path does not
 # apply DEFAULT_HOSTNAME: the installed system inherits the base deployment's
