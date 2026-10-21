@@ -216,6 +216,11 @@ which build you ran. Updates: `sudo bootc update && sudo systemctl reboot`.
 
 ## Development
 
+`main` is built by GitHub Actions. Pushes that only touch documentation,
+`tools/` or `tests/` are linted but do not publish a new image; the channel
+advances on image-affecting changes and on the nightly build. Unknown paths
+always build.
+
 - Design, invariants and non-goals: [docs/architecture.md](docs/architecture.md)
 - Install, verification, troubleshooting: [docs/install.md](docs/install.md)
 - Rollback and escape hatches: [docs/rollback.md](docs/rollback.md)

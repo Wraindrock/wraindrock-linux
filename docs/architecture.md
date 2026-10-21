@@ -51,6 +51,17 @@ with Konflux" change targets Fedora 46). Building with bootc today:
 
 ## Build pipeline
 
+Every push runs lint. A push is only built and published when at least one
+changed file can affect the image (`image.env`, `Containerfile`,
+`build_files/**`, or anything outside the known documentation/tool/test set);
+unknown paths always build. Documentation, `tools/` and `tests/` are not
+COPYed into the image — the Containerfile bind-mounts `build_files/` at build
+time — so a docs-only rebuild would only change `build-info.json` and force
+every client to download the full build layer again. Nightly and manual runs
+always build. As a consequence, `:44` can lag `main` by documentation commits;
+the image's `build-info.json` (`git_sha`) is the honest record of what it was
+built from.
+
 ```
 image.env ──► workflow (lint) ──► pull base, resolve digest
                                         │

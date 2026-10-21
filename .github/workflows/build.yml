@@ -32,8 +32,79 @@ env:
   IMAGE_REGISTRY: ghcr.io/${{ github.repository_owner }}
 
 jobs:
+  # Every push is linted. Only pushes that touch an image input are built and
+  # published: documentation, tools and CI tests do not enter the image (the
+  # Containerfile bind-mounts build_files and never COPYs the repository), so a
+  # rebuild would only change build-info.json and force clients to download the
+  # whole build layer again. Unknown paths default to building, so a new input
+  # file can never be skipped silently. Nightly and manual runs always build.
+  changes:
+    name: classify changed paths
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    outputs:
+      build: ${{ steps.classify.outputs.build }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - name: Classify changed paths
+        id: classify
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          EVENT_BEFORE: ${{ github.event.before }}
+          PR_BASE: ${{ github.event.pull_request.base.sha }}
+        run: |
+          set -euo pipefail
+          build=true
+          case "${EVENT_NAME}" in
+            push|pull_request)
+              if [[ ${EVENT_NAME} == pull_request ]]; then
+                base="${PR_BASE}"
+              else
+                base="${EVENT_BEFORE}"
+              fi
+              # A new branch or rewritten history has no useful parent; the
+              # safe answer is to build.
+              if [[ -z ${base} || ${base} =~ ^0+$ ]] || ! git cat-file -e "${base}^{commit}" 2>/dev/null; then
+                build=true
+              else
+                changed="$(git diff --name-only "${base}" "${GITHUB_SHA}")"
+                if [[ -n ${changed} ]]; then
+                  build=false
+                  while IFS= read -r path; do
+                    case "${path}" in
+                      docs/*|README.md|CHANGELOG.md|CONTRIBUTING.md|SECURITY.md|LICENSE|.gitignore|.dockerignore|.editorconfig|tools/*|tests/*) ;;
+                      *) build=true; break ;;
+                    esac
+                  done <<< "${changed}"
+                fi
+              fi
+              ;;
+            *)
+              build=true
+              ;;
+          esac
+          printf 'build=%s\n' "${build}" >> "$GITHUB_OUTPUT"
+          printf 'image-affecting change: %s\n' "${build}"
+
+  lint:
+    name: lint
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+      - name: Lint
+        run: bash tests/lint.sh
+
   build:
     name: build and publish
+    needs: [changes, lint]
+    if: needs.changes.outputs.build == 'true'
     runs-on: ubuntu-24.04
     permissions:
       contents: read
@@ -67,9 +138,6 @@ jobs:
             echo "build_date=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
           } >> "$GITHUB_OUTPUT"
           cat "$GITHUB_OUTPUT"
-
-      - name: Lint
-        run: bash tests/lint.sh
 
       - name: Pull the base image and resolve its digest
         id: base

@@ -18,9 +18,9 @@ Current channel: `44` → `44.20261020T045729Z.69`
 (`sha256:f517b873143538fa7e7c51512280d5e727d57db59535c6abe077594490777902`).
 `.57`–`.59` were documentation rebuilds of `.55`; `.69` is the release that
 removed the appearance overrides, branded `/etc/system-release` and added the
-application folders. Later documentation commits may advance the channel again
-without changing system content — the immutable tag and `delta.json` are the
-honest reference.
+application folders. Documentation and tool commits are linted but do not rebuild the image, so the
+channel can lag `main`; it advances on image-affecting pushes and on the nightly
+build. The immutable tag and `delta.json` are the honest reference.
 
 ```bash
 sudo bootc switch ghcr.io/wraindrock/wraindrock-linux:44

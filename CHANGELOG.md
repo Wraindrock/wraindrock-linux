@@ -5,6 +5,19 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 image versions are the upstream channel plus an immutable build tag, see
 [docs/architecture.md](docs/architecture.md).
 
+## [0.16.0] - 2026-10-21
+
+### Changed
+
+- `build.yml` is split into a `changes` classifier, an always-on `lint` job and
+  the `build` job. Pushes that only touch `docs/`, `README.md`, `CHANGELOG.md`,
+  `CONTRIBUTING.md`, `SECURITY.md`, `LICENSE`, dotfiles, `tools/` or `tests/`
+  are linted but not built or published: those files never enter the image, so
+  rebuilding only changed `build-info.json` and made clients download the full
+  build layer. Any unknown path, nightly run and manual dispatch still build.
+- `:44` can therefore lag `main` by documentation commits; `build-info.json`
+  remains the record of the commit an image was built from.
+
 ## [0.15.1] - 2026-10-20
 
 ### Fixed
