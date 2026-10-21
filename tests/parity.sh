@@ -450,6 +450,19 @@ else
     fail "/etc/system-release does not name the UEFI entry: ${system_release:-<missing>}"
 fi
 
+# Bluefin owns 01-bluefin-folders; our exclusions are appended per key, so a
+# change upstream must be re-reviewed here and in tests/fixtures/bluefin-folders.conf.
+in_image "${BASE}" "sed 's/[[:space:]]*$//' /etc/dconf/db/distro.d/01-bluefin-folders" \
+    | grep -v '^#' | sed '/^[[:space:]]*$/d' > "${tmpdir}/base.folders"
+grep -v '^#' tests/fixtures/bluefin-folders.conf \
+    | sed 's/[[:space:]]*$//' | sed '/^[[:space:]]*$/d' > "${tmpdir}/fixture.folders"
+if diff -u "${tmpdir}/fixture.folders" "${tmpdir}/base.folders" > "${tmpdir}/folders.diff"; then
+    pass "Bluefin's own folder definitions still match the vendored fixture"
+else
+    fail "Bluefin changed its folder definitions; update tests/fixtures/bluefin-folders.conf and the exclusions"
+    head -20 "${tmpdir}/folders.diff" || true
+fi
+
 folders_file=/etc/dconf/db/distro.d/10-wraindrock-folders
 if in_image "${IMAGE}" "test -s ${folders_file}"; then
     pass "application folders are declared"
