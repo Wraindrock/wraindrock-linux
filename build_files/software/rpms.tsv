@@ -3,5 +3,5 @@
 # .github/workflows/upstream-watch.yml refreshes this file when a release lands.
 helium-bin	0.19.4.1-1.fc44	https://download.copr.fedorainfracloud.org/results/imput/helium/fedora-44-x86_64/01116216-helium/helium-bin-0.19.4.1-1.fc44.x86_64.rpm	fc2250388ea90e04219d19b2e286ebf67e5d05bdc6321fbdafa3d1565579f3cb
 clash-verge	2.5.8-1	https://github.com/clash-verge-rev/clash-verge-rev/releases/download/v2.5.8/Clash.Verge-2.5.8-1.x86_64.rpm	ad378ea9fb12ebae49500fcddb0435fd67abef79d828b654368e0f67b5785c2e
-rayburst	4.0.1-1	https://github.com/AnInsomniacy/rayburst/releases/download/v4.0.1/Rayburst-4.0.1-1.x86_64.rpm	06b08d124fa1f487c7450a2cc720eb9b9299f621ebb3db4213b77fb3e99b6633
+rayburst	4.1.0-1	https://github.com/AnInsomniacy/rayburst/releases/download/v4.1.0/Rayburst-4.1.0-1.x86_64.rpm	d48046b70422f01efc4ff71a133883a283c0386df4924162a5e56122a3af822e
 sing-box	1.14.3-1	https://github.com/SagerNet/sing-box/releases/download/v1.14.3/SFL-1.14.3-x86_64.rpm	979bfdeb419525ff5603a2edc30602e56953abba983eabda4dda2877a23f31f4
