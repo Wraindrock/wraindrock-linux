@@ -14,8 +14,8 @@ never overwritten; always prefer the newest one.
 | `previous` | Where `44` pointed before the last release |
 | `44.<UTC>.<run>` | Immutable build; quote this when reporting a bug |
 
-Current channel: `44` → `44.20261020T045729Z.69`
-(`sha256:f517b873143538fa7e7c51512280d5e727d57db59535c6abe077594490777902`).
+Current channel: `44` → `44.20261021T045220Z.73`
+(`sha256:a047093110110d2b1d958e9d6c5f40cf7e0774afcdcf6c33486ecd6bdb71fb65`).
 `.57`–`.59` were documentation rebuilds of `.55`; `.69` is the release that
 removed the appearance overrides, branded `/etc/system-release` and added the
 application folders. Documentation and tool commits are linted but do not rebuild the image, so the
@@ -39,6 +39,7 @@ three layers: `file:disk.qcow2`, `file:Wraindrock-Live.iso` and
 44.20261018T031902Z.30   44.20261018T150250Z.43   44.20261019T132911Z.55
 44.20261018T071737Z.32   44.20261018T161148Z.47
 44.20261018T100652Z.35   44.20261018T233302Z.48   44.20261020T045729Z.69
+44.20261021T045220Z.73
 ```
 
 Tags up to `.50` predate the rename and contain `install.iso`; `.55` and later
@@ -46,7 +47,7 @@ contain `Wraindrock-Live.iso`. They stay public for reproducibility, but use the
 newest.
 
 ```bash
-oras pull ghcr.io/wraindrock/wraindrock-linux-disk:44.20261020T045729Z.69 -o disk
+oras pull ghcr.io/wraindrock/wraindrock-linux-disk:44.20261021T045220Z.73 -o disk
 cd disk && sha256sum -c SHA256SUMS
 ```
 
