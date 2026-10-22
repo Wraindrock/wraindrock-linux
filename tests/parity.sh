@@ -78,8 +78,7 @@ assert set(delta["rpm"]["added"]) == set(added), (
     "declared", sorted(delta["rpm"]["added"]), "actual", sorted(added)
 )
 assert removed == [], removed
-names = {"clash-verge", "helium-bin", "hplip", "hplip-common", "hplip-libs",
-         "libsane-hpaio", "rayburst", "sing-box"}
+names = {"clash-verge", "helium-bin", "rayburst", "sing-box"}
 assert len(added) == len(names), added
 for name in names:
     assert any(entry.startswith(name + "-") for entry in added), (name, added)
@@ -421,9 +420,7 @@ import json
 import sys
 
 delta = json.load(open(sys.argv[1]))
-names = ["hplip-common", "libsane-hpaio", "clash-verge", "helium-bin",
-         "rayburst", "sing-box", "hplip-libs", "hplip"]
-names.sort(key=len, reverse=True)
+names = ["clash-verge", "helium-bin", "rayburst", "sing-box"]
 for entry in delta["rpm"]["added"]:
     for name in names:
         if entry.startswith(name + "-"):
