@@ -14,12 +14,13 @@ fail() { printf '  fail %s\n' "$1"; failures=$((failures + 1)); }
 
 echo "shell syntax"
 shell_files=()
-while IFS= read -r file; do shell_files+=("$file"); done < <(
-    find . -path ./.git -prune -o -type f -name '*.sh' -print | sort
-)
-# The GRUB theme helper is a bash script without a .sh suffix.
-# Same for the first-boot hostname seeder.
-shell_files+=("build_files/hostname/wraindrock-hostname-seed")
+# Only tracked files: the working tree may hold downloaded or unpacked sources
+# (for example an upstream tarball) that are not part of the image.
+while IFS= read -r file; do shell_files+=("$file"); done < <(git ls-files '*.sh' | sort)
+# First-boot helpers are bash scripts without a .sh suffix.
+shell_files+=("build_files/hostname/wraindrock-hostname-seed"
+              "build_files/software/wraindrock-flatpak-preinstall"
+              "build_files/software/wraindrock-g15-install")
 for file in "${shell_files[@]}"; do
     if bash -n "${file}"; then
         pass "${file}"
@@ -346,12 +347,12 @@ for scheme in text/html application/xhtml+xml x-scheme-handler/http x-scheme-han
     fi
 done
 rpm_rows=$(awk 'NF && $1 !~ /^#/' build_files/software/rpms.tsv | wc -l)
-if [[ ${rpm_rows} == 4 ]]; then
-    pass "rpms.tsv pins 4 upstream packages"
+if [[ ${rpm_rows} == 8 ]]; then
+    pass "rpms.tsv pins 8 upstream packages"
 else
-    fail "rpms.tsv pins ${rpm_rows} packages, want 4"
+    fail "rpms.tsv pins ${rpm_rows} packages, want 8"
 fi
-for name in helium-bin clash-verge rayburst sing-box; do
+for name in helium-bin clash-verge rayburst sing-box hplip hplip-common hplip-libs libsane-hpaio; do
     if awk -F'\t' -v n="${name}" 'NF && $1 == n && $2 != "" && $3 ~ /^https:\/\// && $4 ~ /^[0-9a-f]{64}$/' build_files/software/rpms.tsv | grep -q .; then
         pass "rpms.tsv has a complete pin for ${name}"
     else
@@ -359,7 +360,7 @@ for name in helium-bin clash-verge rayburst sing-box; do
     fi
 done
 for needle in "flatpaks.txt" "mimeapps.list" "rpms.tsv" "rpm -i" "sha256sum -c" \
-    "rpm_base_set_file" "rpmdb.sqlite-wal"; do
+    "rpm_base_set_file" "rpmdb.sqlite-wal" "hp-setup" "libsane-hpaio"; do
     if grep -Fq -- "${needle}" build_files/build.sh; then
         pass "build.sh handles ${needle}"
     else

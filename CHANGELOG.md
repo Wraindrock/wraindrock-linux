@@ -5,6 +5,15 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 image versions are the upstream channel plus an immutable build tag, see
 [docs/architecture.md](docs/architecture.md).
 
+## [0.18.4] - 2026-10-23
+
+### Added
+
+- HPLIP 3.26.6 from the Fedora 44 stable update: HP CUPS backend and filters,
+  `hp-setup`/`hp-info`, and the `libsane-hpaio` SANE backend, pinned by URL and
+  sha256 in `build_files/software/rpms.tsv`. The Qt GUI (`hp-toolbox`) is not
+  included; use `hp-setup -i`.
+
 ## [0.18.3] - 2026-10-22
 
 ### Fixed

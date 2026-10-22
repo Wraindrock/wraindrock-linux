@@ -78,7 +78,8 @@ assert set(delta["rpm"]["added"]) == set(added), (
     "declared", sorted(delta["rpm"]["added"]), "actual", sorted(added)
 )
 assert removed == [], removed
-names = {"clash-verge", "helium-bin", "rayburst", "sing-box"}
+names = {"clash-verge", "helium-bin", "hplip", "hplip-common", "hplip-libs",
+         "libsane-hpaio", "rayburst", "sing-box"}
 assert len(added) == len(names), added
 for name in names:
     assert any(entry.startswith(name + "-") for entry in added), (name, added)
@@ -420,7 +421,9 @@ import json
 import sys
 
 delta = json.load(open(sys.argv[1]))
-names = ["clash-verge", "helium-bin", "rayburst", "sing-box"]
+names = ["hplip-common", "libsane-hpaio", "clash-verge", "helium-bin",
+         "rayburst", "sing-box", "hplip-libs", "hplip"]
+names.sort(key=len, reverse=True)
 for entry in delta["rpm"]["added"]:
     for name in names:
         if entry.startswith(name + "-"):
@@ -437,6 +440,12 @@ while IFS=$'\t' read -r name version; do
         fail "baked package ${name} is ${installed}, expected ${version}"
     fi
 done < "${tmpdir}/rpm.versions"
+
+if in_image "${IMAGE}"     "test -x /usr/bin/hp-setup && test -x /usr/lib/cups/backend/hp"     && in_image "${IMAGE}" "test -e /usr/lib64/sane/libsane-hpaio.so.1"; then
+    pass "HPLIP command line, CUPS backend and SANE backend are installed"
+else
+    fail "HPLIP is incomplete (hp-setup, CUPS backend or SANE backend missing)"
+fi
 
 # --- default wallpaper ------------------------------------------------------
 wallpaper=/usr/share/backgrounds/wraindrock/wraindrock-wallpaper.png
