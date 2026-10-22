@@ -221,6 +221,11 @@ ln -sfn ../wraindrock-hostname-seed.service "${systemd_wants}/wraindrock-hostnam
 grep -q '^WantedBy=sysinit.target$' /usr/lib/systemd/system/wraindrock-hostname-seed.service \
     || die "hostname seed unit has the wrong target"
 
+# Scanner stack inherited from Bluefin. sane-airscan drives eSCL/WSD
+# scanners without vendor plugins; assert it stays in the base.
+rpm -q sane-airscan sane-backends-drivers-scanners >/dev/null \
+    || die "the base lost sane-airscan or the scanner drivers"
+
 # --- 3h. software defaults --------------------------------------------------
 # Bluefin DX's developer Flatpaks and Wraindrock's personal defaults are
 # installed by flatpak-preinstall.service on the first boot (Flatpak only; the

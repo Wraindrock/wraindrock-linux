@@ -71,6 +71,10 @@ Rayburst 4.1.0 and sing-box (SFL) 1.14.3. Each upstream release is caught by the
 daily upstream-watch workflow, which bumps the pin and publishes a new signed
 image tag — the apps do not wait for a Fedora major release.
 
+Scanning is inherited from Bluefin: `sane-airscan` and the SANE scanner
+drivers are installed, so network scanners appear in Document Scanner without
+extra packages.
+
 Dell G15/G16 owners also get the
 [G15 control center](https://github.com/Wraindrock/Ian-g-control-center): a
 first-boot unit installs a pinned commit into `/var/opt/g15-controller` and

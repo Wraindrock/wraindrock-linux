@@ -5,6 +5,21 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 image versions are the upstream channel plus an immutable build tag, see
 [docs/architecture.md](docs/architecture.md).
 
+## [0.18.3] - 2026-10-22
+
+### Fixed
+
+- The Flatpak retry wrapper now checks that every declared app is actually
+  installed before recording completion. Previously, if Bluefin's own
+  `flatpak-preinstall.service` was still running when the timer fired, the
+  wrapper recorded the new preinstall hash early and the newly added apps could
+  stay missing until the next image change.
+
+### Added
+
+- Assert the scanner stack inherited from Bluefin: `sane-airscan` and
+  `sane-backends-drivers-scanners` must be present in every build.
+
 ## [0.18.2] - 2026-10-22
 
 ### Changed

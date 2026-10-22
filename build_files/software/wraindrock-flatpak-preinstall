@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 # Install Wraindrock's Flatpaks as soon as Flathub is reachable.
 #
-# Bluefin's flatpak-preinstall.service runs once per boot and gives up after
-# three failed attempts. On a fresh install the network is often configured
-# later, in GNOME Initial Setup, so that service has already failed by then.
-# This wrapper is started by a timer; it records the hash of the preinstall
-# file it completed, so repeated runs are no-ops and a later image that adds
-# Flatpaks installs them on the next boot.
+# Bluefin's flatpak-preinstall runs once per boot and gives up after three
+# failed attempts; on a fresh install the network is often configured later, in
+# GNOME Initial Setup. This wrapper is started by a timer and retries until the
+# declared apps are actually present. The marker stores the hash of the
+# preinstall file it completed, so boots without changes are cheap, and a new
+# image that adds Flatpaks installs them on the next tick.
 set -euo pipefail
 
 preinstall=/usr/share/flatpak/preinstall.d/wraindrock.preinstall
@@ -16,12 +16,38 @@ marker="${state_dir}/flatpak-preinstall.sha256"
 [ -s "${preinstall}" ] || exit 0
 
 desired="$(sha256sum "${preinstall}" | cut -d' ' -f1)"
-if [ -s "${marker}" ] && [ "$(cat "${marker}")" = "${desired}" ]; then
+
+app_ids() {
+    grep -Ev '^#|^[[:space:]]*$' "${preinstall}" | sort -u
+}
+
+missing_apps() {
+    local installed
+    installed="$(flatpak list --system --app --columns=application 2>/dev/null || true)"
+    local id
+    while IFS= read -r id; do
+        grep -Fxq "${id}" <<<"${installed}" || printf '%s\n' "${id}"
+    done < <(app_ids)
+}
+
+installed_completely() {
+    [[ -z "$(missing_apps)" ]]
+}
+
+# A matching marker only means a previous run finished; verify the apps too,
+# so a marker written while the base service was still running cannot leave
+# apps permanently missing.
+if [ -s "${marker}" ] && [ "$(cat "${marker}")" = "${desired}" ] && installed_completely; then
     exit 0
 fi
 
-# The base service already succeeded this boot (RemainAfterExit=yes).
-if systemctl is-active --quiet flatpak-preinstall.service; then
+# The base service may still be installing (it is a long-running oneshot).
+for _ in $(seq 1 180); do
+    systemctl is-active --quiet flatpak-preinstall.service || break
+    sleep 10
+done
+
+if installed_completely; then
     install -d -m 0755 "${state_dir}"
     printf '%s\n' "${desired}" > "${marker}.tmp"
     mv -f "${marker}.tmp" "${marker}"
@@ -31,6 +57,12 @@ fi
 # Wait for the Flathub remote; the timer retries while this fails.
 flatpak remote-ls --system >/dev/null 2>&1 || exit 1
 flatpak preinstall -y
+
+if ! installed_completely; then
+    echo "flatpak preinstall returned but apps are still missing:" >&2
+    missing_apps >&2
+    exit 1
+fi
 
 install -d -m 0755 "${state_dir}"
 printf '%s\n' "${desired}" > "${marker}.tmp"

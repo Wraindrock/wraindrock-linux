@@ -276,6 +276,19 @@ else
     fail "G15 installer service is misconfigured"
 fi
 
+for needle in 'missing_apps' 'installed_completely' 'flatpak list --system'; do
+    if grep -Fq -- "${needle}" build_files/software/wraindrock-flatpak-preinstall; then
+        pass "Flatpak retry wrapper contains ${needle}"
+    else
+        fail "Flatpak retry wrapper is missing ${needle}"
+    fi
+done
+if grep -Fq 'rpm -q sane-airscan sane-backends-drivers-scanners' build_files/build.sh; then
+    pass "build.sh asserts the scanner stack"
+else
+    fail "build.sh does not assert sane-airscan"
+fi
+
 # Bluefin's preinstall service gives up after three attempts; a timer retries
 # our wrapper so a fresh install still gets its Flatpaks once Wi-Fi is up.
 retry_base=build_files/software/wraindrock-flatpak-preinstall

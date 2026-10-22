@@ -346,6 +346,11 @@ else
     fail "retry wrapper does not record its progress"
 fi
 
+if in_image "${IMAGE}" 'rpm -q sane-airscan sane-backends-drivers-scanners >/dev/null'; then
+    pass "scanner support (sane-airscan) is present"
+else
+    fail "sane-airscan is missing"
+fi
 # Dell G15/G16 control center: first boot only, pinned commit and tarball.
 g15_script=/usr/libexec/wraindrock-g15-install
 g15_unit=/usr/lib/systemd/system/wraindrock-g15-install.service
