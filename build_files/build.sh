@@ -247,7 +247,7 @@ install -m 0644 "${script_dir}/software/wraindrock-flatpak-preinstall.service" \
     /usr/lib/systemd/system/wraindrock-flatpak-preinstall.service
 install -m 0644 "${script_dir}/software/wraindrock-flatpak-preinstall.timer" \
     /usr/lib/systemd/system/wraindrock-flatpak-preinstall.timer
-ln -sfn ../wraindrock-flatpak-preinstall.timer \
+ln -sfn /usr/lib/systemd/system/wraindrock-flatpak-preinstall.timer \
     /etc/systemd/system/timers.target.wants/wraindrock-flatpak-preinstall.timer
 [[ -e /etc/systemd/system/timers.target.wants/wraindrock-flatpak-preinstall.timer ]] \
     || die "the Flatpak preinstall timer is not enabled"
