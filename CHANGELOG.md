@@ -5,6 +5,18 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 image versions are the upstream channel plus an immutable build tag, see
 [docs/architecture.md](docs/architecture.md).
 
+## [0.17.1] - 2026-10-22
+
+### Changed
+
+- Every GNOME desktop application is now filed under Utilities (附件): Files,
+  Terminal, Settings, Disks, System Monitor, Tour, Tweaks, Orca, and the GNOME
+  Flathub apps (Calculator, Calendar, Papers, Loupe, Showtime, Text Editor,
+  Weather, Maps, Clocks, Fonts, Baobab, Connections, Contacts, DejaDup, File
+  Roller, Firmware, Logs, Simple Scan, Snapshot, Decibels). The desktop ids were
+  verified against the base rpmdb and Flathub appstream on 2026-10-22 and are
+  pinned in `tests/fixtures/gnome-desktop-apps.txt`.
+
 ## [0.17.0] - 2026-10-22
 
 ### Changed

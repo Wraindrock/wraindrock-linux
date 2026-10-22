@@ -172,6 +172,22 @@ if python3 tests/folders.py tests/fixtures/bluefin-folders.conf build_files/soft
 else
     fail "the application folders duplicate at least one app"
 fi
+gnome_apps=tests/fixtures/gnome-desktop-apps.txt
+if [[ -s ${gnome_apps} ]]; then
+    missing_gnome=0
+    while IFS= read -r app; do
+        [[ -z ${app} || ${app} == \#* ]] && continue
+        if ! grep -Fq "'${app}'" build_files/software/app-folders; then
+            fail "GNOME desktop app is not filed under Utilities: ${app}"
+            missing_gnome=1
+        fi
+    done < "${gnome_apps}"
+    if [[ ${missing_gnome} -eq 0 ]]; then
+        pass "GNOME desktop applications are filed under Utilities"
+    fi
+else
+    fail "tests/fixtures/gnome-desktop-apps.txt is missing"
+fi
 for stale in plymouth grub-theme wraindrock-gdm-logo; do
     if grep -Fq "${stale}" build_files/build.sh; then
         fail "build.sh still has removed appearance code: ${stale}"

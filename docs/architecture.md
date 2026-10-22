@@ -172,6 +172,10 @@ upstream folder. GNOME matches `(apps ∪ categories) − excluded-apps` per fol
 so listing an app in two places shows it twice; `tests/folders.py` merges the
 upstream definition with ours and fails if any app would land in more than one
 folder. Channel folders (`Flatpak`, `AppImage`) were removed for this reason.
+The Utilities folder additionally lists every GNOME desktop application (RPM
+desktop files from the base rpmdb plus Flathub launchable ids); the ids are kept
+in `tests/fixtures/gnome-desktop-apps.txt`, and lint/parity fail if any of them
+is no longer filed under Utilities.
 
 `glib-compile-schemas` *is* run, because GSettings only reads compiled schemas;
 that rewrites `/usr/share/glib-2.0/schemas/gschemas.compiled`, which the delta

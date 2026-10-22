@@ -501,6 +501,23 @@ for app in 'virt-manager.desktop' 'io.podman_desktop.PodmanDesktop.desktop' \
         fail "re-homed app is missing: ${app}"
     fi
 done
+in_image "${IMAGE}" "cat ${folders_file}" > "${tmpdir}/app-folders"
+if python3 tests/folders.py tests/fixtures/bluefin-folders.conf "${tmpdir}/app-folders" >/dev/null; then
+    pass "published app folders keep one folder per app"
+else
+    fail "published app folders duplicate at least one app"
+fi
+missing_gnome=0
+while IFS= read -r app; do
+    [[ -z ${app} || ${app} == \#* ]] && continue
+    if ! grep -Fq "'${app}'" "${tmpdir}/app-folders"; then
+        fail "GNOME desktop app is not filed under Utilities: ${app}"
+        missing_gnome=1
+    fi
+done < tests/fixtures/gnome-desktop-apps.txt
+if [[ ${missing_gnome} -eq 0 ]]; then
+    pass "GNOME desktop applications are filed under Utilities"
+fi
 if in_image "${IMAGE}" 'grep -aq 'Virtualization' /etc/dconf/db/distro'; then
     pass "app folders are compiled into the distro dconf database"
 else
