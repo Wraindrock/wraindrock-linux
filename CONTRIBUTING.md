@@ -88,6 +88,18 @@ Prefer not to patch. When a build-time patch is unavoidable:
   just the happy path.
 - Every command in the docs must be copy-pasteable and tested at least once.
 
+## Scratch space
+
+`/tmp` inside the development container is tmpfs, so large downloads, image
+layers and extracted ISOs written there consume RAM and can push the host into
+swap. Run big temporary work through `tools/scratch.sh`, which creates a
+directory under `./.scratch` (disk-backed, gitignored), exports it as `TMPDIR`, and removes it
+when the command exits:
+
+```bash
+tools/scratch.sh bash -c 'oras pull ... -o "$TMPDIR/disk" && inspect "$TMPDIR/disk"'
+```
+
 ## Review checklist
 
 - [ ] `bash tests/lint.sh` passes
