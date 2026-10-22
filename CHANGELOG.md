@@ -5,6 +5,16 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 image versions are the upstream channel plus an immutable build tag, see
 [docs/architecture.md](docs/architecture.md).
 
+## [0.18.0] - 2026-10-22
+
+### Changed
+
+- Split Accessories (附件) from Utilities (工具). GNOME's desktop applications
+  now live in their own `Accessories` folder with a custom
+  `wraindrock-accessories.directory` (`Name[zh_CN]=附件`); Bluefin's Utilities
+  folder keeps its own tools and excludes the GNOME apps, so the two folders no
+  longer overlap.
+
 ## [0.17.2] - 2026-10-22
 
 ### Fixed

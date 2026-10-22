@@ -1,4 +1,4 @@
-# GNOME desktop applications that must be filed under Utilities (附件).
+# GNOME desktop applications that must be filed under Accessories (附件).
 # Sources, verified 2026-10-22 against the current base image:
 #   * RPMs: desktop files listed by the Bluefin base rpmdb for
 #     nautilus, ptyxis, gnome-control-center, gnome-disk-utility,

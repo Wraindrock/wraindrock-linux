@@ -14,10 +14,10 @@ owns the identity, the presentation and a short list of personal defaults.
 - A 4K dark wallpaper replaces upstream's. Everything else visual — the logo,
   GDM artwork, boot splash and boot-menu theme — is Bluefin's own.
 - The UEFI boot entry is labelled **Wraindrock** (not Fedora or Bluefin).
-- GNOME application folders group launchers by purpose: Wraindrock,
-  Virtualization, Proxies, uBlue, plus Bluefin's own folders. Every GNOME
-  desktop application is filed under Utilities (附件). Each app appears in
-  exactly one folder.
+- GNOME application folders group launchers by purpose: Accessories (附件) for
+  GNOME's own desktop apps, Utilities (工具) for Bluefin's tools, plus
+  Wraindrock, Virtualization, Proxies, uBlue and Bluefin's other folders. Each
+  app appears in exactly one folder.
 - The dock starts as Helium, Rnote, Files, Bazaar, Mission Center, Terminal.
 - A fresh install seeds the hostname to `wraindrock`.
 - **NVIDIA open drivers**, QEMU/KVM with virt-manager, libvirt, Incus, Docker

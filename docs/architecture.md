@@ -172,10 +172,13 @@ upstream folder. GNOME matches `(apps ∪ categories) − excluded-apps` per fol
 so listing an app in two places shows it twice; `tests/folders.py` merges the
 upstream definition with ours and fails if any app would land in more than one
 folder. Channel folders (`Flatpak`, `AppImage`) were removed for this reason.
-The Utilities folder additionally lists every GNOME desktop application (RPM
-desktop files from the base rpmdb plus Flathub launchable ids); the ids are kept
+A separate Accessories folder (附件) lists every GNOME desktop application (RPM
+desktop files from the base rpmdb plus Flathub launchable ids); its name comes
+from `wraindrock-accessories.directory` (`Name=Accessories`, `Name[zh_CN]=附件`).
+Bluefin's Utilities folder (工具) keeps only its own tools, and the GNOME apps
+are excluded from it, so Accessories and Tools never overlap. The ids are kept
 in `tests/fixtures/gnome-desktop-apps.txt`, and lint/parity fail if any of them
-is no longer filed under Utilities.
+is no longer filed under Accessories.
 
 `glib-compile-schemas` *is* run, because GSettings only reads compiled schemas;
 that rewrites `/usr/share/glib-2.0/schemas/gschemas.compiled`, which the delta

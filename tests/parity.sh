@@ -237,6 +237,7 @@ expected_added = {
     "/etc/systemd/system/timers.target.wants/wraindrock-flatpak-preinstall.timer",
     "/etc/xdg/mimeapps.list",
     "/etc/dconf/db/distro.d/10-wraindrock-folders",
+    "/usr/share/desktop-directories/wraindrock-accessories.directory",
 }
 assert set(delta["files"]["added"]) == expected_added, delta["files"]["added"]
 PY
@@ -518,7 +519,7 @@ if in_image "${IMAGE}" "test -s ${folders_file}"; then
 else
     fail "application folders are missing"
 fi
-for folder in Virtualization Proxies Wraindrock uBlue; do
+for folder in Accessories Virtualization Proxies Wraindrock uBlue; do
     if in_image "${IMAGE}" "grep -q '\[org/gnome/desktop/app-folders/folders/${folder}\]' ${folders_file}"; then
         pass "app folder declared: ${folder}"
     else
@@ -551,14 +552,28 @@ missing_gnome=0
 while IFS= read -r app; do
     [[ -z ${app} || ${app} == \#* ]] && continue
     if ! grep -Fq "'${app}'" "${tmpdir}/app-folders"; then
-        fail "GNOME desktop app is not filed under Utilities: ${app}"
+        fail "GNOME desktop app is not filed under Accessories: ${app}"
         missing_gnome=1
     fi
 done < tests/fixtures/gnome-desktop-apps.txt
 if [[ ${missing_gnome} -eq 0 ]]; then
-    pass "GNOME desktop applications are filed under Utilities"
+    pass "GNOME desktop applications are filed under Accessories"
 fi
-if in_image "${IMAGE}" 'grep -aq 'Virtualization' /etc/dconf/db/distro'; then
+
+# Accessories and Tools must not overlap: the GNOME apps live only in
+# Accessories, and Utilities keeps Bluefin's own tool list.
+utils_apps="$(awk '/folders\/Utilities\]/{seen=1; next} /^\[/{seen=0} seen && /^apps=/{print}' "${tmpdir}/app-folders")"
+if [[ ${utils_apps} == *"'org.gnome.Calculator.desktop'"* ]]; then
+    fail "Utilities still lists GNOME applications (Accessories would duplicate)"
+else
+    pass "Utilities no longer lists the GNOME applications"
+fi
+if in_image "${IMAGE}" "grep -Fq 'Name[zh_CN]=附件' /usr/share/desktop-directories/wraindrock-accessories.directory"; then
+    pass "Accessories folder is labelled 附件 in Chinese"
+else
+    fail "Accessories .directory is missing the Chinese name"
+fi
+if in_image "${IMAGE}" 'grep -aq 'Accessories' /etc/dconf/db/distro'; then
     pass "app folders are compiled into the distro dconf database"
 else
     fail "compiled distro dconf database does not contain the app folders"

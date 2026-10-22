@@ -148,7 +148,7 @@ if [[ -s build_files/software/app-folders ]]; then
 else
     fail "build_files/software/app-folders is missing"
 fi
-for folder in Virtualization Proxies Wraindrock uBlue; do
+for folder in Accessories Virtualization Proxies Wraindrock uBlue; do
     if grep -Fq "app-folders/folders/${folder}]" build_files/software/app-folders; then
         pass "app folder declared: ${folder}"
     else
@@ -178,15 +178,28 @@ if [[ -s ${gnome_apps} ]]; then
     while IFS= read -r app; do
         [[ -z ${app} || ${app} == \#* ]] && continue
         if ! grep -Fq "'${app}'" build_files/software/app-folders; then
-            fail "GNOME desktop app is not filed under Utilities: ${app}"
+            fail "GNOME desktop app is not filed under Accessories: ${app}"
             missing_gnome=1
         fi
     done < "${gnome_apps}"
     if [[ ${missing_gnome} -eq 0 ]]; then
-        pass "GNOME desktop applications are filed under Utilities"
+        pass "GNOME desktop applications are filed under Accessories"
     fi
 else
     fail "tests/fixtures/gnome-desktop-apps.txt is missing"
+fi
+if [[ -s build_files/software/wraindrock-accessories.directory ]] \
+    && grep -Fq 'Name[zh_CN]=附件' build_files/software/wraindrock-accessories.directory \
+    && grep -Fq "name='wraindrock-accessories.directory'" build_files/software/app-folders \
+    && grep -Fq 'wraindrock-accessories.directory' build_files/build.sh; then
+    pass "the Accessories folder is named 附件 and installed"
+else
+    fail "the Accessories folder name or .directory install is missing"
+fi
+if sed -n '/folders\/Utilities\]/,/^\[/p' build_files/software/app-folders | grep '^apps=' | grep -Fq "'org.gnome.Calculator.desktop'"; then
+    fail "Utilities still lists GNOME applications (Accessories would overlap)"
+else
+    pass "Utilities keeps only Bluefin's tools"
 fi
 for stale in plymouth grub-theme wraindrock-gdm-logo; do
     if grep -Fq "${stale}" build_files/build.sh; then

@@ -189,10 +189,16 @@ dconf_dir=/etc/dconf/db/distro.d
 install -d -m 0755 "${dconf_dir}"
 folders_file="${dconf_dir}/10-wraindrock-folders"
 install -m 0644 "${script_dir}/software/app-folders" "${folders_file}"
+desktop_dirs=/usr/share/desktop-directories
+install -d -m 0755 "${desktop_dirs}"
+install -m 0644 "${script_dir}/software/wraindrock-accessories.directory" \
+    "${desktop_dirs}/wraindrock-accessories.directory"
 command -v dconf >/dev/null 2>&1 || die "dconf is required to compile the app-folder database"
 dconf update
 grep -aq 'Virtualization' /etc/dconf/db/distro \
     || die "the app-folder database was not compiled"
+grep -aq 'Accessories' /etc/dconf/db/distro \
+    || die "the Accessories folder was not compiled"
 grep -Eq "folder-children=.*'Wraindrock'" "${folders_file}" \
     || die "the Wraindrock folder is not declared"
 
@@ -386,7 +392,8 @@ cat > /usr/share/wraindrock/delta.json <<EOF
       "/usr/lib/systemd/system/wraindrock-flatpak-preinstall.timer",
       "/etc/systemd/system/timers.target.wants/wraindrock-flatpak-preinstall.timer",
       "/etc/xdg/mimeapps.list",
-      "/etc/dconf/db/distro.d/10-wraindrock-folders"
+      "/etc/dconf/db/distro.d/10-wraindrock-folders",
+      "/usr/share/desktop-directories/wraindrock-accessories.directory"
     ]
   }
 }
