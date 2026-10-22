@@ -5,6 +5,17 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 image versions are the upstream channel plus an immutable build tag, see
 [docs/architecture.md](docs/architecture.md).
 
+## [0.18.1] - 2026-10-22
+
+### Fixed
+
+- ISO and qcow2 installs now track the moving `:44` channel. The disk workflow
+  verifies that the channel tag resolves to the image it was asked to build,
+  hands bootc-image-builder the channel reference, and rewrites the kickstarts'
+  `bootc switch` line to the channel with the build digest as an offline
+  fallback. Previously an install recorded the immutable build tag, so
+  `bootc update` could never move past that build.
+
 ## [0.18.0] - 2026-10-22
 
 ### Changed

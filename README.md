@@ -109,7 +109,10 @@ Every build publishes the same three things; pick one:
 | System image | `ghcr.io/wraindrock/wraindrock-linux:44` | Switching an existing Bluefin DX install |
 
 Both disk artifacts come from `.github/workflows/disk.yml`; releases are cut by
-`.github/workflows/release-iso.yml` from the published ISO layer.
+`.github/workflows/release-iso.yml` from the published ISO layer. Systems
+installed from the ISO track the moving `:44` channel, so `bootc update` keeps
+them current; [docs/install.md](docs/install.md) explains how to restore that
+tracking if an older install pinned an immutable tag or digest.
 
 The newest release is on the [Releases page](https://github.com/Wraindrock/wraindrock-linux/releases);
 its notes list the ISO size and sha256. Each release ships the ISO split

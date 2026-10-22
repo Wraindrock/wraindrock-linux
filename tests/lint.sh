@@ -525,6 +525,7 @@ if [[ -r .github/workflows/disk.yml ]]; then
                   'SHA256SUMS' 'sha256sum' 'BIB_IMAGE' \
                   'wraindrock-linux-disk' 'oras push' 'oras manifest fetch' \
                   'immutable artifact tags are never overwritten' \
+                  'channel_ref' 'CHANNEL_REF=' 'osbuild-base.ks' \
                   'tests/iso-menu.sh' \
                   'tests/iso-interactive-shots.sh' \
                   'Install Wraindrock (interactive, choose disks)' \
@@ -585,7 +586,7 @@ for fixture in anaconda-hub.png anaconda-destination.png \
     fi
 done
 for needle in 'interactive.ks' 'ostreecontainer --url=/run/install/repo/container' \
-              '-boot_image any replay' 'xorriso'; do
+              '-boot_image any replay' 'xorriso' 'CHANNEL_REF' 'osbuild-base.ks'; do
     if grep -Fq -e "${needle}" tests/iso-menu.sh; then
         pass "iso-menu.sh handles: ${needle}"
     else

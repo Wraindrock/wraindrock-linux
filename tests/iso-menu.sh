@@ -47,12 +47,33 @@ post_switch="$(grep -m1 '^bootc switch ' "${tmp}/osbuild-base.ks")" || {
     echo "error: the generated kickstart has no 'bootc switch' line" >&2
     exit 1
 }
+# Installed systems should track the moving channel tag, not the immutable
+# build tag/digest. bootc-image-builder's kickstart switches to a digest (safe
+# when the installer has no network); prefer the channel and fall back to the
+# digest, so an offline install still completes.
+channel_ref="${CHANNEL_REF:-}"
+if [[ -n ${channel_ref} ]]; then
+    channel_switch="bootc switch --mutate-in-place --transport registry ${channel_ref}"
+    switch_line="${channel_switch} || ${post_switch}"
+else
+    switch_line="${post_switch}"
+fi
+if [[ -n ${channel_ref} ]]; then
+    python3 - "${tmp}/osbuild-base.ks" "${post_switch}" "${switch_line}" <<'PY2'
+import sys
+path, old, new = sys.argv[1:4]
+text = open(path, encoding="utf-8").read()
+if text.count(old) != 1:
+    raise SystemExit(f"error: kickstart has {text.count(old)} switch lines, expected 1")
+open(path, "w", encoding="utf-8").write(text.replace(old, new))
+PY2
+fi
 {
     echo 'ostreecontainer --url=/run/install/repo/container --transport=oci'
     echo
     echo '%post --erroronfail'
     echo 'set -e'
-    echo "${post_switch}"
+    echo "${switch_line}"
     echo '%end'
 } >"${tmp}/interactive.ks"
 
@@ -161,6 +182,7 @@ xorriso -indev "${iso}" -outdev "${tmp}/install.partial" \
     -map "${tmp}/uefi.new" /EFI/BOOT/grub.cfg \
     -map "${tmp}/bios.new" /boot/grub2/grub.cfg \
     -map "${tmp}/interactive.ks" /interactive.ks \
+    -map "${tmp}/osbuild-base.ks" /osbuild-base.ks \
     -boot_image any replay >"${tmp}/xorriso.log" 2>&1 || {
     cat "${tmp}/xorriso.log" >&2
     echo "error: xorriso failed to remaster the ISO" >&2
@@ -170,7 +192,8 @@ xorriso -indev "${iso}" -outdev "${tmp}/install.partial" \
 xorriso -osirrox on -indev "${tmp}/install.partial" \
     -extract /EFI/BOOT/grub.cfg "${tmp}/uefi.chk" \
     -extract /boot/grub2/grub.cfg "${tmp}/bios.chk" \
-    -extract /interactive.ks "${tmp}/interactive.chk" 2>/dev/null
+    -extract /interactive.ks "${tmp}/interactive.chk" \
+    -extract /osbuild-base.ks "${tmp}/osbuild-base.chk" 2>/dev/null
 for menu in "${tmp}/uefi.chk" "${tmp}/bios.chk"; do
     grep -Fq "Install Wraindrock (interactive, choose disks)" "${menu}"
     grep -Fq "Install Wraindrock - erase first disk (unattended)" "${menu}"
@@ -189,6 +212,14 @@ for menu in "${tmp}/uefi.chk" "${tmp}/bios.chk"; do
 done
 grep -Fq 'ostreecontainer --url=/run/install/repo/container --transport=oci' "${tmp}/interactive.chk"
 grep -Fq 'bootc switch --mutate-in-place --transport registry' "${tmp}/interactive.chk"
+if [[ -n ${channel_ref} ]]; then
+    for ks in "${tmp}/interactive.chk" "${tmp}/osbuild-base.chk"; do
+        grep -Fq "bootc switch --mutate-in-place --transport registry ${channel_ref}" "${ks}" || {
+            echo "error: $(basename "${ks}") does not track the channel ref" >&2
+            exit 1
+        }
+    done
+fi
 
 xorriso -indev "${tmp}/install.partial" -report_el_torito plain 2>/dev/null |
     grep -q 'BIOS' || { echo "error: remastered ISO lost its BIOS boot image" >&2; exit 1; }

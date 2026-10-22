@@ -83,6 +83,16 @@ The boot menu offers two entries:
 > The ISO is larger than 4 GB, so use an 8 GB or larger USB stick formatted for
 > a single >4 GB file (exFAT) or write it directly with `dd`.
 
+An installed system tracks the moving `:44` channel, so `bootc update` picks up
+new builds. When the installer has network access the post-install switch points
+at the channel tag; without it the install falls back to the build digest. If
+`bootc status` shows an immutable `44.<timestamp>.<run>` or a digest instead,
+point it back at the channel once:
+
+```bash
+sudo bootc switch ghcr.io/wraindrock/wraindrock-linux:44
+```
+
 Boot the stick on a UEFI machine, pick an entry and let Anaconda install; the
 system reboots into GDM. On the first boot the network must be up: the system
 installs 41 Flatpaks in the background (Podman Desktop, GNOME Builder,
