@@ -5,6 +5,21 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 image versions are the upstream channel plus an immutable build tag, see
 [docs/architecture.md](docs/architecture.md).
 
+## [0.18.2] - 2026-10-22
+
+### Changed
+
+- Removed Thunderbird from the first-boot Flatpaks; it installs from Bazaar
+  when wanted.
+- Added DingTalk, QQ and Open Orpheus to the preinstalled Flatpaks (43 total).
+
+### Added
+
+- Dell G15/G16 control center: a hardware-gated first-boot unit installs a
+  pinned commit of `Wraindrock/Ian-g-control-center` (tarball verified by
+  sha256) into `/var/opt/g15-controller`, because the upstream installer builds
+  a venv and starts a daemon at runtime rather than shipping an RPM.
+
 ## [0.18.1] - 2026-10-22
 
 ### Fixed

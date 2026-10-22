@@ -1,0 +1,16 @@
+[Unit]
+Description=Install the Dell G15/G16 control center on first boot
+Wants=network-online.target
+After=network-online.target
+ConditionPathExists=!/var/lib/wraindrock/g15-control-center.installed
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/libexec/wraindrock-g15-install
+Restart=on-failure
+RestartSec=300
+StartLimitIntervalSec=0
+
+[Install]
+WantedBy=multi-user.target

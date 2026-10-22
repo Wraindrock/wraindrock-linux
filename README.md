@@ -54,21 +54,27 @@ cannot drift apart silently.
 
 ## Software
 
-The first boot installs **41 Flatpaks** (needs the network and a few GB); a
+The first boot installs **43 Flatpaks** (needs the network and a few GB); a
 timer retries every ten minutes until they are in, and
 `sudo systemctl start wraindrock-flatpak-preinstall.service` runs it now:
-Bluefin's core and DX applications — GNOME apps, Thunderbird, Podman Desktop,
-GNOME Builder, DevToolbox, Clapgrep, Embellish, Bazaar, Flatseal, DistroShelf
-and the rest of the maintained set — plus WeChat, Rnote and Gear Lever. Firefox
-is deliberately not preinstalled; `flatpak install org.mozilla.firefox` adds it.
-The two adw-gtk3 theme extensions and Tavern (no longer on Flathub) are skipped.
+Bluefin's core and DX applications — GNOME apps, Podman Desktop, GNOME Builder,
+DevToolbox, Clapgrep, Embellish, Bazaar, Flatseal, DistroShelf and the rest of
+the maintained set — plus DingTalk, QQ, Open Orpheus, WeChat, Rnote and Gear
+Lever. Firefox and Thunderbird are deliberately not preinstalled; both install
+from Bazaar (or `flatpak install flathub org.mozilla.firefox`). The two
+adw-gtk3 theme extensions and Tavern (no longer on Flathub) are skipped.
 
 **Helium is the default browser** for links and HTML. Four programs have no
 Flatpak, so their upstream RPMs are baked in at pinned versions: Helium
 0.19.4.1 (from the official `imput/helium` COPR), Clash Verge Rev 2.5.8,
-Rayburst 4.0.1 and sing-box (SFL) 1.14.3. Each upstream release is caught by the
+Rayburst 4.1.0 and sing-box (SFL) 1.14.3. Each upstream release is caught by the
 daily upstream-watch workflow, which bumps the pin and publishes a new signed
 image tag — the apps do not wait for a Fedora major release.
+
+Dell G15/G16 owners also get the
+[G15 control center](https://github.com/Wraindrock/Ian-g-control-center): a
+first-boot unit installs a pinned commit into `/var/opt/g15-controller` and
+starts its daemon, only when the DMI model matches. Other machines skip it.
 
 KVM (`virt-manager`, `libvirt`, `qemu-system-x86`), Incus and Docker are part of
 the inherited Bluefin DX base, so virtual machines work out of the box. The
@@ -202,7 +208,7 @@ scratch machine, with data disks detached, or in a VM.
 cat /usr/lib/os-release              # NAME="Wraindrock", ID=bluefin
 cat /usr/share/wraindrock/delta.json # every intended difference
 hostnamectl                          # wraindrock
-flatpak list --system                # the 41 declared preinstalls
+flatpak list --system                # the 43 declared preinstalls
 rpm -q helium-bin clash-verge rayburst sing-box # the four baked packages
 cosign verify \
   --certificate-identity-regexp '^https://github.com/Wraindrock/wraindrock-linux/' \

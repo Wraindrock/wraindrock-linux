@@ -65,7 +65,7 @@ upstream already provides.
 
 - [x] Flatpak preinstalls through uBlue's supported mechanism
       (`/usr/share/flatpak/preinstall.d/wraindrock.preinstall`, generated from
-      `build_files/software/flatpaks.txt`): 41 apps = Bluefin's core and DX set
+      `build_files/software/flatpaks.txt`): 43 apps = Bluefin's core and DX set
       (GNOME apps, Thunderbird, Podman Desktop, Builder, DevToolbox, Clapgrep,
       Embellish, Bazaar, Flatseal, DistroShelf, Mission Center, Refine, …) plus
       WeChat, Rnote and Gear Lever. Firefox is skipped by explicit request,

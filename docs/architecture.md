@@ -190,7 +190,7 @@ database. `gtk-update-icon-cache` is not run.
 Two delivery mechanisms keep the out-of-box set small and updatable:
 
 - **Flatpaks install on first boot.** `/usr/share/flatpak/preinstall.d/wraindrock.preinstall`
-  declares 41 apps and Bluefin's `flatpak-preinstall.service` runs
+  declares 43 apps and Bluefin's `flatpak-preinstall.service` runs
   `flatpak preinstall -y` once the network is up. That service gives up after
   three attempts, which a fresh install usually exhausts before Wi-Fi is
   configured, so `wraindrock-flatpak-preinstall.timer` retries our wrapper

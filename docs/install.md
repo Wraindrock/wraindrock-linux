@@ -95,10 +95,12 @@ sudo bootc switch ghcr.io/wraindrock/wraindrock-linux:44
 
 Boot the stick on a UEFI machine, pick an entry and let Anaconda install; the
 system reboots into GDM. On the first boot the network must be up: the system
-installs 41 Flatpaks in the background (Podman Desktop, GNOME Builder,
-DevToolbox, Clapgrep, Embellish, WeChat, Rnote, Gear Lever, …). Helium is the
-default browser; Firefox is not preinstalled. Visual presentation (logo, boot
-splash, boot-menu theme) stays upstream Bluefin's.
+installs 43 Flatpaks in the background (Podman Desktop, GNOME Builder,
+DevToolbox, Clapgrep, Embellish, DingTalk, QQ, Open Orpheus, WeChat, Rnote,
+Gear Lever, …). On a Dell G15/G16 it also installs the G15 control center from a
+pinned commit. Helium is the default browser; Firefox and Thunderbird are not
+preinstalled. Apart from the wallpaper, visual presentation stays upstream
+Bluefin's.
 
 ## Verify after reboot
 
@@ -107,7 +109,7 @@ bootc status                         # Booted: ghcr.io/wraindrock/wraindrock-lin
 cat /usr/lib/os-release              # NAME="Wraindrock", ID=bluefin
 cat /usr/share/wraindrock/delta.json # every intended difference
 hostnamectl                          # wraindrock on a fresh install
-flatpak list --system                # the 41 declared preinstalls
+flatpak list --system                # the 43 declared preinstalls
 rpm -q helium-bin clash-verge rayburst sing-box  # baked apps
 nvidia-smi                           # NVIDIA open driver
 virsh --version && incus version     # KVM/libvirt and Incus

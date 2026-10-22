@@ -4,7 +4,7 @@
 # the user asked for no Firefox preinstall) and minus the two GTK3 theme
 # extensions (flatpak preinstall only handles apps). Zen is replaced by the
 # Helium RPM. Tavern is left out because it is no longer on Flathub. The last
-# three entries are Wraindrock's personal defaults.
+# Personal defaults: DingTalk, QQ, Open Orpheus, WeChat, Rnote and Gear Lever.
 be.alexandervanhee.gradia
 com.github.PintaProject.Pinta
 com.github.tchx84.Flatseal
@@ -36,7 +36,6 @@ org.gnome.Weather
 org.gnome.baobab
 org.gnome.clocks
 org.gnome.font-viewer
-org.mozilla.thunderbird
 page.tesk.Refine
 de.leopoldluley.Clapgrep
 io.github.getnf.embellish
@@ -46,3 +45,6 @@ org.gnome.Builder
 com.tencent.WeChat
 com.github.flxzt.rnote
 it.mijorus.gearlever
+com.dingtalk.DingTalk
+com.qq.QQ
+io.github.yucling.open-orpheus

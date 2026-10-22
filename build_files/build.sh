@@ -258,6 +258,20 @@ ln -sfn /usr/lib/systemd/system/wraindrock-flatpak-preinstall.timer \
 [[ -e /etc/systemd/system/timers.target.wants/wraindrock-flatpak-preinstall.timer ]] \
     || die "the Flatpak preinstall timer is not enabled"
 
+# Dell G15/G16 control center: the upstream installer writes to /var/opt and
+# starts a daemon, so it runs on the first boot of matching hardware instead of
+# at image build time. The wrapper pins a commit and the tarball's sha256.
+install -m 0755 "${script_dir}/software/wraindrock-g15-install" \
+    /usr/libexec/wraindrock-g15-install
+install -m 0644 "${script_dir}/software/wraindrock-g15-install.service" \
+    /usr/lib/systemd/system/wraindrock-g15-install.service
+ln -sfn /usr/lib/systemd/system/wraindrock-g15-install.service \
+    /etc/systemd/system/multi-user.target.wants/wraindrock-g15-install.service
+[[ -x /usr/libexec/wraindrock-g15-install ]] \
+    || die "the G15 installer is not executable"
+[[ -e /etc/systemd/system/multi-user.target.wants/wraindrock-g15-install.service ]] \
+    || die "the G15 installer service is not enabled"
+
 # Pins live in software/rpms.tsv so the upstream-watch workflow can refresh
 # them without rewriting this script. The column order is:
 #   name <TAB> version-release <TAB> url <TAB> sha256
@@ -391,6 +405,9 @@ cat > /usr/share/wraindrock/delta.json <<EOF
       "/usr/lib/systemd/system/wraindrock-flatpak-preinstall.service",
       "/usr/lib/systemd/system/wraindrock-flatpak-preinstall.timer",
       "/etc/systemd/system/timers.target.wants/wraindrock-flatpak-preinstall.timer",
+      "/usr/libexec/wraindrock-g15-install",
+      "/usr/lib/systemd/system/wraindrock-g15-install.service",
+      "/etc/systemd/system/multi-user.target.wants/wraindrock-g15-install.service",
       "/etc/xdg/mimeapps.list",
       "/etc/dconf/db/distro.d/10-wraindrock-folders",
       "/usr/share/desktop-directories/wraindrock-accessories.directory"

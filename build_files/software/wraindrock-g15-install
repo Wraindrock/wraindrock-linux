@@ -1,0 +1,45 @@
+#!/usr/bin/env bash
+# Install the Dell G15/G16 control center on first boot.
+#
+# The upstream installer targets an installed system: it builds a venv under
+# /var/opt/g15-controller, writes a systemd unit and a udev hwdb rule, and
+# starts a daemon. It cannot run at image build time, so this first-boot unit
+# fetches a pinned commit, verifies the tarball, and runs the installer once.
+set -euo pipefail
+
+readonly marker=/var/lib/wraindrock/g15-control-center.installed
+readonly state_dir=/var/lib/wraindrock
+readonly commit=3a004772cb050d9c74765ca794c3df7afa0f7b4c
+readonly tarball_sha256=7ac15f4d9d196bb2f9e441554747e9e1435782ae92749541f9d5c99e0ba7fa55
+readonly url="https://github.com/Wraindrock/Ian-g-control-center/archive/${commit}.tar.gz"
+readonly log=/var/log/wraindrock-g15-install.log
+
+if [[ -e ${marker} ]]; then
+    exit 0
+fi
+install -d -m 0755 "${state_dir}"
+
+model="$(cat /sys/class/dmi/id/product_name 2>/dev/null || true)"
+case "${model}" in
+    *G15*|*G16*) ;;
+    *)
+        printf 'skipped: %s is not a Dell G15/G16\n' "${model:-unknown}" \
+            > "${state_dir}/g15-control-center.skipped"
+        exit 0
+        ;;
+esac
+
+work="$(mktemp -d "${TMPDIR:-/var/tmp}/wraindrock-g15.XXXXXX")"
+trap 'rm -rf -- "${work}"' EXIT
+
+curl -fsSL --retry 5 --retry-delay 5 -o "${work}/src.tgz" "${url}"
+printf '%s  %s\n' "${tarball_sha256}" "${work}/src.tgz" | sha256sum -c -
+tar -xzf "${work}/src.tgz" -C "${work}"
+src="$(find "${work}" -maxdepth 1 -type d -name 'Ian-g-control-center-*' -print -quit)"
+[[ -n ${src} && -x ${src}/install.sh ]] || { echo 'installer missing from tarball' >&2; exit 1; }
+
+# The installer asks for confirmation only on unsupported hardware, which the
+# DMI gate above already excludes; feed "yes" anyway so an unattended boot can
+# never hang on a prompt.
+yes | bash "${src}/install.sh" >"${log}" 2>&1
+printf 'installed %s\n' "${commit}" > "${marker}"

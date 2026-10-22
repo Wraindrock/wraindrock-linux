@@ -235,6 +235,9 @@ expected_added = {
     "/usr/lib/systemd/system/wraindrock-flatpak-preinstall.service",
     "/usr/lib/systemd/system/wraindrock-flatpak-preinstall.timer",
     "/etc/systemd/system/timers.target.wants/wraindrock-flatpak-preinstall.timer",
+    "/usr/libexec/wraindrock-g15-install",
+    "/usr/lib/systemd/system/wraindrock-g15-install.service",
+    "/etc/systemd/system/multi-user.target.wants/wraindrock-g15-install.service",
     "/etc/xdg/mimeapps.list",
     "/etc/dconf/db/distro.d/10-wraindrock-folders",
     "/usr/share/desktop-directories/wraindrock-accessories.directory",
@@ -341,6 +344,30 @@ if in_image "${IMAGE}" "grep -Fq 'flatpak-preinstall.sha256' ${retry_script}"; t
     pass "retry wrapper records the completed preinstall hash"
 else
     fail "retry wrapper does not record its progress"
+fi
+
+# Dell G15/G16 control center: first boot only, pinned commit and tarball.
+g15_script=/usr/libexec/wraindrock-g15-install
+g15_unit=/usr/lib/systemd/system/wraindrock-g15-install.service
+if in_image "${IMAGE}" "test -x ${g15_script} && test -s ${g15_unit}"; then
+    pass "G15 control-center first-boot installer is installed"
+else
+    fail "G15 control-center installer is missing"
+fi
+if in_image "${IMAGE}" "grep -Fq 'commit=3a004772cb050d9c74765ca794c3df7afa0f7b4c' ${g15_script} && grep -Fq 'tarball_sha256=7ac15f4d9d196bb2f9e441554747e9e1435782ae92749541f9d5c99e0ba7fa55' ${g15_script}"; then
+    pass "G15 installer pins its commit and tarball checksum"
+else
+    fail "G15 installer is not pinned"
+fi
+if in_image "${IMAGE}" "grep -Fq '*G15*|*G16*' ${g15_script}"; then
+    pass "G15 installer only runs on Dell G15/G16 hardware"
+else
+    fail "G15 installer does not gate on the hardware model"
+fi
+if in_image "${IMAGE}" "test -L /etc/systemd/system/multi-user.target.wants/wraindrock-g15-install.service"; then
+    pass "G15 installer service is enabled"
+else
+    fail "G15 installer service is not enabled"
 fi
 
 if in_image "${IMAGE}" \

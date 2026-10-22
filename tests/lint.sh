@@ -237,16 +237,43 @@ for asset in build_files/software/flatpaks.txt build_files/software/mimeapps.lis
     fi
 done
 flatpak_count=$(grep -v '^#' build_files/software/flatpaks.txt | sed '/^[[:space:]]*$/d' | wc -l)
-if [[ ${flatpak_count} == 41 ]]; then
-    pass "flatpaks.txt declares 41 Flatpaks"
+if [[ ${flatpak_count} == 43 ]]; then
+    pass "flatpaks.txt declares 43 Flatpaks"
 else
-    fail "flatpaks.txt declares ${flatpak_count} Flatpaks, want 41"
+    fail "flatpaks.txt declares ${flatpak_count} Flatpaks, want 43"
 fi
 if grep -Ev '^#|^[[:space:]]*$' build_files/software/flatpaks.txt \
         | grep -Eqv '^[A-Za-z0-9_-]+(\.[A-Za-z0-9_-]+)+$'; then
     fail "flatpaks.txt contains a malformed app ID"
 else
     pass "flatpaks.txt app IDs are well formed"
+fi
+
+# Dell G15/G16 control center: first-boot installer pinned to one commit.
+g15=build_files/software/wraindrock-g15-install
+for asset in "${g15}" "${g15}.service"; do
+    if [[ -s ${asset} ]]; then
+        pass "${asset} exists"
+    else
+        fail "${asset} is missing"
+    fi
+done
+if grep -Fq 'commit=3a004772cb050d9c74765ca794c3df7afa0f7b4c' "${g15}" \
+        && grep -Fq 'tarball_sha256=7ac15f4d9d196bb2f9e441554747e9e1435782ae92749541f9d5c99e0ba7fa55' "${g15}"; then
+    pass "G15 installer pins a commit and tarball checksum"
+else
+    fail "G15 installer is not pinned"
+fi
+if grep -Fq '*G15*|*G16*' "${g15}"; then
+    pass "G15 installer gates on Dell G15/G16"
+else
+    fail "G15 installer does not gate on the hardware model"
+fi
+if grep -Fq 'ExecStart=/usr/libexec/wraindrock-g15-install' "${g15}.service" \
+        && grep -Fq 'StartLimitIntervalSec=0' "${g15}.service"; then
+    pass "G15 installer service retries without a start limit"
+else
+    fail "G15 installer service is misconfigured"
 fi
 
 # Bluefin's preinstall service gives up after three attempts; a timer retries
@@ -285,17 +312,18 @@ else
 fi
 for app in io.podman_desktop.PodmanDesktop com.tencent.WeChat \
     com.github.flxzt.rnote it.mijorus.gearlever org.gnome.Builder \
-    org.gnome.Calculator org.mozilla.thunderbird org.gnome.DejaDup; do
+    org.gnome.Calculator org.gnome.DejaDup com.dingtalk.DingTalk \
+    com.qq.QQ io.github.yucling.open-orpheus; do
     if grep -Fxq "${app}" build_files/software/flatpaks.txt; then
         pass "flatpaks.txt lists ${app}"
     else
         fail "flatpaks.txt is missing ${app}"
     fi
 done
-if grep -Eq 'org\.mozilla\.firefox|app\.zen_browser\.zen|Gtk3theme' build_files/software/flatpaks.txt; then
-    fail "flatpaks.txt still preinstalls Firefox, Zen or theme extensions"
+if grep -Eq 'org\.mozilla\.firefox|org\.mozilla\.thunderbird|app\.zen_browser\.zen|Gtk3theme' build_files/software/flatpaks.txt; then
+    fail "flatpaks.txt still preinstalls Firefox, Thunderbird, Zen or theme extensions"
 else
-    pass "flatpaks.txt skips Firefox, Zen and theme extensions"
+    pass "flatpaks.txt skips Firefox, Thunderbird, Zen and theme extensions"
 fi
 for scheme in text/html application/xhtml+xml x-scheme-handler/http x-scheme-handler/https; do
     if grep -Fxq "${scheme}=helium.desktop" build_files/software/mimeapps.list; then
