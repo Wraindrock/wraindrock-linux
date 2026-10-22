@@ -64,20 +64,19 @@ Lever. Firefox and Thunderbird are deliberately not preinstalled; both install
 from Bazaar (or `flatpak install flathub org.mozilla.firefox`). The two
 adw-gtk3 theme extensions and Tavern (no longer on Flathub) are skipped.
 
-**Helium is the default browser** for links and HTML. Five programs have no
+**Helium is the default browser** for links and HTML. Four programs have no
 Flatpak, so their upstream RPMs are baked in at pinned versions: Helium
 0.20.1.1 (from the official `imput/helium` COPR), Clash Verge Rev 2.5.8,
-Rayburst 4.1.0, sing-box (SFL) 1.14.3 and HPLIP 3.26.6. Helium, Clash Verge,
-Rayburst and sing-box are caught by the daily upstream-watch workflow, which
-bumps the pin and publishes a new signed image tag — the apps do not wait for a
-Fedora major release.
+Rayburst 4.1.0 and sing-box (SFL) 1.14.3. Each upstream release is caught by the
+daily upstream-watch workflow, which bumps the pin and publishes a new signed
+image tag — the apps do not wait for a Fedora major release.
 
-Printing and scanning: HPLIP 3.26.6 provides the HP CUPS backend, filters and
-the `hp-setup`/`hp-info` command line tools, plus the `libsane-hpaio` SANE
-backend. The graphical toolbox (`hp-toolbox`) is not included because it needs
-the Qt5 Python bindings; use `hp-setup -i` or the CUPS web interface instead.
-`sane-airscan` and the SANE scanner drivers are inherited from Bluefin, so
-network scanners also appear in Document Scanner without extra packages.
+Printing and scanning are inherited from Bluefin: HPLIP 3.26.6 is already in the
+base with the HP CUPS backend and filters, `hp-setup`/`hp-info`, and the
+`libsane-hpaio` SANE backend; the build asserts that this stack is present. The
+Qt graphical toolbox (`hp-toolbox`, in the `hplip-gui` package) is not installed;
+use `hp-setup -i` or the CUPS web interface. `sane-airscan` and the SANE scanner
+drivers are also inherited, so network scanners appear in Document Scanner.
 
 Dell G15/G16 owners also get the
 [G15 control center](https://github.com/Wraindrock/Ian-g-control-center): a

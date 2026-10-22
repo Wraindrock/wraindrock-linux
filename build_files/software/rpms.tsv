@@ -5,7 +5,3 @@ helium-bin	0.20.1.1-1.fc44	https://download.copr.fedorainfracloud.org/results/im
 clash-verge	2.5.8-1	https://github.com/clash-verge-rev/clash-verge-rev/releases/download/v2.5.8/Clash.Verge-2.5.8-1.x86_64.rpm	ad378ea9fb12ebae49500fcddb0435fd67abef79d828b654368e0f67b5785c2e
 rayburst	4.1.0-1	https://github.com/AnInsomniacy/rayburst/releases/download/v4.1.0/Rayburst-4.1.0-1.x86_64.rpm	d48046b70422f01efc4ff71a133883a283c0386df4924162a5e56122a3af822e
 sing-box	1.14.3-1	https://github.com/SagerNet/sing-box/releases/download/v1.14.3/SFL-1.14.3-x86_64.rpm	979bfdeb419525ff5603a2edc30602e56953abba983eabda4dda2877a23f31f4
-hplip	3.26.6-2.fc44	https://kojipkgs.fedoraproject.org/packages/hplip/3.26.6/2.fc44/x86_64/hplip-3.26.6-2.fc44.x86_64.rpm	cd0095f4e7ceac6b0000c71b41c61f3dbb7790ff5b8ef03cc766b8dc910980c1
-hplip-common	3.26.6-2.fc44	https://kojipkgs.fedoraproject.org/packages/hplip/3.26.6/2.fc44/x86_64/hplip-common-3.26.6-2.fc44.x86_64.rpm	2a583d040d883fee121d5b0a942d86cfba3593cf79f2bcd66f0aa8a6db73213b
-hplip-libs	3.26.6-2.fc44	https://kojipkgs.fedoraproject.org/packages/hplip/3.26.6/2.fc44/x86_64/hplip-libs-3.26.6-2.fc44.x86_64.rpm	2d19d9db5d9d4f3910dca22ce9c34f12e1eeacbde975c402f0d81eda3d39f0cb
-libsane-hpaio	3.26.6-2.fc44	https://kojipkgs.fedoraproject.org/packages/hplip/3.26.6/2.fc44/x86_64/libsane-hpaio-3.26.6-2.fc44.x86_64.rpm	e15053cda4c1e7a3cee8f747454eb10ee062f7d7674ef486a24e6c514d53f11a

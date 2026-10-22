@@ -441,10 +441,12 @@ while IFS=$'\t' read -r name version; do
     fi
 done < "${tmpdir}/rpm.versions"
 
-if in_image "${IMAGE}"     "test -x /usr/bin/hp-setup && test -x /usr/lib/cups/backend/hp"     && in_image "${IMAGE}" "test -e /usr/lib64/sane/libsane-hpaio.so.1"; then
-    pass "HPLIP command line, CUPS backend and SANE backend are installed"
+if in_image "${IMAGE}" "rpm -q hplip hplip-common hplip-libs libsane-hpaio >/dev/null" \
+    && in_image "${IMAGE}" "test -x /usr/bin/hp-setup && test -x /usr/lib/cups/backend/hp" \
+    && in_image "${IMAGE}" "test -e /usr/lib64/sane/libsane-hpaio.so.1"; then
+    pass "HPLIP (inherited from Bluefin) provides hp-setup, the CUPS backend and the SANE backend"
 else
-    fail "HPLIP is incomplete (hp-setup, CUPS backend or SANE backend missing)"
+    fail "HPLIP is incomplete (packages, hp-setup, CUPS backend or SANE backend missing)"
 fi
 
 # --- default wallpaper ------------------------------------------------------

@@ -114,7 +114,7 @@ teaching the test about it — never relaxing the diff.
 The manifest also covers the files the build itself adds: the identity,
 wallpaper, hostname-seeding, application-folder and software files sit next to the
 `/usr/share/wraindrock/` provenance files in `files.added`, and parity requires
-that set to match exactly. Because eight RPMs are baked, the image's RPM
+that set to match exactly. Because four RPMs are baked, the image's RPM
 database *is* written by design; the build asserts the sqlite WAL is
 checkpointed (0 bytes) after the last `rpm` call and keeps the sidecars the base
 ships, since `rpm` on a read-only `/usr` relies on the pre-created `-shm`/`-wal`.
@@ -199,9 +199,10 @@ Two delivery mechanisms keep the out-of-box set small and updatable:
   handler in `/etc/xdg/mimeapps.list`; Firefox stays installed and selectable.
   The other Bluefin apps remain a one-liner (`ujust install-system-flatpaks`)
   because Bluefin itself does not bake them.
-- **Eight RPMs are baked** (Helium from the official `imput/helium` COPR,
-  Clash Verge Rev, Rayburst, sing-box/SFL, and HPLIP 3.26.6) because
-  they have no Flatpak. They are downloaded at build time from pinned upstream
+- **Four RPMs are baked** (Helium from the official `imput/helium` COPR,
+  Clash Verge Rev, Rayburst, sing-box/SFL) because they have no Flatpak.
+  HPLIP 3.26.6 is not pinned: Bluefin's base already ships it, and the build
+  asserts the CUPS/SANE backends and `hp-setup` are present. They are downloaded at build time from pinned upstream
   URLs, checked against a pinned sha256 and expected version, and installed with
   `rpm -i`; the dependency closure already exists in the base, so nothing is
   resolved from a repository. Their `%post` scriptlets run as root inside the

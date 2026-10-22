@@ -7,12 +7,12 @@ image versions are the upstream channel plus an immutable build tag, see
 
 ## [0.18.4] - 2026-10-23
 
-### Added
+### Changed
 
-- HPLIP 3.26.6 from the Fedora 44 stable update: HP CUPS backend and filters,
-  `hp-setup`/`hp-info`, and the `libsane-hpaio` SANE backend, pinned by URL and
-  sha256 in `build_files/software/rpms.tsv`. The Qt GUI (`hp-toolbox`) is not
-  included; use `hp-setup -i`.
+- Assert that the inherited HPLIP 3.26.6 stack is complete: the `hplip`,
+  `hplip-common`, `hplip-libs` and `libsane-hpaio` packages, `hp-setup`, the HP
+  CUPS backend and the SANE backend. No package is added — Bluefin's base
+  already provides them; the Qt GUI (`hplip-gui`) remains optional.
 
 ## [0.18.3] - 2026-10-22
 

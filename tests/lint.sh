@@ -347,12 +347,12 @@ for scheme in text/html application/xhtml+xml x-scheme-handler/http x-scheme-han
     fi
 done
 rpm_rows=$(awk 'NF && $1 !~ /^#/' build_files/software/rpms.tsv | wc -l)
-if [[ ${rpm_rows} == 8 ]]; then
-    pass "rpms.tsv pins 8 upstream packages"
+if [[ ${rpm_rows} == 4 ]]; then
+    pass "rpms.tsv pins 4 upstream packages"
 else
-    fail "rpms.tsv pins ${rpm_rows} packages, want 8"
+    fail "rpms.tsv pins ${rpm_rows} packages, want 4"
 fi
-for name in helium-bin clash-verge rayburst sing-box hplip hplip-common hplip-libs libsane-hpaio; do
+for name in helium-bin clash-verge rayburst sing-box; do
     if awk -F'\t' -v n="${name}" 'NF && $1 == n && $2 != "" && $3 ~ /^https:\/\// && $4 ~ /^[0-9a-f]{64}$/' build_files/software/rpms.tsv | grep -q .; then
         pass "rpms.tsv has a complete pin for ${name}"
     else
