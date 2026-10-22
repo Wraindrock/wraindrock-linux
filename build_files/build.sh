@@ -236,6 +236,22 @@ flatpak_list="${script_dir}/software/flatpaks.txt"
 chmod 0644 /usr/share/flatpak/preinstall.d/wraindrock.preinstall
 install -m 0644 "${script_dir}/software/mimeapps.list" /etc/xdg/mimeapps.list
 
+# Bluefin's preinstall service gives up after three attempts, before a laptop
+# has joined Wi-Fi. A timer retries our wrapper until the preinstall file's
+# hash is recorded, so a fresh install finishes installing Flatpaks minutes
+# after the network comes up.
+install -d -m 0755 /usr/libexec /etc/systemd/system/timers.target.wants
+install -m 0755 "${script_dir}/software/wraindrock-flatpak-preinstall" \
+    /usr/libexec/wraindrock-flatpak-preinstall
+install -m 0644 "${script_dir}/software/wraindrock-flatpak-preinstall.service" \
+    /usr/lib/systemd/system/wraindrock-flatpak-preinstall.service
+install -m 0644 "${script_dir}/software/wraindrock-flatpak-preinstall.timer" \
+    /usr/lib/systemd/system/wraindrock-flatpak-preinstall.timer
+ln -sfn ../wraindrock-flatpak-preinstall.timer \
+    /etc/systemd/system/timers.target.wants/wraindrock-flatpak-preinstall.timer
+[[ -e /etc/systemd/system/timers.target.wants/wraindrock-flatpak-preinstall.timer ]] \
+    || die "the Flatpak preinstall timer is not enabled"
+
 # Pins live in software/rpms.tsv so the upstream-watch workflow can refresh
 # them without rewriting this script. The column order is:
 #   name <TAB> version-release <TAB> url <TAB> sha256
@@ -365,6 +381,10 @@ cat > /usr/share/wraindrock/delta.json <<EOF
       "/usr/share/wraindrock/build-info.json",
       "/usr/share/wraindrock/delta.json",
       "/usr/share/flatpak/preinstall.d/wraindrock.preinstall",
+      "/usr/libexec/wraindrock-flatpak-preinstall",
+      "/usr/lib/systemd/system/wraindrock-flatpak-preinstall.service",
+      "/usr/lib/systemd/system/wraindrock-flatpak-preinstall.timer",
+      "/etc/systemd/system/timers.target.wants/wraindrock-flatpak-preinstall.timer",
       "/etc/xdg/mimeapps.list",
       "/etc/dconf/db/distro.d/10-wraindrock-folders"
     ]
@@ -399,6 +419,6 @@ say "base os-release preserved at /usr/share/wraindrock/base-os-release"
 say "identity applied: $(unquote "$(field PRETTY_NAME)")"
 say "UEFI boot entry name: $(tr -d '\n' < /etc/system-release)"
 say "first-boot Flatpaks: $(grep -vc '^#' "${flatpak_list}") declared in /usr/share/flatpak/preinstall.d/wraindrock.preinstall"
-say "baked RPMs: $(wc -l < "${rpm_added_file}") (clash-verge, rayburst, sing-box)"
+say "baked RPMs: $(wc -l < "${rpm_added_file}") (clash-verge, helium-bin, rayburst, sing-box)"
 say "delta manifest written to /usr/share/wraindrock/delta.json"
 say "rpm database written by design; WAL checkpointed, sidecars in place"

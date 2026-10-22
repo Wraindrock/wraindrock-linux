@@ -108,7 +108,14 @@ efibootmgr                           # firmware entry named Wraindrock
 ```
 
 The first boot downloads the Flatpaks in the background; give it network and a
-few GB of free space, and `systemctl status flatpak-preinstall` shows progress.
+few GB of free space. If the machine reaches the desktop before its network is
+configured, a timer retries every ten minutes until the set is installed; to
+run it immediately:
+
+```bash
+sudo systemctl start wraindrock-flatpak-preinstall.service
+flatpak list --system
+```
 The four RPMs are part of the image and update with it. For a package you
 need newer before an image update, use
 `sudo rpm-ostree override replace <path-or-url-to-rpm>`; removing the override
@@ -150,6 +157,24 @@ has `read:packages`. Your running system was not modified.
 A second deployment does not fit. Free space (`sudo rpm-ostree cleanup -p`
 removes pending/rollback deployments only), prune containers, or grow the root
 filesystem. The booted deployment is intact.
+
+### Flatpaks did not install
+
+Symptom: after a fresh install the desktop has only the baked RPMs; Bazaar,
+Rnote, WeChat and the other preinstalled Flatpaks are missing.
+
+Cause: the base `flatpak-preinstall.service` runs at boot and stops after three
+failed attempts (`StartLimitBurst=3`). On a laptop Wi-Fi is usually configured
+later, in GNOME Initial Setup, so all three attempts fail.
+
+Workaround, once the network is up:
+
+```bash
+sudo systemctl start wraindrock-flatpak-preinstall.service
+```
+
+The image also ships `wraindrock-flatpak-preinstall.timer`, which retries every
+ten minutes until the declared set is installed; a reboot is not required.
 
 ### `error: Bootloader ... couldn't add entry`
 

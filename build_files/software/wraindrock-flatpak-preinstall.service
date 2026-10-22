@@ -1,0 +1,14 @@
+[Unit]
+Description=Install Wraindrock's Flatpaks once Flathub is reachable
+Documentation=man:flatpak-preinstall(1)
+Wants=network-online.target
+After=network-online.target
+ConditionPathExists=/usr/bin/flatpak
+StartLimitIntervalSec=0
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/libexec/wraindrock-flatpak-preinstall
+Restart=on-failure
+RestartSec=300

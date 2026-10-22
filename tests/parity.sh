@@ -231,6 +231,10 @@ expected_added = {
     "/usr/lib/systemd/system/sysinit.target.wants/wraindrock-hostname-seed.service",
     "/usr/share/wraindrock/base-rpm-set",
     "/usr/share/flatpak/preinstall.d/wraindrock.preinstall",
+    "/usr/libexec/wraindrock-flatpak-preinstall",
+    "/usr/lib/systemd/system/wraindrock-flatpak-preinstall.service",
+    "/usr/lib/systemd/system/wraindrock-flatpak-preinstall.timer",
+    "/etc/systemd/system/timers.target.wants/wraindrock-flatpak-preinstall.timer",
     "/etc/xdg/mimeapps.list",
     "/etc/dconf/db/distro.d/10-wraindrock-folders",
 }
@@ -300,6 +304,42 @@ if in_image "${IMAGE}" "grep -q 'org.mozilla.firefox' ${preinstall}"; then
     fail "the preinstall file installs Firefox, which the user asked to skip"
 else
     pass "Firefox is not preinstalled"
+fi
+
+# Fresh offline installs: the base service gives up after three attempts, so a
+# timer retries our wrapper until the preinstall hash is recorded.
+retry_script=/usr/libexec/wraindrock-flatpak-preinstall
+retry_unit=/usr/lib/systemd/system/wraindrock-flatpak-preinstall.service
+retry_timer=/usr/lib/systemd/system/wraindrock-flatpak-preinstall.timer
+if in_image "${IMAGE}" "test -x ${retry_script} && test -s ${retry_unit} && test -s ${retry_timer}"; then
+    pass "Flatpak preinstall retry wrapper, service and timer are installed"
+else
+    fail "Flatpak preinstall retry unit is incomplete"
+fi
+if in_image "${IMAGE}" "grep -Fq 'ExecStart=${retry_script}' ${retry_unit} && grep -Fq 'StartLimitIntervalSec=0' ${retry_unit}"; then
+    pass "retry service runs the wrapper without a start limit"
+else
+    fail "retry service is misconfigured"
+fi
+if in_image "${IMAGE}" "grep -Fq 'OnUnitActiveSec=10min' ${retry_timer} && grep -Fq 'Unit=wraindrock-flatpak-preinstall.service' ${retry_timer}"; then
+    pass "retry timer re-runs the wrapper every ten minutes"
+else
+    fail "retry timer is misconfigured"
+fi
+if in_image "${IMAGE}" "test -L /etc/systemd/system/timers.target.wants/wraindrock-flatpak-preinstall.timer"; then
+    pass "Flatpak preinstall retry timer is enabled"
+else
+    fail "Flatpak preinstall retry timer is not enabled"
+fi
+if in_image "${IMAGE}" "test -L /etc/systemd/system/multi-user.target.wants/flatpak-preinstall.service"; then
+    pass "base Flatpak preinstall service remains enabled"
+else
+    fail "base Flatpak preinstall service is not enabled"
+fi
+if in_image "${IMAGE}" "grep -Fq 'flatpak-preinstall.sha256' ${retry_script}"; then
+    pass "retry wrapper records the completed preinstall hash"
+else
+    fail "retry wrapper does not record its progress"
 fi
 
 if in_image "${IMAGE}" \

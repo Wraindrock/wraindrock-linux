@@ -1,0 +1,11 @@
+[Unit]
+Description=Retry Wraindrock's Flatpak preinstall until it succeeds
+
+[Timer]
+OnBootSec=5min
+OnUnitActiveSec=10min
+AccuracySec=1min
+Unit=wraindrock-flatpak-preinstall.service
+
+[Install]
+WantedBy=timers.target

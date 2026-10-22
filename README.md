@@ -54,7 +54,9 @@ cannot drift apart silently.
 
 ## Software
 
-The first boot installs **41 Flatpaks** (needs the network and a few GB):
+The first boot installs **41 Flatpaks** (needs the network and a few GB); a
+timer retries every ten minutes until they are in, and
+`sudo systemctl start wraindrock-flatpak-preinstall.service` runs it now:
 Bluefin's core and DX applications — GNOME apps, Thunderbird, Podman Desktop,
 GNOME Builder, DevToolbox, Clapgrep, Embellish, Bazaar, Flatseal, DistroShelf
 and the rest of the maintained set — plus WeChat, Rnote and Gear Lever. Firefox

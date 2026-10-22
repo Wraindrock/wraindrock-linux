@@ -5,6 +5,18 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 image versions are the upstream channel plus an immutable build tag, see
 [docs/architecture.md](docs/architecture.md).
 
+## [0.17.2] - 2026-10-22
+
+### Fixed
+
+- A fresh install could finish without its Flatpaks (including Bazaar): Bluefin's
+  `flatpak-preinstall.service` stops after three attempts, which happen before
+  Wi-Fi is configured in GNOME Initial Setup. A new
+  `wraindrock-flatpak-preinstall.timer` retries the install every ten minutes
+  until the preinstall file's hash is recorded in
+  `/var/lib/wraindrock/flatpak-preinstall.sha256`; the wrapper is a no-op once
+  the declared set is complete.
+
 ## [0.17.1] - 2026-10-22
 
 ### Changed

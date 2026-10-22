@@ -235,6 +235,41 @@ if grep -Ev '^#|^[[:space:]]*$' build_files/software/flatpaks.txt \
 else
     pass "flatpaks.txt app IDs are well formed"
 fi
+
+# Bluefin's preinstall service gives up after three attempts; a timer retries
+# our wrapper so a fresh install still gets its Flatpaks once Wi-Fi is up.
+retry_base=build_files/software/wraindrock-flatpak-preinstall
+for asset in "${retry_base}" "${retry_base}.service" "${retry_base}.timer"; do
+    if [[ -s ${asset} ]]; then
+        pass "${asset} exists"
+    else
+        fail "${asset} is missing"
+    fi
+done
+if [[ -x ${retry_base} ]] && grep -Fq 'flatpak preinstall -y' "${retry_base}" \
+        && grep -Fq 'flatpak-preinstall.sha256' "${retry_base}"; then
+    pass "Flatpak preinstall wrapper is executable and records its progress"
+else
+    fail "Flatpak preinstall wrapper is incomplete"
+fi
+if grep -Fq 'ExecStart=/usr/libexec/wraindrock-flatpak-preinstall' "${retry_base}.service" \
+        && grep -Fq 'StartLimitIntervalSec=0' "${retry_base}.service"; then
+    pass "retry service has no start limit"
+else
+    fail "retry service is misconfigured"
+fi
+if grep -Fq 'OnUnitActiveSec=10min' "${retry_base}.timer" \
+        && grep -Fq 'Unit=wraindrock-flatpak-preinstall.service' "${retry_base}.timer"; then
+    pass "retry timer is configured"
+else
+    fail "retry timer is misconfigured"
+fi
+if grep -Fq 'wraindrock-flatpak-preinstall.timer' build_files/build.sh \
+        && grep -Fq 'timers.target.wants' build_files/build.sh; then
+    pass "build.sh enables the Flatpak preinstall retry timer"
+else
+    fail "build.sh does not enable the retry timer"
+fi
 for app in io.podman_desktop.PodmanDesktop com.tencent.WeChat \
     com.github.flxzt.rnote it.mijorus.gearlever org.gnome.Builder \
     org.gnome.Calculator org.mozilla.thunderbird org.gnome.DejaDup; do

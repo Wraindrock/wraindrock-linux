@@ -187,10 +187,14 @@ database. `gtk-update-icon-cache` is not run.
 Two delivery mechanisms keep the out-of-box set small and updatable:
 
 - **Flatpaks install on first boot.** `/usr/share/flatpak/preinstall.d/wraindrock.preinstall`
-  declares ten apps and Bluefin's `flatpak-preinstall.service` runs
-  `flatpak preinstall -y` once the network is up. Helium is the default
+  declares 41 apps and Bluefin's `flatpak-preinstall.service` runs
+  `flatpak preinstall -y` once the network is up. That service gives up after
+  three attempts, which a fresh install usually exhausts before Wi-Fi is
+  configured, so `wraindrock-flatpak-preinstall.timer` retries our wrapper
+  every ten minutes until the preinstall file's hash is recorded in
+  `/var/lib/wraindrock/flatpak-preinstall.sha256`. Helium is the default
   handler in `/etc/xdg/mimeapps.list`; Firefox stays installed and selectable.
-  The other 36 Bluefin apps remain a one-liner (`ujust install-system-flatpaks`)
+  The other Bluefin apps remain a one-liner (`ujust install-system-flatpaks`)
   because Bluefin itself does not bake them.
 - **Four RPMs are baked** (Helium from the official `imput/helium` COPR,
   Clash Verge Rev, Rayburst, sing-box/SFL) because

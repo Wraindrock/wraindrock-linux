@@ -1,0 +1,37 @@
+#!/usr/bin/env bash
+# Install Wraindrock's Flatpaks as soon as Flathub is reachable.
+#
+# Bluefin's flatpak-preinstall.service runs once per boot and gives up after
+# three failed attempts. On a fresh install the network is often configured
+# later, in GNOME Initial Setup, so that service has already failed by then.
+# This wrapper is started by a timer; it records the hash of the preinstall
+# file it completed, so repeated runs are no-ops and a later image that adds
+# Flatpaks installs them on the next boot.
+set -euo pipefail
+
+preinstall=/usr/share/flatpak/preinstall.d/wraindrock.preinstall
+state_dir=/var/lib/wraindrock
+marker="${state_dir}/flatpak-preinstall.sha256"
+
+[ -s "${preinstall}" ] || exit 0
+
+desired="$(sha256sum "${preinstall}" | cut -d' ' -f1)"
+if [ -s "${marker}" ] && [ "$(cat "${marker}")" = "${desired}" ]; then
+    exit 0
+fi
+
+# The base service already succeeded this boot (RemainAfterExit=yes).
+if systemctl is-active --quiet flatpak-preinstall.service; then
+    install -d -m 0755 "${state_dir}"
+    printf '%s\n' "${desired}" > "${marker}.tmp"
+    mv -f "${marker}.tmp" "${marker}"
+    exit 0
+fi
+
+# Wait for the Flathub remote; the timer retries while this fails.
+flatpak remote-ls --system >/dev/null 2>&1 || exit 1
+flatpak preinstall -y
+
+install -d -m 0755 "${state_dir}"
+printf '%s\n' "${desired}" > "${marker}.tmp"
+mv -f "${marker}.tmp" "${marker}"
