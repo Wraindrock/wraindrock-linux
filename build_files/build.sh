@@ -351,6 +351,7 @@ done
     || die "ipp-duplexd user unit is missing"
 /usr/bin/ipp-duplexd --help 2>&1 | grep -Fq -- '--printer' \
     || die "ipp-duplexd did not run"
+say "installed ipp-duplexd ${ipp_version}"
 rm -rf "${ipp_tmp}"
 
 # --- 3h. software defaults --------------------------------------------------
