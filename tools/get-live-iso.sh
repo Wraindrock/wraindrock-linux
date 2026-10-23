@@ -86,8 +86,17 @@ have_asset() {
 }
 
 # Checksums first: they are small and let us verify every part before extracting.
-fetch "SHA256SUMS"
-fetch "${extract}"
+# Never resume these two: a stale SHA256SUMS from another release would poison
+# every later comparison, so always replace them with this release's copies.
+fetch_fresh() {
+    local name=$1
+    rm -f "${name}"
+    fetch "${name}"
+}
+fetch_fresh "SHA256SUMS"
+grep -q "Wraindrock-Live-${tag}.zip.part-00" SHA256SUMS \
+    || die "SHA256SUMS does not describe release ${tag}"
+fetch_fresh "${extract}"
 for asset in "${parts[@]}"; do
     if have_asset "${asset}"; then
         printf '%s already complete\n' "${asset}"
