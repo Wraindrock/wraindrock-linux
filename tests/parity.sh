@@ -244,6 +244,7 @@ expected_added = {
     "/usr/lib/systemd/system/wraindrock-hostname-seed.service",
     "/usr/lib/systemd/system/sysinit.target.wants/wraindrock-hostname-seed.service",
     "/usr/share/wraindrock/base-rpm-set",
+    "/usr/share/wraindrock/rpm-pins",
     "/usr/share/flatpak/preinstall.d/wraindrock.preinstall",
     "/usr/libexec/wraindrock-flatpak-preinstall",
     "/usr/lib/systemd/system/wraindrock-flatpak-preinstall.service",
