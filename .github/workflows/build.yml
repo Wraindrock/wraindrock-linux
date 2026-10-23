@@ -174,7 +174,7 @@ jobs:
           tag="main-44-${kernel%.x86_64}"
           image="ghcr.io/ublue-os/akmods-nvidia-open:${tag}"
           podman pull --quiet "${image}"
-          cid="$(podman create "${image}")"
+          cid="$(podman create "${image}" /bin/true)"
           rm -rf build_files/nvidia-rpms
           podman cp "${cid}:/rpms" build_files/nvidia-rpms
           podman rm "${cid}" >/dev/null
