@@ -1,8 +1,8 @@
 # Installing Wraindrock
 
-Wraindrock v0.4 is a remix of **Bluefin DX**. There are two install paths:
+Wraindrock v0.8 is a remix of **uBlue Silverblue**. There are two install paths:
 
-1. pull the image with `bootc switch` on an existing Bluefin DX 44 system;
+1. pull the image with `bootc switch` on an existing uBlue Silverblue 44 (or Bluefin DX 44) system;
 2. download the ISO and install from scratch.
 
 Read [rollback.md](rollback.md) before either. The switch does not repartition
@@ -11,13 +11,13 @@ target — but only if you know where it is.
 
 ## Before you start
 
-- **Bluefin DX 44** is the only supported starting point. Do not cross a
+- **uBlue Silverblue 44** (or Bluefin DX 44, same bootc lineage) is the supported starting point. Do not cross a
   release.
 - **Disk space:** keep 10 GiB free on `/`, ideally 15 GiB so two deployments fit.
 - **ESP:** each deployment adds a kernel and initramfs. If `df -h /boot/efi`
   is tight, prune rollback deployments first (`sudo rpm-ostree cleanup -p`).
 - **Backup:** `/home` should be untouched, but back up what you cannot recreate.
-- **Secure Boot:** the image ships Bluefin DX's signed kernels and shim
+- **Secure Boot:** the image ships Fedora's signed kernels and shim
   unmodified; on an NVIDIA variant, MOK enrollment works as upstream.
 
 ## 1. Pull the image (ghcr.io)
@@ -99,14 +99,14 @@ installs 43 Flatpaks in the background (Podman Desktop, GNOME Builder,
 DevToolbox, Clapgrep, Embellish, DingTalk, QQ, Open Orpheus, WeChat, Rnote,
 Gear Lever, …). On a Dell G15/G16 it also installs the G15 control center from a
 pinned commit. Helium is the default browser; Firefox and Thunderbird are not
-preinstalled. Apart from the wallpaper, visual presentation stays upstream
-Bluefin's.
+preinstalled. Apart from the wallpaper and the curated app folders, visual
+presentation is stock Silverblue/GNOME.
 
 ## Verify after reboot
 
 ```bash
 bootc status                         # Booted: ghcr.io/wraindrock/wraindrock-linux:44
-cat /usr/lib/os-release              # NAME="Wraindrock", ID=bluefin
+cat /usr/lib/os-release              # NAME="Wraindrock", ID=fedora
 cat /usr/share/wraindrock/delta.json # every intended difference
 hostnamectl                          # wraindrock on a fresh install
 flatpak list --system                # the 43 declared preinstalls
@@ -134,8 +134,8 @@ need newer before an image update, use
 goes back to the baked version. Flatpaks update independently of the image
 through Flathub.
 
-`ID=bluefin` and `CPE_NAME` stay upstream's on purpose: uBlue tooling keys off
-`ID`, and the CPE keeps the lineage honest. `PRETTY_NAME` keeps the Bluefin
+`ID=fedora` and `CPE_NAME` stay upstream's on purpose: uBlue and Fedora tooling key off
+`ID`, and the CPE keeps the lineage honest. `PRETTY_NAME` keeps the Silverblue
 version so you can tell which upstream snapshot you run.
 
 Verify the published signature before trusting the image:
@@ -151,7 +151,7 @@ cosign verify \
 
 ```bash
 sudo bootc rollback && sudo systemctl reboot          # previous deployment
-sudo bootc switch ghcr.io/ublue-os/bluefin-dx:stable  # stock Bluefin DX
+sudo bootc switch ghcr.io/ublue-os/silverblue-main:44  # stock uBlue Silverblue
 ```
 
 See [rollback.md](rollback.md) for bootloader recovery.

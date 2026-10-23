@@ -5,6 +5,21 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 image versions are the upstream channel plus an immutable build tag, see
 [docs/architecture.md](docs/architecture.md).
 
+## [0.20.0] - 2026-10-23
+
+### Changed
+
+- Rebased from `ghcr.io/ublue-os/bluefin-dx-nvidia-open:stable` onto
+  `ghcr.io/ublue-os/silverblue-main:44`. The NVIDIA driver and kernel module are
+  staged from the matching `akmods-nvidia-open:main-44-<kernel>` build; Docker,
+  Incus, libvirt/QEMU, virt-manager and Distrobox are installed from Fedora and
+  Docker repositories, and `nvidia-container-toolkit` comes from uBlue's addons.
+- Restored the Bluefin DX desktop layer on the lean base: nine GNOME extensions
+  with their dconf presets, the seven Bluefin application folders, the Flathub
+  remote and the Bazaar `host-etc` preset.
+- Base identity is now `ID=fedora`/`VARIANT_ID=silverblue`; `CPE_NAME` names
+  Fedora, and the image adds 197 packages to the 1,632-package base.
+
 ## [0.19.0] - 2026-10-23
 
 ### Added
