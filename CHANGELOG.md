@@ -15,6 +15,8 @@ image versions are the upstream channel plus an immutable build tag, see
 
 ### Changed
 
+- `hplip-gui` has one pin per matching `hplip` core version (3.26.6-1 and
+  -2); the build selects the row whose condition matches the inherited core.
 - The build records its verified pins at `/usr/share/wraindrock/rpm-pins`, and
   parity compares that list with the packages rpm actually installed, so pin
   bumps no longer need edits to the parity script. The build asserts the

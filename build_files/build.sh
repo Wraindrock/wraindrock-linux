@@ -279,14 +279,34 @@ ln -sfn /usr/lib/systemd/system/wraindrock-g15-install.service \
 
 # Pins live in software/rpms.tsv so the upstream-watch workflow can refresh
 # them without rewriting this script. The column order is:
-#   name <TAB> version-release <TAB> url <TAB> sha256
+#   name <TAB> version-release <TAB> url <TAB> sha256 [<TAB> name=version-release]
+# The optional condition selects a row only when the base ships that exact
+# version (hplip-gui must match the inherited hplip core).
 rpm_pins_file="${script_dir}/software/rpms.tsv"
-rpm_expected_added="$(awk 'NF && $1 !~ /^#/' "${rpm_pins_file}" | wc -l)"
+rpm_active_pins="$(mktemp /tmp/wraindrock-active-pins.XXXXXX)"
+rpm_pin_active() {
+    local condition="$1" want_name want_version have_version
+    [[ -n ${condition} ]] || return 0
+    want_name="${condition%%=*}"
+    want_version="${condition#*=}"
+    have_version="$(rpm -q --qf '%{VERSION}-%{RELEASE}' "${want_name}" 2>/dev/null)" || return 1
+    [[ ${have_version} == "${want_version}" ]]
+}
+while IFS=$'\t' read -r rpm_name rpm_version rpm_url rpm_sha256 rpm_condition; do
+    [[ -n ${rpm_name} && ${rpm_name} != \#* ]] || continue
+    rpm_pin_active "${rpm_condition:-}" || continue
+    printf '%s\t%s\t%s\t%s\n' "${rpm_name}" "${rpm_version}" "${rpm_url}" "${rpm_sha256}" \
+        >> "${rpm_active_pins}"
+done < "${rpm_pins_file}"
+rpm_expected_added="$(wc -l < "${rpm_active_pins}")"
+[[ ${rpm_expected_added} -gt 0 ]] || die "no RPM pin matches this base image"
+[[ $(awk -F'\t' '$1 == "hplip-gui"' "${rpm_active_pins}" | wc -l) -eq 1 ]] \
+    || die "no hplip-gui pin matches the base hplip version"
 
 say "installing pinned software RPMs"
 rpm_dir="$(mktemp -d /tmp/wraindrock-rpms.XXXXXX)"
 while IFS=$'\t' read -r rpm_name rpm_version rpm_url rpm_sha256; do
-    [[ -n ${rpm_name} && ${rpm_name} != \#* ]] || continue
+    [[ -n ${rpm_name} ]] || continue
     rpm_file="${rpm_dir}/${rpm_name}.rpm"
     curl -fsSL --retry 3 --retry-delay 2 -o "${rpm_file}" "${rpm_url}" \
         || die "could not download ${rpm_name} from ${rpm_url}"
@@ -298,7 +318,7 @@ while IFS=$'\t' read -r rpm_name rpm_version rpm_url rpm_sha256; do
     rpm_got_version="$(rpm -qp --qf '%{VERSION}-%{RELEASE}' "${rpm_file}")"
     [[ ${rpm_got_version} == "${rpm_version}" ]] \
         || die "${rpm_name}: expected ${rpm_version}, got ${rpm_got_version}"
-done < "${rpm_pins_file}"
+done < "${rpm_active_pins}"
 
 # Bluefin ships /opt as a symlink to /var/opt, and a bootc deployment does not
 # carry /var, so that symlink dangles inside the build container. Both SFL and
@@ -317,6 +337,8 @@ rm -rf "${rpm_dir}"
 [[ -x /usr/bin/hp-toolbox ]] || die "hplip-gui did not install /usr/bin/hp-toolbox"
 [[ -e /usr/share/applications/hplip.desktop ]] || die "hplip-gui did not install its desktop entry"
 rpm -q hplip-gui >/dev/null || die "hplip-gui is not installed"
+[[ "$(rpm -q --qf '%{VERSION}-%{RELEASE}' hplip-gui)" == "$(rpm -q --qf '%{VERSION}-%{RELEASE}' hplip)" ]] \
+    || die "hplip-gui does not match the inherited hplip core"
 
 rpm_current_set_file="$(mktemp /tmp/wraindrock-current-rpm-set.XXXXXX)"
 rpm_added_file="$(mktemp /tmp/wraindrock-rpm-added.XXXXXX)"
@@ -339,8 +361,9 @@ rpm_count="$(wc -l < "${rpm_current_set_file}")"
 install -m 0644 "${rpm_base_set_file}" /usr/share/wraindrock/base-rpm-set
 # The pins were verified above; ship them so parity can compare what rpm
 # actually installed against what we asked for, without carrying the TSV.
-awk 'NF && $1 !~ /^#/ { printf "%s\t%s\n", $1, $2 }' "${rpm_pins_file}" \
+awk -F'\t' '{ printf "%s\t%s\n", $1, $2 }' "${rpm_active_pins}" \
     > /usr/share/wraindrock/rpm-pins
+rm -f "${rpm_active_pins}"
 rm -f "${rpm_base_set_file}" "${rpm_current_set_file}"
 
 # --- 4. delta manifest ------------------------------------------------------

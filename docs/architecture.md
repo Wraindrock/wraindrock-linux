@@ -206,7 +206,10 @@ Two delivery mechanisms keep the out-of-box set small and updatable:
   closure is added on top for the full toolbox. Every baked RPM is downloaded at
   build time from a pinned upstream URL, checked against a pinned sha256 and
   expected version, and installed with `rpm -i`; nothing is resolved from a
-  repository, and a removal of any base package fails the build. Their `%post`
+  repository, and a removal of any base package fails the build. `hplip-gui` is
+  pinned twice (`3.26.6-1` and `-2`), each row conditioned on the `hplip` core
+  version the base ships, so a base refresh picks the matching GUI without
+  touching the core. Their `%post`
   scriptlets run as root inside the build container. They update with the image;
   `rpm-ostree override replace`
   gives a per-package escape hatch between image releases. SFL installs only

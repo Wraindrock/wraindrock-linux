@@ -352,8 +352,8 @@ if [[ ${rpm_rows} -ge 21 ]]; then
 else
     fail "rpms.tsv pins ${rpm_rows} packages, want at least 21"
 fi
-if [[ $(awk -F'\t' 'NF && $1 !~ /^#/ {print $1}' build_files/software/rpms.tsv | sort | uniq -d | wc -l) -eq 0 ]]; then
-    pass "rpms.tsv pins each package once"
+if [[ $(awk -F'\t' 'NF && $1 !~ /^#/ {print $1 "-" $2}' build_files/software/rpms.tsv | sort | uniq -d | wc -l) -eq 0 ]]; then
+    pass "rpms.tsv pins each name-version once"
 else
     fail "rpms.tsv contains duplicate package names"
 fi

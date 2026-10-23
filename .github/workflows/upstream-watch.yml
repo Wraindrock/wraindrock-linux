@@ -113,14 +113,22 @@ jobs:
               if not line or line.startswith("#"):
                   output.append(line)
                   continue
-              name, version, url, digest = line.split("\t")
+              parts = line.split("\t")
+              name, version, url, digest = parts[:4]
+              condition = parts[4] if len(parts) > 4 else ""
+              if name not in resolved:
+                  output.append(line)
+                  continue
               new_version, new_url = resolved[name]
               if new_version != version or new_url != url:
                   data = get(new_url, raw=True)
                   new_digest = hashlib.sha256(data).hexdigest()
                   if new_digest != digest or new_version != version:
                       changed.append(f"{name} {version} -> {new_version}")
-                      line = "\t".join([name, new_version, new_url, new_digest])
+                      fields = [name, new_version, new_url, new_digest]
+                      if condition:
+                          fields.append(condition)
+                      line = "\t".join(fields)
               output.append(line)
 
           if changed:
