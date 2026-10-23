@@ -84,7 +84,6 @@ gcc
 gcc-c++
 gdb-minimal
 gdisk
-generic-logos
 git
 git-credential-libsecret
 git-lfs
