@@ -8,7 +8,7 @@ inside every image; CI fails if the image carries anything it does not declare.
 
 - Base image: `ghcr.io/ublue-os/silverblue-main:44`
 - Base digest: `sha256:aa8751e2268e322e49869cedec47f9cb73d506f086dd24b3d4d95b2505faa3bb`
-- Current image: `44.20261023T110546Z.115` (`sha256:4d74a88b6b39bcd6d176db3895b82495fc6f64d81516975948c73cc699ad2e6c`)
+- Current image: `44.20261023T111651Z.119` (`sha256:59d2dfc755fe46d81ec9a1ca1dc41760bf708bb0b532cbddf082ee987ed10452`)
 
 ## Identity
 

@@ -14,7 +14,7 @@ never overwritten; always prefer the newest one.
 | `previous` | Where `44` pointed before the last release |
 | `44.<UTC>.<run>` | Immutable build; quote this when reporting a bug |
 
-Current channel: `44` → `44.20261022T145603Z.93`
+Current channel `:44` = `44.20261023T111651Z.119` (`sha256:59d2dfc7…`, uBlue Silverblue base); the disk artifacts below are from the last published disk build.
 (`sha256:7897a3fd5878208abd7fb733ae693f0777f674e53ec110cd688b9c9cdce21e09`,
 revision `2a2d125`).
 `.57`–`.59` were documentation rebuilds of `.55`; `.69` removed the appearance
