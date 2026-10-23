@@ -26,18 +26,16 @@ This is the complete inventory. It is the human-readable counterpart of
 - Dock, in order: Helium, Rnote, DistroShelf, Files, Bazaar, Mission Center, Terminal.
 - Input sources: English (US) keyboard layout plus the `libpinyin` input method on
   the inherited IBus framework.
-- Eight application folders, with every visible app in exactly one folder:
+- Five application folders, every app in exactly one:
 
-  - **附件** — `org.gnome.DiskUtility`, `org.gnome.Tour`, `org.gnome.ColorProfileViewer`
-  - **工具** — `hplip`, `hp-uiscan`, `io.github.ronb1964.TuxTalk`, `it.mijorus.gearlever`
-  - **系统** — `org.gnome.Settings`, `org.gnome.SystemMonitor`, `htop`, `nvtop`,
-    `nvidia-settings`, `rygel-preferences`, `io.github.kolunmi.Bazaar`,
-    `org.freedesktop.MalcontentControl`
-  - **网络** — `helium`, `Rayburst`, `io.github.yucling.open-orpheus`
-  - **代理** — `Clash Verge`, `sing-box`
-  - **社交** — `com.tencent.WeChat`, `com.qq.QQ`, `com.dingtalk.DingTalk`
-  - **办公** — `com.github.flxzt.rnote`
-  - **虚拟化** — `virt-manager`, `com.ranfdev.DistroShelf`, `io.podman_desktop.PodmanDesktop`
+  - **附件** — Files, Terminal, Tour, Color Profile Viewer, Disks, Parental Controls
+  - **系统** — Settings, System Monitor, htop, nvtop, NVIDIA Settings, Rygel Preferences, Clash Verge, sing-box
+  - **HP** — HPLIP Graphical Tools, hp-uiscan
+  - **工具** — Flatseal, Warehouse, Extension Manager, firewall-config, Fedora Media Writer, Input Remapper, Sysprof, Remote Viewer, Ignition, Impression, Refine, Pinta
+  - **开发** — virt-manager, Podman Desktop, Builder, Dev Toolbox, Pods, DistroShelf
+
+  Helium, Rayburst, Rnote, Open Orpheus, WeChat, QQ, DingTalk, TuxTalk,
+  Gear Lever and Bazaar stay ungrouped by request.
 
 ## Removed from the base
 
