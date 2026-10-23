@@ -16,7 +16,7 @@ echo "shell syntax"
 shell_files=()
 # Only tracked files: the working tree may hold downloaded or unpacked sources
 # (for example an upstream tarball) that are not part of the image.
-while IFS= read -r file; do shell_files+=("$file"); done < <(git ls-files '*.sh' | sort)
+while IFS= read -r file; do shell_files+=("$file"); done < <(git ls-files '*.sh' | grep -v '^build_files/gnome-extensions/' | sort)
 # First-boot helpers are bash scripts without a .sh suffix.
 shell_files+=("build_files/hostname/wraindrock-hostname-seed"
               "build_files/software/wraindrock-flatpak-preinstall"
