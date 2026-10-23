@@ -199,14 +199,16 @@ Two delivery mechanisms keep the out-of-box set small and updatable:
   handler in `/etc/xdg/mimeapps.list`; Firefox stays installed and selectable.
   The other Bluefin apps remain a one-liner (`ujust install-system-flatpaks`)
   because Bluefin itself does not bake them.
-- **Four RPMs are baked** (Helium from the official `imput/helium` COPR,
+- **The four app RPMs are baked** (Helium from the official `imput/helium` COPR,
   Clash Verge Rev, Rayburst, sing-box/SFL) because they have no Flatpak.
-  HPLIP 3.26.6 is not pinned: Bluefin's base already ships it, and the build
-  asserts the CUPS/SANE backends and `hp-setup` are present. They are downloaded at build time from pinned upstream
-  URLs, checked against a pinned sha256 and expected version, and installed with
-  `rpm -i`; the dependency closure already exists in the base, so nothing is
-  resolved from a repository. Their `%post` scriptlets run as root inside the
-  build container. They update with the image; `rpm-ostree override replace`
+  HPLIP's core is inherited from Bluefin (the build asserts the CUPS/SANE
+  backends and `hp-setup`), and the pinned `hplip-gui` plus its Qt5/ReportLab
+  closure is added on top for the full toolbox. Every baked RPM is downloaded at
+  build time from a pinned upstream URL, checked against a pinned sha256 and
+  expected version, and installed with `rpm -i`; nothing is resolved from a
+  repository, and a removal of any base package fails the build. Their `%post`
+  scriptlets run as root inside the build container. They update with the image;
+  `rpm-ostree override replace`
   gives a per-package escape hatch between image releases. SFL installs only
   under `/opt`; because Bluefin's `/opt` is a symlink into `/var` and a bootc
   deployment does not carry `/var`, the build replaces it with a real directory

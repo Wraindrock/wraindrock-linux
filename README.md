@@ -74,9 +74,10 @@ image tag — the apps do not wait for a Fedora major release.
 Printing and scanning are inherited from Bluefin: HPLIP 3.26.6 is already in the
 base with the HP CUPS backend and filters, `hp-setup`/`hp-info`, and the
 `libsane-hpaio` SANE backend; the build asserts that this stack is present. The
-Qt graphical toolbox (`hp-toolbox`, in the `hplip-gui` package) is not installed;
-use `hp-setup -i` or the CUPS web interface. `sane-airscan` and the SANE scanner
-drivers are also inherited, so network scanners appear in Document Scanner.
+complete HPLIP toolset is included: the pinned `hplip-gui` package adds the Qt
+toolbox (`hp-toolbox`) and its printer/scanner utilities on top of Bluefin's
+core. `sane-airscan` and the SANE scanner drivers are also inherited, so network
+scanners appear in Document Scanner.
 
 Dell G15/G16 owners also get the
 [G15 control center](https://github.com/Wraindrock/Ian-g-control-center): a

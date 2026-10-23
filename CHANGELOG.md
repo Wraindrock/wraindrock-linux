@@ -7,12 +7,19 @@ image versions are the upstream channel plus an immutable build tag, see
 
 ## [0.18.4] - 2026-10-23
 
+### Added
+
+- Full HPLIP: the pinned `hplip-gui` 3.26.6-1 package and its Qt5/ReportLab
+  dependencies join Bluefin's inherited HPLIP core, adding `hp-toolbox` and the
+  printer/scanner GUI utilities without upgrading `hplip` itself.
+
 ### Changed
 
-- Assert that the inherited HPLIP 3.26.6 stack is complete: the `hplip`,
-  `hplip-common`, `hplip-libs` and `libsane-hpaio` packages, `hp-setup`, the HP
-  CUPS backend and the SANE backend. No package is added — Bluefin's base
-  already provides them; the Qt GUI (`hplip-gui`) remains optional.
+- The build records its verified pins at `/usr/share/wraindrock/rpm-pins`, and
+  parity compares that list with the packages rpm actually installed, so pin
+  bumps no longer need edits to the parity script. The build asserts the
+  inherited `hplip`, `hplip-common`, `hplip-libs`, `libsane-hpaio` stack,
+  `hp-setup`, the GUI toolbox, the HP CUPS backend and the SANE backend.
 
 ## [0.18.3] - 2026-10-22
 

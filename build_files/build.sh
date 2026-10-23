@@ -314,6 +314,9 @@ rm -rf "${rpm_dir}"
 [[ -x /usr/bin/hp-setup ]] || die "HPLIP did not install /usr/bin/hp-setup"
 [[ -x /usr/lib/cups/backend/hp ]] || die "HPLIP did not install the CUPS backend"
 [[ -e /usr/lib64/sane/libsane-hpaio.so.1 ]] || die "HPLIP did not install the SANE backend"
+[[ -x /usr/bin/hp-toolbox ]] || die "hplip-gui did not install /usr/bin/hp-toolbox"
+[[ -e /usr/share/applications/hplip.desktop ]] || die "hplip-gui did not install its desktop entry"
+rpm -q hplip-gui >/dev/null || die "hplip-gui is not installed"
 
 rpm_current_set_file="$(mktemp /tmp/wraindrock-current-rpm-set.XXXXXX)"
 rpm_added_file="$(mktemp /tmp/wraindrock-rpm-added.XXXXXX)"
@@ -334,6 +337,10 @@ rpm_count="$(wc -l < "${rpm_current_set_file}")"
 [[ ! -s /usr/share/rpm/rpmdb.sqlite-wal ]] \
     || die "the RPM database WAL was not checkpointed before packaging"
 install -m 0644 "${rpm_base_set_file}" /usr/share/wraindrock/base-rpm-set
+# The pins were verified above; ship them so parity can compare what rpm
+# actually installed against what we asked for, without carrying the TSV.
+awk 'NF && $1 !~ /^#/ { printf "%s\t%s\n", $1, $2 }' "${rpm_pins_file}" \
+    > /usr/share/wraindrock/rpm-pins
 rm -f "${rpm_base_set_file}" "${rpm_current_set_file}"
 
 # --- 4. delta manifest ------------------------------------------------------
@@ -406,6 +413,7 @@ cat > /usr/share/wraindrock/delta.json <<EOF
       "/usr/lib/systemd/system/sysinit.target.wants/wraindrock-hostname-seed.service",
       "/usr/share/wraindrock/base-os-release",
       "/usr/share/wraindrock/base-rpm-set",
+      "/usr/share/wraindrock/rpm-pins",
       "/usr/share/wraindrock/build-info.json",
       "/usr/share/wraindrock/delta.json",
       "/usr/share/flatpak/preinstall.d/wraindrock.preinstall",

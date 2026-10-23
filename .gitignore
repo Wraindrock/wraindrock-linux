@@ -14,3 +14,5 @@ artifacts/
 .vscode/
 __pycache__/
 .scratch/
+hplip-3.26.6/
+hplip-3.26.6.tar.gz

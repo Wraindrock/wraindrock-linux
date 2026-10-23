@@ -62,26 +62,40 @@ comm -23 "${tmpdir}/base.rpm" "${tmpdir}/image.rpm" > "${tmpdir}/rpm.removed"
 base_count="$(wc -l < "${tmpdir}/base.rpm")"
 image_count="$(wc -l < "${tmpdir}/image.rpm")"
 in_image "${IMAGE}" 'cat /usr/share/wraindrock/delta.json' > "${tmpdir}/delta.json"
+in_image "${IMAGE}" 'cat /usr/share/wraindrock/rpm-pins' > "${tmpdir}/rpm-pins"
 
 if [[ ! -s ${tmpdir}/rpm.removed ]] \
-    && python3 - "${tmpdir}/delta.json" "${tmpdir}/rpm.added" "${tmpdir}/rpm.removed" <<'PY'
+    && python3 - "${tmpdir}/delta.json" "${tmpdir}/rpm.added" "${tmpdir}/rpm.removed" "${tmpdir}/rpm-pins" <<'PY'
 import json
 import sys
 
-delta_path, added_path, removed_path = sys.argv[1:4]
+delta_path, added_path, removed_path, pins_path = sys.argv[1:5]
 delta = json.load(open(delta_path))
 added = [line.strip() for line in open(added_path) if line.strip()]
 removed = [line.strip() for line in open(removed_path) if line.strip()]
+pins = {}
+for line in open(pins_path):
+    line = line.rstrip("\n")
+    if not line or line.startswith("#"):
+        continue
+    name, nvr = line.split("\t")
+    pins[name] = nvr
 assert delta["schema"] == 2, delta
 assert delta["rpm"]["removed"] == [], delta["rpm"]["removed"]
 assert set(delta["rpm"]["added"]) == set(added), (
     "declared", sorted(delta["rpm"]["added"]), "actual", sorted(added)
 )
 assert removed == [], removed
-names = {"clash-verge", "helium-bin", "rayburst", "sing-box"}
-assert len(added) == len(names), added
-for name in names:
-    assert any(entry.startswith(name + "-") for entry in added), (name, added)
+assert pins, "the image does not record its RPM pins"
+assert len(added) == len(pins), (len(added), len(pins), sorted(added))
+matched = set()
+for entry in added:
+    for name, nvr in pins.items():
+        if entry.startswith(f"{name}-{nvr}."):
+            assert name not in matched, ("duplicate", name, added)
+            matched.add(name)
+            break
+assert matched == set(pins), sorted(set(pins) - matched)
 PY
 then
     pass "RPM set is the base plus exactly the declared additions (${base_count} -> ${image_count})"
@@ -413,37 +427,25 @@ else
     pass "no Fcitx packages are installed"
 fi
 
-# Expected versions come from the manifest, which build.sh derived from the
-# pins it verified; compare them with what rpm actually installed.
-python3 - "${tmpdir}/delta.json" <<'RPM_VERSIONS' > "${tmpdir}/rpm.versions"
-import json
-import sys
-
-delta = json.load(open(sys.argv[1]))
-names = ["clash-verge", "helium-bin", "rayburst", "sing-box"]
-for entry in delta["rpm"]["added"]:
-    for name in names:
-        if entry.startswith(name + "-"):
-            version = entry[len(name) + 1:]
-            if version.endswith(".x86_64"):
-                version = version[:-len(".x86_64")]
-            print(f"{name}\t{version}")
-RPM_VERSIONS
+# Expected versions come from the pins the build verified; compare them with
+# what rpm actually installed.
 while IFS=$'\t' read -r name version; do
+    [[ -n ${name} ]] || continue
     installed="$(in_image "${IMAGE}" "rpm -q --qf '%{VERSION}-%{RELEASE}' ${name}")"
     if [[ ${installed} == "${version}" ]]; then
         pass "baked package present at the pinned version: ${name} ${installed}"
     else
         fail "baked package ${name} is ${installed}, expected ${version}"
     fi
-done < "${tmpdir}/rpm.versions"
+done < "${tmpdir}/rpm-pins"
 
-if in_image "${IMAGE}" "rpm -q hplip hplip-common hplip-libs libsane-hpaio >/dev/null" \
+if in_image "${IMAGE}" "rpm -q hplip hplip-common hplip-libs libsane-hpaio hplip-gui >/dev/null" \
     && in_image "${IMAGE}" "test -x /usr/bin/hp-setup && test -x /usr/lib/cups/backend/hp" \
+    && in_image "${IMAGE}" "test -x /usr/bin/hp-toolbox && test -e /usr/share/applications/hplip.desktop" \
     && in_image "${IMAGE}" "test -e /usr/lib64/sane/libsane-hpaio.so.1"; then
-    pass "HPLIP (inherited from Bluefin) provides hp-setup, the CUPS backend and the SANE backend"
+    pass "HPLIP (inherited core + pinned GUI) provides hp-setup, hp-toolbox, the CUPS backend and the SANE backend"
 else
-    fail "HPLIP is incomplete (packages, hp-setup, CUPS backend or SANE backend missing)"
+    fail "HPLIP is incomplete (packages, hp-setup, hp-toolbox, CUPS backend or SANE backend missing)"
 fi
 
 # --- default wallpaper ------------------------------------------------------
