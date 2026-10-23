@@ -15,12 +15,12 @@ folder-children=['Accessories','System','HP','Tools','Development']
 [org/gnome/desktop/app-folders/folders/Accessories]
 name='wraindrock-accessories.directory'
 translate=true
-apps=['org.gnome.Nautilus.desktop','org.gnome.Ptyxis.desktop','org.gnome.Tour.desktop']
+apps=['org.gnome.Nautilus.desktop','org.gnome.Ptyxis.desktop','org.gnome.Tour.desktop','org.gnome.DiskUtility.desktop','org.freedesktop.MalcontentControl.desktop','org.gnome.ColorProfileViewer.desktop']
 
 [org/gnome/desktop/app-folders/folders/System]
 name='wraindrock-system.directory'
 translate=true
-apps=['org.gnome.Settings.desktop','org.gnome.SystemMonitor.desktop','org.gnome.DiskUtility.desktop','org.freedesktop.MalcontentControl.desktop','org.gnome.ColorProfileViewer.desktop','htop.desktop','nvtop.desktop','nvidia-settings.desktop','rygel-preferences.desktop','Clash Verge.desktop','sing-box.desktop']
+apps=['org.gnome.Settings.desktop','org.gnome.SystemMonitor.desktop','htop.desktop','nvtop.desktop','nvidia-settings.desktop','rygel-preferences.desktop','Clash Verge.desktop','sing-box.desktop','org.gnome.Sysprof.desktop']
 
 [org/gnome/desktop/app-folders/folders/HP]
 name='wraindrock-hp.directory'
@@ -30,7 +30,7 @@ apps=['hplip.desktop','hp-uiscan.desktop']
 [org/gnome/desktop/app-folders/folders/Tools]
 name='wraindrock-tools.directory'
 translate=true
-apps=['com.github.tchx84.Flatseal.desktop','io.github.flattool.Warehouse.desktop','com.mattjakeman.ExtensionManager.desktop','firewall-config.desktop','org.fedoraproject.MediaWriter.desktop','input-remapper-gtk.desktop','org.gnome.Sysprof.desktop','org.virt_manager.virt-viewer.desktop','io.github.flattool.Ignition.desktop','io.gitlab.adhami3310.Impression.desktop','page.tesk.Refine.desktop','com.github.PintaProject.Pinta.desktop']
+apps=['com.github.tchx84.Flatseal.desktop','io.github.flattool.Warehouse.desktop','com.mattjakeman.ExtensionManager.desktop','firewall-config.desktop','org.fedoraproject.MediaWriter.desktop','input-remapper-gtk.desktop','org.virt_manager.virt-viewer.desktop','io.github.flattool.Ignition.desktop','io.gitlab.adhami3310.Impression.desktop','page.tesk.Refine.desktop','com.github.PintaProject.Pinta.desktop']
 
 [org/gnome/desktop/app-folders/folders/Development]
 name='wraindrock-development.directory'

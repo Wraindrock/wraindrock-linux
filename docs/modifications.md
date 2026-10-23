@@ -28,10 +28,10 @@ This is the complete inventory. It is the human-readable counterpart of
   the inherited IBus framework.
 - Five application folders, every app in exactly one:
 
-  - **附件** — Files, Terminal, Tour, Color Profile Viewer, Disks, Parental Controls
-  - **系统** — Settings, System Monitor, htop, nvtop, NVIDIA Settings, Rygel Preferences, Clash Verge, sing-box
+  - **附件** — Files, Terminal, Tour, Disks, Parental Controls, Color Profile Viewer
+  - **系统** — Settings, System Monitor, htop, nvtop, NVIDIA Settings, Rygel Preferences, Clash Verge, sing-box, Sysprof
   - **HP** — HPLIP Graphical Tools, hp-uiscan
-  - **工具** — Flatseal, Warehouse, Extension Manager, firewall-config, Fedora Media Writer, Input Remapper, Sysprof, Remote Viewer, Ignition, Impression, Refine, Pinta
+  - **工具** — Flatseal, Warehouse, Extension Manager, firewall-config, Fedora Media Writer, Input Remapper, Remote Viewer, Ignition, Impression, Refine, Pinta
   - **开发** — virt-manager, Podman Desktop, Builder, Dev Toolbox, Pods, DistroShelf
 
   Helium, Rayburst, Rnote, Open Orpheus, WeChat, QQ, DingTalk, TuxTalk,

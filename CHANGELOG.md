@@ -5,6 +5,13 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 image versions are the upstream channel plus an immutable build tag, see
 [docs/architecture.md](docs/architecture.md).
 
+## [0.21.4] - 2026-10-24
+
+### Changed
+
+- Per the user's placement decisions, Disks, Parental Controls and Color Profile
+  Viewer are now in 附件, and Sysprof is in 系统 (it was in 工具).
+
 ## [0.21.3] - 2026-10-24
 
 ### Fixed
