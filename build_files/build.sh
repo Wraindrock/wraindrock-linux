@@ -541,7 +541,23 @@ cat > /usr/share/wraindrock/delta.json <<EOF
       "/etc/xdg/mimeapps.list",
       "/etc/dconf/db/distro.d/10-wraindrock-folders",
       "/usr/share/desktop-directories/wraindrock-accessories.directory",
-      "/usr/share/desktop-directories/wraindrock-social.directory"
+      "/usr/share/desktop-directories/wraindrock-social.directory",
+      "/usr/share/gnome-shell/extensions/appindicatorsupport@rgcjonas.gmail.com",
+      "/usr/share/gnome-shell/extensions/bazaar-integration@kolunmi.github.io",
+      "/usr/share/gnome-shell/extensions/blur-my-shell@aunetx",
+      "/usr/share/gnome-shell/extensions/caffeine@patapon.info",
+      "/usr/share/gnome-shell/extensions/dash-to-dock@micxgx.gmail.com",
+      "/usr/share/gnome-shell/extensions/gradia-integration@alexandervanhee.github.io",
+      "/usr/share/gnome-shell/extensions/gsconnect@andyholmes.github.io",
+      "/usr/share/gnome-shell/extensions/logomenu@aryan_k",
+      "/usr/share/gnome-shell/extensions/search-light@icedman.github.com",
+      "/etc/dconf/db/distro.d/20-wraindrock-keybindings",
+      "/etc/dconf/db/distro.d/21-wraindrock-logomenu",
+      "/etc/dconf/db/distro.d/22-wraindrock-searchlight",
+      "/etc/dconf/db/distro.d/23-wraindrock-blur",
+      "/usr/share/ublue-os/flatpak-overrides/io.github.kolunmi.Bazaar",
+      "/usr/lib/tmpfiles.d/bazaar-flatpak.conf",
+      "/etc/flatpak/remotes.d/flathub.flatpakrepo",
     ]
   }
 }
