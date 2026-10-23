@@ -64,8 +64,7 @@ image_count="$(wc -l < "${tmpdir}/image.rpm")"
 in_image "${IMAGE}" 'cat /usr/share/wraindrock/delta.json' > "${tmpdir}/delta.json"
 in_image "${IMAGE}" 'cat /usr/share/wraindrock/rpm-pins' > "${tmpdir}/rpm-pins"
 
-if [[ ! -s ${tmpdir}/rpm.removed ]] \
-    && python3 - "${tmpdir}/delta.json" "${tmpdir}/rpm.added" "${tmpdir}/rpm.removed" "${tmpdir}/rpm-pins" <<'PY'
+if python3 - "${tmpdir}/delta.json" "${tmpdir}/rpm.added" "${tmpdir}/rpm.removed" "${tmpdir}/rpm-pins" <<'PY'
 import json
 import sys
 
