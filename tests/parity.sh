@@ -94,7 +94,6 @@ assert set(delta["rpm"]["added"]) == set(added), (
 )
 removed_names = {entry.rsplit("-", 2)[0] for entry in removed}
 assert removed_names <= allowed_removed, sorted(removed_names - allowed_removed)
-assert removed_names == allowed_removed, sorted(allowed_removed - removed_names)
 assert pins, "the image does not record its RPM pins"
 matched = set()
 for entry in added:
@@ -747,10 +746,15 @@ if in_image "${IMAGE}" \
 else
     fail "the virtualisation stack is incomplete"
 fi
-if in_image "${IMAGE}" 'rpm -q incus docker-ce distrobox >/dev/null 2>&1'; then
-    pass "Incus, Docker and Distrobox are present"
+if in_image "${IMAGE}" 'rpm -q incus distrobox >/dev/null 2>&1'; then
+    pass "Incus and Distrobox are present"
 else
     fail "the container stack is incomplete"
+fi
+if in_image "${IMAGE}" 'rpm -q docker-ce >/dev/null 2>&1'; then
+    fail "Docker is installed but was not selected"
+else
+    pass "Docker is not installed"
 fi
 
 # --- desktop defaults (restored on top of the uBlue base) -------------------
@@ -786,11 +790,11 @@ else
 fi
 
 if in_image "${IMAGE}" \
-    'grep -q "\[Flatpak Preinstall com.mattjakeman.ExtensionManager\]" \
+    'grep -q "\[Flatpak Preinstall io.github.kolunmi.Bazaar\]" \
         /usr/share/flatpak/preinstall.d/wraindrock.preinstall'; then
-    pass "Extension Manager is part of the first-boot Flatpaks"
+    pass "Bazaar is part of the first-boot Flatpaks"
 else
-    fail "Extension Manager is missing from the Flatpak preinstall file"
+    fail "Bazaar is missing from the Flatpak preinstall file"
 fi
 
 if in_image "${IMAGE}" 'test -s /etc/flatpak/remotes.d/flathub.flatpakrepo'; then

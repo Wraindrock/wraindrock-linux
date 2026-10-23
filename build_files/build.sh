@@ -121,7 +121,7 @@ cat > "${override}" <<'EOF'
 # Default dock: the user's working set, in this order. Left and right are the
 # same list; a user's own favorite-apps setting always wins.
 [org.gnome.shell]
-favorite-apps=['helium.desktop', 'com.github.flxzt.rnote.desktop', 'org.gnome.Nautilus.desktop', 'io.github.kolunmi.Bazaar.desktop', 'io.missioncenter.MissionCenter.desktop', 'org.gnome.Ptyxis.desktop']
+favorite-apps=['helium.desktop', 'com.github.flxzt.rnote.desktop', 'com.ranfdev.DistroShelf.desktop', 'org.gnome.Nautilus.desktop', 'io.github.kolunmi.Bazaar.desktop', 'io.missioncenter.MissionCenter.desktop', 'org.gnome.Ptyxis.desktop']
 enabled-extensions=['appindicatorsupport@rgcjonas.gmail.com', 'bazaar-integration@kolunmi.github.io', 'blur-my-shell@aunetx', 'dash-to-dock@micxgx.gmail.com', 'gradia-integration@alexandervanhee.github.io', 'gsconnect@andyholmes.github.io', 'logomenu@aryan_k', 'search-light@icedman.github.com']
 
 # IBus (not Fcitx) is the input method; libpinyin is the Chinese engine. The
@@ -311,6 +311,18 @@ rpm -q lxc cockpit-system >/dev/null || die "LXC or cockpit did not install"
 # override that lets the store manage system Flatpaks, so provide both.
 flatpak remote-add --system --if-not-exists flathub \
     https://dl.flathub.org/repo/flathub.flatpakrepo
+
+# Install the declared Flatpaks into the image itself, so a machine without
+# network still has them after install. The first-boot preinstall service
+# remains as a fallback for anything that failed to download here.
+mapfile -t baked_flatpaks < <(grep -v '^#' "${script_dir}/software/flatpaks.txt" | sed '/^[[:space:]]*$/d')
+flatpak install --system --noninteractive -y --app flathub "${baked_flatpaks[@]}" \
+    || die "could not bake the declared Flatpaks into the image"
+flatpak list --system --app --columns=application | LC_ALL=C sort > /tmp/baked-flatpaks
+for flatpak_app in "${baked_flatpaks[@]}"; do
+    grep -Fxq "${flatpak_app}" /tmp/baked-flatpaks \
+        || die "Flatpak ${flatpak_app} was not baked into the image"
+done
 install -d /usr/share/ublue-os/flatpak-overrides
 install -m 0644 "${script_dir}/software/flatpak-overrides/io.github.kolunmi.Bazaar" \
     /usr/share/ublue-os/flatpak-overrides/io.github.kolunmi.Bazaar
@@ -484,8 +496,7 @@ rm -rf "${rpm_dir}"
 # replace with Bazaar and Helium, plus the Fedora browser config that only
 # existed for Firefox.
 removed_apps=(firefox firefox-langpacks gnome-software fedora-bookmarks
-    fedora-chromium-config fedora-chromium-config-gnome
-    gnome-shell-extension-background-logo yelp)
+    fedora-chromium-config fedora-chromium-config-gnome yelp)
 dnf5 remove -y --no-autoremove "${removed_apps[@]}"
 for app in firefox gnome-software; do
     rpm -q "${app}" >/dev/null 2>&1 && die "${app} is still installed"
