@@ -323,7 +323,7 @@ if in_image "${IMAGE}" \
 else
     fail "ipp-duplexd installation is incomplete"
 fi
-if in_image "${IMAGE}" '/usr/bin/ipp-duplexd --help 2>&1 | grep -Fq -- "--printer"'; then
+if in_image "${IMAGE}" 'out="$(/usr/bin/ipp-duplexd --help 2>&1 || true)"; grep -Fq -- "--printer" <<<"${out}"'; then
     pass "ipp-duplexd runs and advertises --printer"
 else
     fail "ipp-duplexd does not run"

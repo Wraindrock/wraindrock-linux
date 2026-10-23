@@ -349,8 +349,8 @@ done
     || die "ipp-duplexd binaries are missing"
 [[ -r /usr/lib/systemd/user/ipp-duplexd.service ]] \
     || die "ipp-duplexd user unit is missing"
-/usr/bin/ipp-duplexd --help 2>&1 | grep -Fq -- '--printer' \
-    || die "ipp-duplexd did not run"
+ipp_help="$(/usr/bin/ipp-duplexd --help 2>&1 || true)"
+grep -Fq -- '--printer' <<<"${ipp_help}" || die "ipp-duplexd did not run"
 say "installed ipp-duplexd ${ipp_version}"
 rm -rf "${ipp_tmp}"
 
