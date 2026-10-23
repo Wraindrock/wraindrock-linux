@@ -226,6 +226,18 @@ jobs:
           podman run --rm --entrypoint /usr/bin/bootc \
             "${LOCAL_IMAGE}:${TAG}" container lint
 
+      - name: Inventory installed applications
+        env:
+          LOCAL_IMAGE: ${{ steps.meta.outputs.local_image }}
+          TAG: ${{ steps.meta.outputs.immutable_tag }}
+        run: |
+          set -euo pipefail
+          podman run --rm --entrypoint /usr/bin/bash "${LOCAL_IMAGE}:${TAG}" -c '
+            ls /usr/share/applications/*.desktop 2>/dev/null | xargs -n1 basename | sort
+            echo ---FLATPAKS---
+            flatpak list --system --app --columns=application 2>/dev/null | sort
+          '
+
       - name: Parity test
         env:
           LOCAL_IMAGE: ${{ steps.meta.outputs.local_image }}

@@ -92,8 +92,15 @@ assert delta["rpm"]["removed"] == removed, (
 assert set(delta["rpm"]["added"]) == set(added), (
     "declared", sorted(delta["rpm"]["added"]), "actual", sorted(added)
 )
-removed_names = {entry.rsplit("-", 2)[0] for entry in removed}
-assert removed_names <= allowed_removed, sorted(removed_names - allowed_removed)
+def removed_name(entry):
+    for allowed in allowed_removed:
+        if entry.startswith(allowed + "-"):
+            return allowed
+    return None
+
+
+unexpected_removals = [entry for entry in removed if removed_name(entry) is None]
+assert not unexpected_removals, unexpected_removals
 assert pins, "the image does not record its RPM pins"
 matched = set()
 for entry in added:
@@ -544,7 +551,7 @@ else
 fi
 
 # --- default dock -----------------------------------------------------------
-expected_dock="['helium.desktop', 'com.github.flxzt.rnote.desktop', 'org.gnome.Nautilus.desktop', 'io.github.kolunmi.Bazaar.desktop', 'io.missioncenter.MissionCenter.desktop', 'org.gnome.Ptyxis.desktop']"
+expected_dock="['helium.desktop', 'com.github.flxzt.rnote.desktop', 'com.ranfdev.DistroShelf.desktop', 'org.gnome.Nautilus.desktop', 'io.github.kolunmi.Bazaar.desktop', 'io.missioncenter.MissionCenter.desktop', 'org.gnome.Ptyxis.desktop']"
 dock="$(in_image "${IMAGE}" 'GSETTINGS_BACKEND=memory gsettings get org.gnome.shell favorite-apps' 2>/dev/null || true)"
 if [[ ${dock} == "${expected_dock}" ]]; then
     pass "default dock is the curated list in order"
