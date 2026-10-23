@@ -9,14 +9,14 @@ never overwritten; always prefer the newest one.
 
 | Tag | Meaning |
 | --- | --- |
-| `44` | Bluefin 44 channel — what `bootc switch …:44` follows |
+| `44` | uBlue Silverblue 44 channel — what `bootc switch …:44` follows |
 | `latest` | Alias of the newest channel |
 | `previous` | Where `44` pointed before the last release |
 | `44.<UTC>.<run>` | Immutable build; quote this when reporting a bug |
 
-Current channel `:44` = `44.20261023T111651Z.119` (`sha256:59d2dfc7…`, uBlue Silverblue base); the disk artifacts below are from the last published disk build.
-(`sha256:7897a3fd5878208abd7fb733ae693f0777f674e53ec110cd688b9c9cdce21e09`,
-revision `2a2d125`).
+Current channel `:44` = `44.20261023T120639Z.127` (`sha256:55133616…`, uBlue
+Silverblue base, revision `6578907`); the disk artifacts below are built from
+that same image.
 `.57`–`.59` were documentation rebuilds of `.55`; `.69` removed the appearance
 overrides, branded `/etc/system-release` and added application folders; `.78`
 gave every app exactly one folder; `.80` curated the default dock and added the
@@ -48,6 +48,7 @@ three layers: `file:disk.qcow2`, `file:Wraindrock-Live.iso` and
 44.20261018T100652Z.35   44.20261018T233302Z.48   44.20261020T045729Z.69
 44.20261021T045220Z.73   44.20261021T134851Z.78   44.20261022T051527Z.82
 44.20261022T145603Z.93   44.20261022T132634Z.91
+44.20261023T120639Z.127
 ```
 
 Tags up to `.50` predate the rename and contain `install.iso`; `.55` and later
@@ -55,7 +56,7 @@ contain `Wraindrock-Live.iso`. They stay public for reproducibility, but use the
 newest.
 
 ```bash
-oras pull ghcr.io/wraindrock/wraindrock-linux-disk:44.20261022T145603Z.93 -o disk
+oras pull ghcr.io/wraindrock/wraindrock-linux-disk:44.20261023T120639Z.127 -o disk
 cd disk && sha256sum -c SHA256SUMS
 ```
 
@@ -66,6 +67,7 @@ The pre-rename `wrainrock-*` packages were deleted on 2026-10-20; only the two
 
 | Release | ISO | Assets |
 | --- | --- | --- |
+| [`44.20261023T120639Z.127`](https://github.com/Wraindrock/wraindrock-linux/releases/tag/44.20261023T120639Z.127) | `Wraindrock-Live.iso`, 6,313,541,632 B, `sha256:36a6f461c2d9b21854ac1dbb155c53e881068321b8da80fb61fa7edf11d01a60` | 4 parts (1.94 GB ×3 + 345 MB) + `-extract.sh` + `SHA256SUMS` |
 | [`44.20261022T145603Z.93`](https://github.com/Wraindrock/wraindrock-linux/releases/tag/44.20261022T145603Z.93) | `Wraindrock-Live.iso`, 6,876,561,408 B, `sha256:e740e088412a5fb610c0bb44ffd4be1294210ea2df772714968e75d7c3590d12` | 4 parts (1.94 GB ×3 + 883 MB) + `-extract.sh` + `SHA256SUMS` |
 | [`44.20261022T132634Z.91`](https://github.com/Wraindrock/wraindrock-linux/releases/tag/44.20261022T132634Z.91) | `Wraindrock-Live.iso`, 6,876,561,408 B, `sha256:20de9df6b9641da2019462985599e67dcaf536990ed5e380829a9204401c4f91` | 4 parts (1.94 GB ×3 + 882 MB) + `-extract.sh` + `SHA256SUMS` |
 | [`44.20261022T051527Z.82`](https://github.com/Wraindrock/wraindrock-linux/releases/tag/44.20261022T051527Z.82) | `Wraindrock-Live.iso`, 6,875,774,976 B, `sha256:08cb0cbff3c400a9e0808913e07019dca20f7d2876705dd6f636ee2977ae863e` | 4 parts (1.94 GB ×3 + 881 MB) + `-extract.sh` + `SHA256SUMS` |
