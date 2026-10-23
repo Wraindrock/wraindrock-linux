@@ -355,6 +355,8 @@ say "installed ipp-duplexd ${ipp_version}"
 rm -rf "${ipp_tmp}"
 
 # --- 3h. software defaults --------------------------------------------------
+# The pinned set now also carries the full HPLIP GUI stack and TuxTalk; the
+# hplip-gui row is selected by matching the inherited hplip core version.
 # Bluefin DX's developer Flatpaks and Wraindrock's personal defaults are
 # installed by flatpak-preinstall.service on the first boot (Flatpak only; the
 # file is declarative and survives image updates). Three programs have no
