@@ -16,3 +16,5 @@ __pycache__/
 .scratch/
 hplip-3.26.6/
 hplip-3.26.6.tar.gz
+build_files/nvidia-rpms/
+build_files/gnome-extensions/**/schemas/gschemas.compiled

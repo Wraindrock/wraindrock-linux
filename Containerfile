@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
 #
-# Wraindrock - a Bluefin DX based atomic desktop, tuned out of the box.
+# Wraindrock - a uBlue Silverblue based atomic desktop, tuned out of the box.
 #
 # v0.3 is a *branded parity build*: the RPM set is still exactly Fedora
 # Bluefin DX 44, plus a presentation delta (os-release display fields, logo
@@ -14,7 +14,7 @@
 # The build inputs are bind-mounted, never COPYed, so the image does not ship
 # its own build scripts.
 
-ARG BASE_REF=ghcr.io/ublue-os/bluefin-dx:stable
+ARG BASE_REF=ghcr.io/ublue-os/silverblue-main:44
 
 FROM ${BASE_REF}
 
@@ -36,7 +36,7 @@ ENV WR_LINUX=1 \
     WR_FEDORA_VERSION="${FEDORA_VERSION}"
 
 LABEL org.opencontainers.image.title="Wraindrock" \
-      org.opencontainers.image.description="Wraindrock - a Bluefin DX based atomic desktop, tuned out of the box" \
+      org.opencontainers.image.description="Wraindrock - a uBlue Silverblue based atomic desktop, tuned out of the box" \
       org.opencontainers.image.vendor="Wraindrock" \
       org.opencontainers.image.licenses="MIT" \
       org.opencontainers.image.source="https://github.com/Wraindrock/wraindrock-linux" \

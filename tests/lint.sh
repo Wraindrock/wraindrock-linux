@@ -58,10 +58,10 @@ if [[ -r ${env_file} ]]; then
     else
         fail "IMAGE_NAME must be lowercase [a-z0-9._-]"
     fi
-    if [[ ${BASE_IMAGE:-} == ghcr.io/ublue-os/bluefin-dx-nvidia-open:* ]]; then
-        pass "BASE_IMAGE tracks Bluefin DX NVIDIA"
+    if [[ ${BASE_IMAGE:-} == ghcr.io/ublue-os/silverblue-main:* ]]; then
+        pass "BASE_IMAGE tracks uBlue Silverblue"
     else
-        fail "BASE_IMAGE (${BASE_IMAGE:-}) does not track Bluefin DX"
+        fail "BASE_IMAGE (${BASE_IMAGE:-}) does not track uBlue Silverblue"
     fi
     if [[ ${DEFAULT_TAG:-} == "${FEDORA_VERSION:-}" ]]; then
         pass "DEFAULT_TAG is the Fedora channel tag"
@@ -432,17 +432,18 @@ if grep -Fq 'delta' tests/parity.sh; then
 else
     fail "parity.sh does not check the delta manifest"
 fi
-if grep -Fq "enabled GNOME extensions match Bluefin's default" tests/parity.sh \
-        && grep -Fq 'extension_list=' tests/parity.sh; then
-    pass "parity.sh compares the GNOME extension set and enabled state with the base"
+if grep -Fq "GNOME extensions are the base set plus the Bluefin DX set" tests/parity.sh \
+        && grep -Fq 'extension_list=' tests/parity.sh \
+        && grep -Fq 'enabled GNOME extensions match the Bluefin DX default' tests/parity.sh; then
+    pass "parity.sh verifies the vendored GNOME extensions and enabled state"
 else
-    fail "parity.sh does not verify the inherited GNOME extension defaults"
+    fail "parity.sh does not verify the vendored GNOME extensions"
 fi
 if grep -Fq 'Extension Manager' README.md \
-        && grep -Fq 'zz0-bluefin-modifications.gschema.override' README.md; then
-    pass "README documents the inherited Bluefin desktop defaults"
+        && grep -Fq 'Bluefin' README.md; then
+    pass "README documents the desktop defaults"
 else
-    fail "README does not document the inherited Bluefin desktop defaults"
+    fail "README does not document the desktop defaults"
 fi
 
 echo "documentation"

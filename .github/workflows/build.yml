@@ -160,6 +160,27 @@ jobs:
             --format '{{.Id}} {{.Created}}' | sed 's/^/base image: /'
           echo "base digest: ${digest}"
 
+      - name: Stage the matching NVIDIA akmods
+        env:
+          BASE_REF: ${{ steps.base.outputs.ref }}
+        run: |
+          set -euo pipefail
+          kernel="$(
+            podman run --rm --entrypoint /usr/bin/bash "${BASE_REF}" \
+              -c 'ls /usr/lib/modules | head -n 1'
+          )"
+          [[ -n ${kernel} ]] || { echo "could not determine the base kernel" >&2; exit 1; }
+          echo "base kernel: ${kernel}"
+          tag="main-44-${kernel%.x86_64}"
+          image="ghcr.io/ublue-os/akmods-nvidia-open:${tag}"
+          podman pull --quiet "${image}"
+          cid="$(podman create "${image}")"
+          rm -rf build_files/nvidia-rpms
+          podman cp "${cid}:/rpms" build_files/nvidia-rpms
+          podman rm "${cid}" >/dev/null
+          ls build_files/nvidia-rpms/kmods/kmod-nvidia-*.rpm >/dev/null
+          ls build_files/nvidia-rpms/nvidia/nvidia-driver-*.x86_64.rpm >/dev/null
+
       - name: Build image
         env:
           LOCAL_IMAGE: ${{ steps.meta.outputs.local_image }}
