@@ -508,6 +508,16 @@ else
     fail "TuxTalk installation is incomplete"
 fi
 
+# --- extensions: official Logo Menu -----------------------------------------
+if in_image "${IMAGE}" \
+    'test -e /usr/share/glib-2.0/schemas/org.gnome.shell.extensions.logo-menu.gschema.xml \
+        && grep -q "\"version\": 45" /usr/share/gnome-shell/extensions/logomenu@aryan_k/metadata.json \
+        && GSETTINGS_BACKEND=memory gsettings get org.gnome.shell.extensions.logo-menu symbolic-icon >/dev/null'; then
+    pass "Logo Menu is the official v25.2 build with its schema installed"
+else
+    fail "Logo Menu is not the official build or its schema is missing"
+fi
+
 # --- wallpaper: the stock base default --------------------------------------
 base_wall="$(in_image "${BASE}" "GSETTINGS_BACKEND=memory gsettings get org.gnome.desktop.background picture-uri" || true)"
 image_wall="$(in_image "${IMAGE}" "GSETTINGS_BACKEND=memory gsettings get org.gnome.desktop.background picture-uri" || true)"

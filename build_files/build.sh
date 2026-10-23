@@ -164,6 +164,16 @@ for ext in appindicatorsupport@rgcjonas.gmail.com bazaar-integration@kolunmi.git
     [[ -r "/usr/share/gnome-shell/extensions/${ext}/metadata.json" ]] \
         || die "extension ${ext} is missing"
 done
+# GNOME launches ESM extensions from the system directory, but their settings
+# schemas must live in the system schema directory. Bluefin built them that
+# way; vendored extensions ship schemas/ next to their code.
+for schema in "${script_dir}"/gnome-extensions/*/schemas/*.xml; do
+    [[ -e ${schema} ]] || continue
+    install -m 0644 "${schema}" /usr/share/glib-2.0/schemas/
+done
+glib-compile-schemas /usr/share/glib-2.0/schemas
+GSETTINGS_BACKEND=memory gsettings get org.gnome.shell.extensions.logo-menu symbolic-icon >/dev/null \
+    || die "the official Logo Menu schema did not install"
 install -d /etc/dconf/db/distro.d
 for preset in "${script_dir}"/dconf/*; do
     install -m 0644 "${preset}" "/etc/dconf/db/distro.d/$(basename "${preset}")"
