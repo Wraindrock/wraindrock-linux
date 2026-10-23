@@ -243,6 +243,7 @@ which build you ran. Updates: `sudo bootc update && sudo systemctl reboot`.
 advances on image-affecting changes and on the nightly build. Unknown paths
 always build.
 
+- Complete inventory of changes: [docs/modifications.md](docs/modifications.md)
 - Design, invariants and non-goals: [docs/architecture.md](docs/architecture.md)
 - Install, verification, troubleshooting: [docs/install.md](docs/install.md)
 - Rollback and escape hatches: [docs/rollback.md](docs/rollback.md)
