@@ -8,7 +8,7 @@
 #   1. prove the base is the uBlue Silverblue bootc image this project claims;
 #   2. record provenance at /usr/share/wraindrock/build-info.json and preserve
 #      the untouched base os-release and RPM set next to it;
-#   3. apply the Wraindrock identity (os-release display fields, wallpaper,
+#   3. apply the Wraindrock identity (os-release display fields,
 #      dock, input method), restore the NVIDIA stack and the Bluefin desktop
 #      extras (GNOME extensions, Docker, Incus, libvirt/QEMU, distrobox);
 #   4. declare the first-boot Flatpaks, the Helium default browser, the pinned
@@ -85,8 +85,6 @@ rm -rf "${rpm_db_tmp}"
     || die "the RPM database changed before the software step"
 
 # --- 3. identity ------------------------------------------------------------
-[[ -r ${branding_dir}/wraindrock-wallpaper.png ]] \
-    || die "wallpaper asset is missing"
 
 # 3a. os-release. Keep VERSION, VERSION_ID, OSTREE_VERSION and SUPPORT_END from
 # the base: update cadence and support window must stay honest. Only identity
@@ -116,22 +114,11 @@ grep -qx "VERSION_ID=${FEDORA_VERSION}" "${os_release}" \
 grep -qx "VARIANT_ID=${base_variant_id}" "${os_release}" \
     || die "branding changed VARIANT_ID"
 
-# 3c. Wallpaper. Fedora ships 10_org.gnome.desktop.background.fedora.gschema
-# override pointing at the f44 day/night images; our zz- override is merged
-# later and therefore wins for new users and for the GDM greeter, which reads
-# the same schema defaults.
-install -D -m 0644 "${branding_dir}/wraindrock-wallpaper.png" \
-    /usr/share/backgrounds/wraindrock/wraindrock-wallpaper.png
-
-# 3d. Default wallpaper, dock and input sources. Override files merge in name order,
+# 3d. Default dock and input sources. Override files merge in name order,
 # so zz- wins over Fedora's 10_* override.
 gschema_dir=/usr/share/glib-2.0/schemas
 override="${gschema_dir}/zzzz-wraindrock.gschema.override"
 cat > "${override}" <<'EOF'
-[org.gnome.desktop.background]
-picture-uri='file:///usr/share/backgrounds/wraindrock/wraindrock-wallpaper.png'
-picture-uri-dark='file:///usr/share/backgrounds/wraindrock/wraindrock-wallpaper.png'
-
 # Default dock: the user's working set, in this order. Left and right are the
 # same list; a user's own favorite-apps setting always wins.
 [org.gnome.shell]
@@ -521,7 +508,6 @@ cat > /usr/share/wraindrock/delta.json <<EOF
     ],
     "added": [
       "/usr/share/glib-2.0/schemas/zzzz-wraindrock.gschema.override",
-      "/usr/share/backgrounds/wraindrock/wraindrock-wallpaper.png",
       "/usr/libexec/wraindrock-hostname-seed",
       "/usr/lib/systemd/system/wraindrock-hostname-seed.service",
       "/usr/lib/systemd/system/sysinit.target.wants/wraindrock-hostname-seed.service",

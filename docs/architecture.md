@@ -97,7 +97,7 @@ equal `rpm.added`, the removals to be empty, and the additions to be the four
 known packages. For os-release it parses both files and allows only the changed
 keys `NAME`, `PRETTY_NAME`, `DEFAULT_HOSTNAME` and the four URLs. A removed, added or changed key outside that set fails the build;
 each declared value is then cross-checked against the actual file, so the
-manifest cannot drift into a polite fiction. The test also proves the wallpaper
+manifest cannot drift into a polite fiction. The test also proves the app folders
 override is compiled into `gschemas.compiled` and that `rpm -V --nomtime` on the
 package owning `/usr/lib/os-release` (looked up dynamically — the base owns it,
 not a Fedora identity package) reports exactly the two documented identity
@@ -109,7 +109,7 @@ Adding a customization therefore means adding it to the manifest **and**
 teaching the test about it — never relaxing the diff.
 
 The manifest also covers the files the build itself adds: the identity,
-wallpaper, hostname-seeding, application-folder and software files sit next to the
+hostname-seeding, application-folder and software files sit next to the
 `/usr/share/wraindrock/` provenance files in `files.added`, and parity requires
 that set to match exactly. Because four RPMs are baked, the image's RPM
 database *is* written by design; the build asserts the sqlite WAL is
@@ -134,22 +134,21 @@ unit is exercised in parity against a fixture with a temporary root.
 
 Visual personalisation was deliberately **removed** in v0.15: Bluefin's own
 logo, GDM artwork, Plymouth splash and boot-menu theme are better than what this
-image shipped, and they are upstream's to maintain. The wallpaper stays because
+image shipped, and they are upstream's to maintain. Wallpaper and other visual
 it is the one change that helps tell deployments apart. The delta is identity,
-the wallpaper, boot-entry naming and desktop grouping:
+identity stay stock; boot-entry naming and desktop grouping:
 
 | Change | Mechanism |
 | --- | --- |
 | display name, pretty name, default hostname | `sed` on `/usr/lib/os-release` |
 | `LOGO`, `ID`, `ID_LIKE`, `CPE_NAME`, version fields | left at upstream values — the icon stays Fedora's, uBlue tooling keys off `ID=fedora`, and the CPE keeps naming Fedora |
-| default desktop + GDM wallpaper | `/usr/share/backgrounds/wraindrock/wraindrock-wallpaper.png` + `[org.gnome.desktop.background]` in `zzzz-wraindrock.gschema.override` |
 | UEFI boot entry name | `/etc/system-release` rewritten to `Wraindrock release <ver> (Silverblue)`; bootupd derives the firmware label from it (`get_product_name`), falling back to os-release `NAME` |
 | default dock | `[org.gnome.shell] favorite-apps` in `zzzz-wraindrock.gschema.override`: Helium, Rnote, Files, Bazaar, Mission Center, Terminal; a user's own value wins |
 | application folders | `/etc/dconf/db/distro.d/10-wraindrock-folders` extends `folder-children` with Virtualization, Proxies, Social (社交), Wraindrock and uBlue, lists their apps explicitly, and excludes re-homed apps from Bluefin's folders; one home per app; `dconf update` compiles the distro database |
 | default hostname | `DEFAULT_HOSTNAME` (no `/etc/hostname` is shipped; an installer or user file still wins) |
 | input method | IBus is inherited from GNOME (no Fcitx in the image). Keyboard layouts and input methods are distinct entries in the source list; the English (US) layout stays and the only addition is the `libpinyin` input method in `[org.gnome.desktop.input-sources]` (`zzzz-wraindrock.gschema.override`). A user's own value wins |
 
-The wallpaper override sorts after Fedora's `10_*`
+The dconf override sorts after Fedora's `10_*`
 `zz0-`/`zz1-` overrides (ours is `zzzz-`), and replaces `picture-uri` and
 `picture-uri-dark`. GDM's greeter reads the same
 `org.gnome.desktop.background` defaults, so the login background follows without

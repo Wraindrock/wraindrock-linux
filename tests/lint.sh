@@ -99,40 +99,6 @@ else
     fail "${containerfile} is missing"
 fi
 
-echo "branding"
-for asset in build_files/branding/wraindrock-wallpaper.svg \
-             build_files/branding/wraindrock-wallpaper.png; do
-    if [[ -s ${asset} ]]; then
-        pass "${asset} exists"
-    else
-        fail "${asset} is missing"
-    fi
-done
-if grep -q '<text' build_files/branding/wraindrock-wallpaper.svg; then
-    fail "wallpaper SVG renders text at runtime"
-else
-    pass "wallpaper SVG is font-independent"
-fi
-if grep -Fiq '3c6eb4' build_files/branding/wraindrock-wallpaper.svg; then
-    pass "wallpaper uses the documented Wraindrock blue"
-else
-    fail "wallpaper lost the Wraindrock blue"
-fi
-if python3 - <<'PYWP'
-import struct
-
-with open("build_files/branding/wraindrock-wallpaper.png", "rb") as handle:
-    data = handle.read(24)
-assert data[:8] == b"\x89PNG\r\n\x1a\n", "not a PNG"
-width, height = struct.unpack(">II", data[16:24])
-assert (width, height) == (3840, 2160), f"wallpaper is {width}x{height}"
-PYWP
-then
-    pass "wallpaper is a 3840x2160 PNG"
-else
-    fail "wallpaper is not a 3840x2160 PNG"
-fi
-
 echo "identity and application folders"
 if grep -Fq "Wraindrock release" build_files/build.sh; then
     pass "build.sh brands /etc/system-release (bootupd UEFI entry name)"
@@ -395,7 +361,7 @@ fi
 
 echo "build invariants"
 for needle in 'base-os-release' 'delta.json' 'zzzz-wraindrock.gschema.override' \
-              'wraindrock-wallpaper.png' 'Wraindrock release' \
+              'Wraindrock release' \
               '10-wraindrock-folders' 'wraindrock-hostname-seed' \
               'install -d -m 0755 /opt' \
               'org.gnome.desktop.input-sources' 'libpinyin' \
@@ -478,11 +444,7 @@ if grep -Fq 'delta.json' docs/architecture.md &&
 else
     fail "docs do not describe /usr/share/wraindrock/delta.json"
 fi
-if grep -Fq 'wraindrock-wallpaper' docs/architecture.md; then
-    pass "architecture doc describes the wallpaper override"
-else
-    fail "docs/architecture.md does not describe the wallpaper"
-fi
+
 
 if grep -Fq 'interactive' docs/install.md &&
    grep -Fq 'erase first disk' docs/install.md; then

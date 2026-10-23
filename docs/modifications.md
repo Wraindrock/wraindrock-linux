@@ -30,8 +30,7 @@ tooling keep working. `/etc/system-release` is rewritten to `Wraindrock release
 
 ## Desktop defaults
 
-- One 3840x2160 dark wallpaper at `/usr/share/backgrounds/wraindrock/`; day and
-  dark picture URIs point at it. No other artwork is replaced.
+- No wallpaper or other visual branding: the stock Silverblue/GNOME look stays.
 - Default dock, in order: Helium, Rnote, Files, Bazaar, Mission Center, Terminal.
 - Input sources: English (US) keyboard layout plus the `libpinyin` input method on
   the inherited IBus framework.
@@ -87,10 +86,9 @@ Modified (6): `/usr/lib/os-release`, `/etc/system-release`,
 `/etc/dconf/db/distro`, `/opt` (bluefin used a symlink into `/var`; the image needs a
 real directory so `/opt` payloads survive).
 
-Added (38):
+Added (37):
 
 - `/usr/share/glib-2.0/schemas/zzzz-wraindrock.gschema.override`
-- `/usr/share/backgrounds/wraindrock/wraindrock-wallpaper.png`
 - `/usr/libexec/wraindrock-hostname-seed`
 - `/usr/lib/systemd/system/wraindrock-hostname-seed.service`
 - `/usr/lib/systemd/system/sysinit.target.wants/wraindrock-hostname-seed.service`

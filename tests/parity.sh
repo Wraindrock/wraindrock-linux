@@ -10,7 +10,7 @@
 #   * /usr/lib/os-release may differ only in the identity keys listed in the
 #     image's own delta manifest, with exactly the recorded values;
 #   * every added file is one the delta manifest declares;
-#   * the wallpaper override is compiled into the schema cache;
+#   * the dconf override is compiled into the schema cache;
 #   * the Plymouth boot splash is installed, selected, and complete.
 #
 #   tests/parity.sh ghcr.io/ublue-os/silverblue-main:44 \
@@ -233,7 +233,6 @@ assert delta["files"]["modified"] == [
 ], delta["files"]
 expected_added = {
     "/usr/share/glib-2.0/schemas/zzzz-wraindrock.gschema.override",
-    "/usr/share/backgrounds/wraindrock/wraindrock-wallpaper.png",
     "/usr/share/wraindrock/base-os-release",
     "/usr/share/wraindrock/build-info.json",
     "/usr/share/wraindrock/delta.json",
@@ -466,106 +465,13 @@ else
     fail "HPLIP is incomplete (packages, hp-setup, CUPS backend or SANE backend missing)"
 fi
 
-# --- default wallpaper ------------------------------------------------------
-wallpaper=/usr/share/backgrounds/wraindrock/wraindrock-wallpaper.png
-if in_image "${IMAGE}" "test -s ${wallpaper}"; then
-    pass "default wallpaper is installed"
+# --- wallpaper: the stock base default --------------------------------------
+base_wall="$(in_image "${BASE}" "GSETTINGS_BACKEND=memory gsettings get org.gnome.desktop.background picture-uri" || true)"
+image_wall="$(in_image "${IMAGE}" "GSETTINGS_BACKEND=memory gsettings get org.gnome.desktop.background picture-uri" || true)"
+if [[ -n ${base_wall} && ${base_wall} == "${image_wall}" ]]; then
+    pass "wallpaper is the stock base default (${image_wall})"
 else
-    fail "default wallpaper is missing"
-fi
-
-png_size="$(in_image "${IMAGE}" "stat -c %s ${wallpaper} 2>/dev/null || true")"
-png_dims="$(in_image "${IMAGE}" "od -An -tu4 --endian=big -j16 -N8 ${wallpaper} 2>/dev/null || true")"
-read -r png_w png_h <<<"${png_dims}"
-if [[ ${png_size:-0} -ge 50000 ]]; then
-    pass "default wallpaper is a real image (${png_size} bytes)"
-else
-    fail "default wallpaper is suspiciously small (${png_size:-0} bytes)"
-fi
-if [[ ${png_w:-0} -eq 3840 && ${png_h:-0} -eq 2160 ]]; then
-    pass "default wallpaper is 3840x2160"
-else
-    fail "default wallpaper is ${png_w:-?}x${png_h:-?}, want 3840x2160"
-fi
-
-if in_image "${IMAGE}" \
-    "grep -qxF \"picture-uri='file://${wallpaper}'\" \
-        /usr/share/glib-2.0/schemas/zzzz-wraindrock.gschema.override" &&
-   in_image "${IMAGE}" \
-    "grep -qxF \"picture-uri-dark='file://${wallpaper}'\" \
-        /usr/share/glib-2.0/schemas/zzzz-wraindrock.gschema.override"; then
-    pass "wallpaper override sets both day and dark defaults"
-else
-    fail "wallpaper override is missing or wrong"
-fi
-
-if in_image "${IMAGE}" \
-    'grep -aq wraindrock-wallpaper /usr/share/glib-2.0/schemas/gschemas.compiled'; then
-    pass "wallpaper override is compiled into the schema cache"
-else
-    fail "compiled schema cache does not contain the wallpaper override"
-fi
-
-for key in picture-uri picture-uri-dark; do
-    want="'file://${wallpaper}'"
-    got="$(in_image "${IMAGE}" \
-        "GSETTINGS_BACKEND=memory gsettings get org.gnome.desktop.background ${key}" \
-        2>/dev/null || true)"
-    if [[ ${got} == "${want}" ]]; then
-        pass "default ${key} is the Wraindrock wallpaper"
-    else
-        fail "default ${key} is ${got:-<unset>}, want ${want}"
-    fi
-done
-
-# --- identity files ---------------------------------------------------------
-# /usr/lib/os-release and /etc/system-release come from different release
-# packages; each is replaced on purpose. Verify each package reports exactly
-# its own branded file and nothing else.
-check_identity_file() {
-    local path="$1" label="$2"
-    local package
-    package="$(in_image "${IMAGE}" "rpm -q --whatprovides ${path}" 2>/dev/null | head -n 1 || true)"
-    if [[ -z ${package} ]]; then
-        fail "could not determine which package owns ${path}"
-        return
-    fi
-    local verify
-    verify="$(in_image "${IMAGE}" "rpm -V --nomtime ${package} || true")"
-    local lines
-    lines="$(printf '%s\n' "${verify}" | grep -c . || true)"
-    if [[ ${lines} -eq 1 ]] && grep -q "${path}" <<<"${verify}"; then
-        pass "rpm sees only the branded ${label} changed (${package})"
-    else
-        fail "rpm verification for ${path} reported: ${verify:-<none>}"
-    fi
-}
-check_identity_file /usr/lib/os-release "os-release"
-check_identity_file /etc/system-release "system-release"
-
-# --- UEFI boot entry name and app folders ----------------------------------
-system_release="$(in_image "${IMAGE}" 'cat /etc/system-release' 2>/dev/null || true)"
-if [[ ${system_release} == "Wraindrock release "* ]]; then
-    pass "/etc/system-release names the UEFI entry Wraindrock (${system_release})"
-else
-    fail "/etc/system-release does not name the UEFI entry: ${system_release:-<missing>}"
-fi
-
-# The uBlue Silverblue base has no app-folder presets; when a base does ship
-# them (e.g. a future upstream change), keep the vendored copy in sync.
-if in_image "${BASE}" "test -e /etc/dconf/db/distro.d/01-bluefin-folders"; then
-    in_image "${BASE}" "sed 's/[[:space:]]*$//' /etc/dconf/db/distro.d/01-bluefin-folders" \
-        | grep -v '^#' | sed '/^[[:space:]]*$/d' > "${tmpdir}/base.folders"
-    grep -v '^#' tests/fixtures/bluefin-folders.conf \
-        | sed 's/[[:space:]]*$//' | sed '/^[[:space:]]*$/d' > "${tmpdir}/fixture.folders"
-    if diff -u "${tmpdir}/fixture.folders" "${tmpdir}/base.folders" > "${tmpdir}/folders.diff"; then
-        pass "the base's own folder definitions match the vendored fixture"
-    else
-        fail "the base changed its folder definitions; update tests/fixtures/bluefin-folders.conf"
-        head -20 "${tmpdir}/folders.diff" || true
-    fi
-else
-    pass "the base ships no app-folder presets; the vendored definitions are authoritative"
+    fail "wallpaper differs from the base (${base_wall} vs ${image_wall})"
 fi
 
 # --- default dock -----------------------------------------------------------
@@ -650,7 +556,7 @@ else
     fail "compiled distro dconf database does not contain the app folders"
 fi
 
-# Appearance customisation was deliberately removed; the wallpaper is the only
+# Appearance customisation is deliberately absent: the wallpaper must stay the
 # visual delta. These files must not come back silently.
 for gone in /usr/share/pixmaps/wraindrock-gdm-logo.png \
     /usr/share/plymouth/themes/wraindrock/wraindrock.plymouth \

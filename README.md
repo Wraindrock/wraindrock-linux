@@ -17,8 +17,8 @@ add on top.
   driver and kernel module, `nvidia-container-toolkit`, Docker, Incus,
   libvirt/QEMU, virt-manager, Distrobox, the nine Bluefin GNOME extensions and
   their dconf presets, and the Bluefin application folders.
-- A 4K dark wallpaper replaces upstream's. Everything else visual — logo, GDM
-  artwork, boot splash and boot-menu theme — is stock Silverblue/GNOME.
+- The wallpaper, logo, GDM artwork, boot splash and boot-menu theme are stock
+  Silverblue/GNOME; personal visual branding is deliberately left out.
 - The UEFI boot entry is labelled **Wraindrock** (not Fedora).
 - GNOME application folders group launchers by purpose: Accessories (附件) for
   GNOME's own desktop apps, Utilities (工具) for the tools, plus Wraindrock,
@@ -52,8 +52,7 @@ silently.
   `libpinyin` engine in the source list (and `show-all-sources`), so Chinese
   typing works on first login.
 - Look, fonts, dock, keybindings and the default favourite apps come from this
-  repository's dconf presets; we override the wallpaper and the input-method
-  default as well.
+  repository's dconf presets; we override the input-method default as well.
 
 ## Software
 

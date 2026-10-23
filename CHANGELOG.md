@@ -17,6 +17,8 @@ image versions are the upstream channel plus an immutable build tag, see
 - Restored the Bluefin DX desktop layer on the lean base: nine GNOME extensions
   with their dconf presets, the seven Bluefin application folders, the Flathub
   remote and the Bazaar `host-etc` preset.
+- The wallpaper and all other visual branding are left at stock Silverblue; only
+  the dock, folders, input default and UEFI name are curated.
 - Base identity is now `ID=fedora`/`VARIANT_ID=silverblue`; `CPE_NAME` names
   Fedora, and the image adds 197 packages to the 1,632-package base.
 
