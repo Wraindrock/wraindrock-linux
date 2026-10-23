@@ -31,7 +31,6 @@ for cmd in rpm sha256sum install grep sed curl comm gsettings; do
 done
 
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-branding_dir="${script_dir}/branding"
 
 os_release=/usr/lib/os-release
 [[ -r ${os_release} ]] || die "${os_release} is missing"
