@@ -81,11 +81,20 @@ for line in open(pins_path):
     name, nvr = line.split("\t")
     pins[name] = nvr
 assert delta["schema"] == 2, delta
-assert delta["rpm"]["removed"] == [], delta["rpm"]["removed"]
+allowed_removed = {
+    "firefox", "firefox-langpacks", "gnome-software", "fedora-bookmarks",
+    "fedora-chromium-config", "fedora-chromium-config-gnome",
+    "gnome-shell-extension-background-logo", "yelp",
+}
+assert delta["rpm"]["removed"] == removed, (
+    "declared", delta["rpm"]["removed"], "actual", removed
+)
 assert set(delta["rpm"]["added"]) == set(added), (
     "declared", sorted(delta["rpm"]["added"]), "actual", sorted(added)
 )
-assert removed == [], removed
+removed_names = {entry.rsplit("-", 2)[0] for entry in removed}
+assert removed_names <= allowed_removed, sorted(removed_names - allowed_removed)
+assert removed_names == allowed_removed, sorted(allowed_removed - removed_names)
 assert pins, "the image does not record its RPM pins"
 matched = set()
 for entry in added:
@@ -102,6 +111,14 @@ else
     fail "RPM set differs beyond the declared additions (base ${base_count}, image ${image_count})"
     head -40 "${tmpdir}/rpm.added" || true
 fi
+
+for app in firefox gnome-software; do
+    if in_image "${IMAGE}" "rpm -q ${app} >/dev/null 2>&1"; then
+        fail "stock application ${app} is still installed"
+    else
+        pass "stock application ${app} is removed"
+    fi
+done
 
 # --- os-release -------------------------------------------------------------
 in_image "${BASE}" 'cat /usr/lib/os-release' > "${tmpdir}/base-os-release"

@@ -18,7 +18,7 @@ marker="${state_dir}/flatpak-preinstall.sha256"
 desired="$(sha256sum "${preinstall}" | cut -d' ' -f1)"
 
 app_ids() {
-    grep -Ev '^#|^[[:space:]]*$' "${preinstall}" | sort -u
+    sed -n 's/^\[Flatpak Preinstall \([^]]*\)\]$/\1/p' "${preinstall}" | sort -u
 }
 
 missing_apps() {

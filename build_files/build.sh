@@ -204,6 +204,13 @@ baseurl=https://download.docker.com/linux/fedora/44/x86_64/stable
 enabled=1
 gpgcheck=0
 skip_if_unavailable=1
+
+[code]
+name=Visual Studio Code
+baseurl=https://packages.microsoft.com/yumrepos/vscode
+enabled=1
+gpgcheck=0
+skip_if_unavailable=1
 EOF
 
 # 3d-ter. NVIDIA driver stack. The uBlue base is driver-neutral, so CI stages
@@ -303,6 +310,17 @@ command -v docker >/dev/null || die "Docker did not install"
 command -v incus >/dev/null || die "Incus did not install"
 command -v virt-manager >/dev/null || die "virt-manager did not install"
 command -v distrobox >/dev/null || die "distrobox did not install"
+
+# 3d-quinquies. The rest of the Bluefin DX package set (developer tools,
+# cockpit, extra fonts, remaining DX utilities). These are ordinary Fedora
+# packages, so dnf resolves their dependencies against the repos above.
+say "installing the rest of the Bluefin DX tool set"
+xargs -a "${script_dir}/software/bluefin-tools.txt" -r dnf5 install -y
+for tool in fish fastfetch gnome-tweaks guestfs-tools code lxc podman-compose qemu-user-static; do
+    rpm -q "${tool}" >/dev/null || die "Bluefin DX tool ${tool} did not install"
+done
+command -v code >/dev/null || die "code did not install"
+command -v fish >/dev/null || die "fish did not install"
 
 # --- 3g-ter. Flatpak remote and Bazaar preset ------------------------------
 # The uBlue base ships flatpak but neither the Flathub remote nor the Bazaar
@@ -478,6 +496,19 @@ rm -rf "${rpm_dir}"
 [[ -x /usr/lib/cups/backend/hp ]] || die "HPLIP did not install the CUPS backend"
 [[ -e /usr/lib64/sane/libsane-hpaio.so.1 ]] || die "HPLIP did not install the SANE backend"
 
+# Remove the two stock Silverblue applications that Bluefin (and Wraindrock)
+# replace with Bazaar and Helium, plus the Fedora browser config that only
+# existed for Firefox.
+removed_apps=(firefox firefox-langpacks gnome-software fedora-bookmarks
+    fedora-chromium-config fedora-chromium-config-gnome
+    gnome-shell-extension-background-logo yelp)
+dnf5 remove -y --no-autoremove "${removed_apps[@]}"
+for app in firefox gnome-software; do
+    rpm -q "${app}" >/dev/null 2>&1 && die "${app} is still installed"
+done
+[[ ! -e /usr/share/applications/firefox.desktop ]] || die "Firefox desktop entry is still present"
+[[ ! -e /usr/share/applications/org.gnome.Software.desktop ]] || die "GNOME Software desktop entry is still present"
+
 rpm_current_set_file="$(mktemp /tmp/wraindrock-current-rpm-set.XXXXXX)"
 rpm_added_file="$(mktemp /tmp/wraindrock-rpm-added.XXXXXX)"
 rpm_removed_file="$(mktemp /tmp/wraindrock-rpm-removed.XXXXXX)"
@@ -494,7 +525,15 @@ while IFS=$'\t' read -r pin_name pin_version _pin_url _pin_sha; do
     [[ ${installed_version} == "${pin_version}" ]] \
         || die "${pin_name}: expected ${pin_version}, installed ${installed_version}"
 done < "${rpm_active_pins}"
-[[ ! -s "${rpm_removed_file}" ]] || die "the software step removed base packages"
+[[ $(wc -l < "${rpm_removed_file}") -eq ${#removed_apps[@]} ]] \
+    || die "unexpected package removals: $(paste -sd' ' "${rpm_removed_file}")"
+while IFS= read -r gone; do
+    [[ -n ${gone} ]] || continue
+    rpm -q "${gone}" >/dev/null 2>&1 && die "expected ${gone} to be removed"
+done < "${rpm_removed_file}"
+for gone in "${removed_apps[@]}"; do
+    rpm -q "${gone}" >/dev/null 2>&1 && die "expected ${gone} to be removed"
+done
 
 # sqlite checkpoints the WAL when the last connection closes. Never ship a
 # non-empty WAL: that would mean an uncheckpointed database. The sidecars stay
