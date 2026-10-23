@@ -123,7 +123,7 @@ Every build publishes the same three things; pick one:
 | --- | --- | --- |
 | Split live ISO | [GitHub Releases](https://github.com/Wraindrock/wraindrock-linux/releases) | Installing from a USB stick |
 | Disk OCI artifact | `ghcr.io/wraindrock/wraindrock-linux-disk:<version>` | You prefer `oras`/registry pulls (qcow2 + ISO + checksums) |
-| System image | `ghcr.io/wraindrock/wraindrock-linux:44` | Switching an existing Bluefin DX install |
+| System image | `ghcr.io/wraindrock/wraindrock-linux:44` | Switching an existing uBlue Silverblue or Bluefin DX install |
 
 Both disk artifacts come from `.github/workflows/disk.yml`; releases are cut by
 `.github/workflows/release-iso.yml` from the published ISO layer. Systems
@@ -183,7 +183,7 @@ Two supported paths.
 
 ### 1. Pull the image (ghcr.io)
 
-On an existing Bluefin DX 44 system:
+On an existing uBlue Silverblue 44 (or Bluefin DX 44) system:
 
 ```bash
 sudo bootc switch ghcr.io/wraindrock/wraindrock-linux:44

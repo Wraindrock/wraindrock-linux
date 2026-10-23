@@ -1,254 +1,93 @@
-# What Wraindrock changes relative to Bluefin DX
+# Everything Wraindrock changes
 
-Wraindrock is a **bootc system image derived from
-`ghcr.io/ublue-os/bluefin-dx-nvidia-open:stable`**. Bluefin remains the
-upstream: the kernel, drivers, desktop, uBlue tooling, update service and
-packaging content are inherited. This page is the complete inventory of the
-differences the build actually applies, and `tests/parity.sh` fails if the
-image differs from the base in any way that is not recorded in
-`/usr/share/wraindrock/delta.json`.
+This is the complete inventory of the delta between **Wraindrock** and its
+upstream base. The machine-readable version is `/usr/share/wraindrock/delta.json`
+inside every image; CI fails if the image carries anything it does not declare.
 
-The base digest resolved by the current build is
-`sha256:f91341a71615b606414dc72c5c76415ccde8bb8928c114d9bbdaac17198e54cd`.
+## Base
 
-## 1. Identity
+- Base image: `ghcr.io/ublue-os/silverblue-main:44`
+- Base digest: `sha256:aa8751e2268e322e49869cedec47f9cb73d506f086dd24b3d4d95b2505faa3bb`
+- Current image: `44.20261023T110546Z.115` (`sha256:4d74a88b6b39bcd6d176db3895b82495fc6f64d81516975948c73cc699ad2e6c`)
 
-`/usr/lib/os-release` is rewritten in place. Only these keys change:
+## Identity
 
-| key | value |
-|---|---|
+`/usr/lib/os-release` is rewritten in place (all other keys stay upstream):
+
+| Key | Value |
+| --- | --- |
 | `NAME` | `Wraindrock` |
-| `PRETTY_NAME` | `Wraindrock (Version: 44.20261022.1)` (the base version is preserved) |
+| `PRETTY_NAME` | `Wraindrock 44.20261023.0 (Silverblue)` |
 | `DEFAULT_HOSTNAME` | `wraindrock` |
 | `HOME_URL` | `https://github.com/Wraindrock/wraindrock-linux` |
-| `DOCUMENTATION_URL` | `https://github.com/Wraindrock/wraindrock-linux/blob/main/docs/install.md` |
-| `SUPPORT_URL` | `https://github.com/Wraindrock/wraindrock-linux/issues` |
-| `BUG_REPORT_URL` | `https://github.com/Wraindrock/wraindrock-linux/issues` |
+| `DOCUMENTATION_URL` | repository docs |
+| `SUPPORT_URL` / `BUG_REPORT_URL` | repository issues |
 
-Every other field is inherited on purpose: `ID=bluefin`, `ID_LIKE=fedora`,
-`VERSION_ID`, `VERSION_CODENAME`, `VARIANT_ID=bluefin-dx-nvidia-open`,
-`OSTREE_VERSION`, `CPE_NAME`, `LOGO`, `IMAGE_ID`/`IMAGE_VERSION` and the update
-identity. uBlue tooling keys off `ID`/`IMAGE_ID`, so changing them would break
-`ujust`, the update service and support tooling.
+`ID`, `ID_LIKE`, `CPE_NAME`, `VERSION_ID`, `VARIANT_ID` and `OSTREE_VERSION` keep
+their upstream values (`ID=fedora`, `VARIANT_ID=silverblue`) so Fedora and uBlue
+tooling keep working. `/etc/system-release` is rewritten to `Wraindrock release
+44 (Silverblue)` so bootupd names the UEFI entry **Wraindrock**.
 
-`/etc/system-release` is replaced with `Wraindrock release <version> (Bluefin DX)`.
-bootupd derives the UEFI firmware entry from this file, so a UEFI install shows
-**Wraindrock** in the firmware boot menu instead of `Fedora`/`Bluefin`.
+## Desktop defaults
 
-The image also carries its own record of the delta:
+- One 3840x2160 dark wallpaper at `/usr/share/backgrounds/wraindrock/`; day and
+  dark picture URIs point at it. No other artwork is replaced.
+- Default dock, in order: Helium, Rnote, Files, Bazaar, Mission Center, Terminal.
+- Input sources: English (US) keyboard layout plus the `libpinyin` input method on
+  the inherited IBus framework.
+- App folders (13): `Games`, `GamingUtilities`, `Accessories`, `Utilities`, `Development`, `Containers`, `Wine`, `Productivity`, `Virtualization`, `Proxies`, `Social`, `Wraindrock`, `uBlue`.
+  - `Accessories`: `org.gnome.Nautilus.desktop`, `org.gnome.Ptyxis.desktop`, `org.gnome.Settings.desktop`, `org.gnome.DiskUtility.desktop`, `org.gnome.SystemMonitor.desktop`, `org.gnome.Tour.desktop`, `org.gnome.tweaks.desktop`, `orca.desktop`, `org.gnome.Calculator.desktop`, `org.gnome.Calendar.desktop`, `org.gnome.Characters.desktop`, `org.gnome.Connections.desktop`, `org.gnome.Contacts.desktop`, `org.gnome.DejaDup.desktop`, `org.gnome.FileRoller.desktop`, `org.gnome.Firmware.desktop`, `org.gnome.Logs.desktop`, `org.gnome.Loupe.desktop`, `org.gnome.Maps.desktop`, `org.gnome.Papers.desktop`, `org.gnome.Showtime.desktop`, `org.gnome.SimpleScan.desktop`, `org.gnome.Snapshot.desktop`, `org.gnome.Decibels.desktop`, `org.gnome.TextEditor.desktop`, `org.gnome.Weather.desktop`, `org.gnome.baobab.desktop`, `org.gnome.clocks.desktop`, `org.gnome.font-viewer.desktop`
+  - `Virtualization`: `virt-manager.desktop`, `io.podman_desktop.PodmanDesktop.desktop`
+  - `Proxies`: `Clash Verge.desktop`, `sing-box.desktop`
+  - `Social`: `com.tencent.WeChat.desktop`, `com.qq.QQ.desktop`, `com.dingtalk.DingTalk.desktop`
+  - `Wraindrock`: `helium.desktop`, `Rayburst.desktop`
+  - `uBlue`: `discourse.desktop`, `documentation.desktop`, `system-update.desktop`
+- Nine GNOME extensions are vendored under `/usr/share/gnome-shell/extensions`
+  (AppIndicator, Bazaar integration, Blur my Shell, Caffeine, Dash to Dock, Gradia
+  integration, GSConnect, Logo Menu, Search Light); the Bluefin DX enabled set is
+  enabled by default, and the four dconf presets configure keybindings, Logo Menu,
+  Search Light and Blur my Shell.
 
-- `/usr/share/wraindrock/build-info.json` — image, version, build number, git sha, base digest, RPM counts;
-- `/usr/share/wraindrock/delta.json` — the manifest described below;
-- `/usr/share/wraindrock/base-os-release` and `/usr/share/wraindrock/base-rpm-set` — pristine copies of the upstream data;
-- `/usr/share/wraindrock/rpm-pins` — the pins the build verified.
+## First boot
 
-## 2. Desktop defaults
+- Hostname seed: a oneshot unit sets `/etc/hostname` to `wraindrock` when it is
+  absent or still `fedora`, then never touches it again (marker in `/var/lib/wraindrock`).
+- Flatpak preinstall: 43 apps are declared in
+  `/usr/share/flatpak/preinstall.d/wraindrock.preinstall`; a wrapper plus a ten-minute
+  timer retries `flatpak preinstall` until the network is up and every app is present.
+- Dell G15/G16 only: a first-boot unit installs the pinned Ian-g-control-center commit
+  into `/var/opt/g15-controller` and starts its daemon.
 
-All defaults are system schema/dconf values; a value the user changes in
-Settings always wins.
+## Software
 
-- **Wallpaper**: `/usr/share/backgrounds/wraindrock/wraindrock-wallpaper.png`
-  (3840x2160), set for both light and dark mode. This is the only visual
-  customisation that is kept.
-- **Dock** (`org.gnome.shell favorite-apps`): Helium, Rnote, Files, Bazaar,
-  Mission Center, Terminal.
-- **Input**: English (US) keyboard layout plus the inherited IBus/libpinyin
-  input method, both in `sources`/`mru-sources`, `show-all-sources=true`.
-- **Deliberately removed** (previously prototyped, now gone): GDM logo, Plymouth
-  boot splash, GRUB theme, custom icon/logo, any dconf theme tweaks. Upstream
-  Bluefin's own look (fonts, accent, extensions) is left untouched.
+The first boot installs 43 Flatpaks from Flathub: `be.alexandervanhee.gradia`, `com.github.PintaProject.Pinta`, `com.github.tchx84.Flatseal`, `com.mattjakeman.ExtensionManager`, `com.ranfdev.DistroShelf`, `io.github.flattool.Ignition`, `io.github.kolunmi.Bazaar`, `io.gitlab.adhami3310.Impression`, `io.missioncenter.MissionCenter`, `org.gnome.Calculator`, `org.gnome.Calendar`, `org.gnome.Characters`, `org.gnome.Connections`, `org.gnome.Contacts`, `org.gnome.DejaDup`, `org.gnome.FileRoller`, `org.gnome.Firmware`, `org.gnome.Logs`, `org.gnome.Loupe`, `org.gnome.Maps`, `org.gnome.NautilusPreviewer`, `org.gnome.Papers`, `org.gnome.Showtime`, `org.gnome.SimpleScan`, `org.gnome.Snapshot`, `org.gnome.Decibels`, `org.gnome.TextEditor`, `org.gnome.Weather`, `org.gnome.baobab`, `org.gnome.clocks`, `org.gnome.font-viewer`, `page.tesk.Refine`, `de.leopoldluley.Clapgrep`, `io.github.getnf.embellish`, `io.podman_desktop.PodmanDesktop`, `me.iepure.devtoolbox`, `org.gnome.Builder`, `com.tencent.WeChat`, `com.github.flxzt.rnote`, `it.mijorus.gearlever`, `com.dingtalk.DingTalk`, `com.qq.QQ`, `io.github.yucling.open-orpheus`.
 
-## 3. Application folders
+Four RPMs without a Flatpak are baked at pinned versions: `helium-bin 0.20.1.1-1.fc44`, `clash-verge 2.5.8-1`, `rayburst 4.1.0-1`, `sing-box 1.14.3-1`.
 
-GNOME puts an app in every folder it matches, so each folder below has one home
-per app, and the re-homed apps are appended to `excluded-apps` of all seven
-Bluefin folders (`Games`, `GamingUtilities`, `Utilities`, `Development`,
-`Containers`, `Wine`, `Productivity`). `tests/folders.py` proves the invariant
-on the merged definitions.
+Restored on top of the lean base (197 added packages in total):
 
-| folder | contents |
-|---|---|
-| Accessories / 附件 | 29 GNOME desktop apps |
-| Virtualization | virt-manager.desktop, io.podman_desktop.PodmanDesktop.desktop |
-| Proxies | Clash Verge.desktop, sing-box.desktop |
-| Social / 社交 | com.tencent.WeChat.desktop, com.qq.QQ.desktop, com.dingtalk.DingTalk.desktop |
-| Wraindrock | helium.desktop, Rayburst.desktop |
-| uBlue | discourse.desktop, documentation.desktop, system-update.desktop |
+- NVIDIA open driver stack: `kmod-nvidia`, `nvidia-driver` and userland,
+  `nvidia-container-toolkit`, staged from `ublue-os/akmods-nvidia-open:main-44-<kernel>`.
+- Docker: `docker-ce`, `docker-ce-cli`, `containerd.io`, `docker-buildx-plugin`,
+  `docker-compose-plugin`.
+- Incus: `incus`, `incus-client`.
+- Virtualisation: the libvirt stack, `qemu-system-x86-core`, `qemu-img`,
+  `virt-manager`, `virt-install`, `distrobox`.
+- Runtime dependencies the pinned apps need (for example `libayatana-appindicator-gtk3`,
+  `libXScrnSaver`, `webkit2gtk4.1`) and their transitive Fedora packages.
+- Flathub is added as a system remote, plus the Bazaar `host-etc` Flatpak preset.
 
-Bluefin's seven folders keep their upstream apps and categories. The
-Accessories and Social names come from our own `.directory` files
-(`wraindrock-accessories.directory`: `附件`; `wraindrock-social.directory`:
-`社交`), because GNOME's `X-GNOME-Utilities` translation is “工具” (Tools).
+The complete, exact package list is in `delta.json` (`rpm.added`); the base is
+1,632 packages and the image is 1,829.
 
-Accessories contains:
-- `org.gnome.Nautilus.desktop`
-- `org.gnome.Ptyxis.desktop`
-- `org.gnome.Settings.desktop`
-- `org.gnome.DiskUtility.desktop`
-- `org.gnome.SystemMonitor.desktop`
-- `org.gnome.Tour.desktop`
-- `org.gnome.tweaks.desktop`
-- `orca.desktop`
-- `org.gnome.Calculator.desktop`
-- `org.gnome.Calendar.desktop`
-- `org.gnome.Characters.desktop`
-- `org.gnome.Connections.desktop`
-- `org.gnome.Contacts.desktop`
-- `org.gnome.DejaDup.desktop`
-- `org.gnome.FileRoller.desktop`
-- `org.gnome.Firmware.desktop`
-- `org.gnome.Logs.desktop`
-- `org.gnome.Loupe.desktop`
-- `org.gnome.Maps.desktop`
-- `org.gnome.Papers.desktop`
-- `org.gnome.Showtime.desktop`
-- `org.gnome.SimpleScan.desktop`
-- `org.gnome.Snapshot.desktop`
-- `org.gnome.Decibels.desktop`
-- `org.gnome.TextEditor.desktop`
-- `org.gnome.Weather.desktop`
-- `org.gnome.baobab.desktop`
-- `org.gnome.clocks.desktop`
-- `org.gnome.font-viewer.desktop`
+## Files
 
-The channel folders (`Flatpak`, `AppImage`, `Bluefin`) that an earlier iteration
-had are gone: grouping by packaging channel duplicated apps across the
-functional folders.
+Modified (6): `/usr/lib/os-release`, `/etc/system-release`,
+`/usr/share/glib-2.0/schemas/gschemas.compiled`, `/usr/share/rpm/rpmdb.sqlite`,
+`/etc/dconf/db/distro`, `/opt` (bluefin used a symlink into `/var`; the image needs a
+real directory so `/opt` payloads survive).
 
-## 4. First boot
-
-- **Hostname seeding** — `wraindrock-hostname-seed.service` (oneshot, after
-  local-fs) writes `DEFAULT_HOSTNAME` to `/etc/hostname` and applies it, but only
-  when the file is empty or still `fedora`/`bluefin`, and only once (marker
-  `/var/lib/wraindrock/hostname-seeded`). A user-chosen hostname is never
-  touched.
-- **Flatpak preinstall** — the image ships
-  `/usr/share/flatpak/preinstall.d/wraindrock.preinstall` with 43
-  apps. Bluefin's `flatpak-preinstall.service` gives up after three attempts,
-  which happens before a fresh laptop has joined Wi-Fi, so our
-  `wraindrock-flatpak-preinstall.service` + `.timer` (every 10 minutes) retry
-  until the network is up. The wrapper checks the preinstall file hash, waits for
-  the base service, runs `flatpak preinstall -y`, then verifies every declared
-  app is actually installed; a matching marker alone is not trusted.
-- **Dell G15/G16 control center** — `wraindrock-g15-install.service` runs only on
-  machines whose DMI matches `*G15*|*G16*`. It installs
-  `Wraindrock/Ian-g-control-center` from a pinned commit/archive sha256 into
-  `/var/opt/g15-controller`, logs to `/var/log/wraindrock-g15-install.log`, and
-  marks completion; other hardware is untouched.
-
-## 5. Software
-
-### Preinstalled Flatpaks (43)
-
-- `be.alexandervanhee.gradia`
-- `com.github.PintaProject.Pinta`
-- `com.github.tchx84.Flatseal`
-- `com.mattjakeman.ExtensionManager`
-- `com.ranfdev.DistroShelf`
-- `io.github.flattool.Ignition`
-- `io.github.kolunmi.Bazaar`
-- `io.gitlab.adhami3310.Impression`
-- `io.missioncenter.MissionCenter`
-- `org.gnome.Calculator`
-- `org.gnome.Calendar`
-- `org.gnome.Characters`
-- `org.gnome.Connections`
-- `org.gnome.Contacts`
-- `org.gnome.DejaDup`
-- `org.gnome.FileRoller`
-- `org.gnome.Firmware`
-- `org.gnome.Logs`
-- `org.gnome.Loupe`
-- `org.gnome.Maps`
-- `org.gnome.NautilusPreviewer`
-- `org.gnome.Papers`
-- `org.gnome.Showtime`
-- `org.gnome.SimpleScan`
-- `org.gnome.Snapshot`
-- `org.gnome.Decibels`
-- `org.gnome.TextEditor`
-- `org.gnome.Weather`
-- `org.gnome.baobab`
-- `org.gnome.clocks`
-- `org.gnome.font-viewer`
-- `page.tesk.Refine`
-- `de.leopoldluley.Clapgrep`
-- `io.github.getnf.embellish`
-- `io.podman_desktop.PodmanDesktop`
-- `me.iepure.devtoolbox`
-- `org.gnome.Builder`
-- `com.tencent.WeChat`
-- `com.github.flxzt.rnote`
-- `it.mijorus.gearlever`
-- `com.dingtalk.DingTalk`
-- `com.qq.QQ`
-- `io.github.yucling.open-orpheus`
-
-This is Bluefin's core and DX list minus `org.mozilla.firefox` (Helium is the
-default browser and no Firefox preinstall was wanted), `org.mozilla.thunderbird`,
-the two GTK3 theme extensions, and `com.github.tuna_os.Tavern` (no longer on
-Flathub), plus WeChat, Rnote, Gear Lever, DingTalk, QQ and Open Orpheus.
-Bluefin's remaining core apps stay a documented one-liner
-(`ujust install-system-flatpaks`) because Bluefin itself does not bake them.
-
-Helium is the default handler for `http`, `https`, `text/html` and
-`application/xhtml+xml` via `/etc/xdg/mimeapps.list`.
-
-### Pinned RPMs
-
-| package | version | source |
-|---|---|---|
-| `helium-bin` | `0.20.1.1-1.fc44` | download.copr.fedorainfracloud.org |
-| `clash-verge` | `2.5.8-1` | github.com |
-| `rayburst` | `4.1.0-1` | github.com |
-| `sing-box` | `1.14.3-1` | github.com |
-
-All four have no Flatpak. They are downloaded at build time from the pinned URL,
-checked against the pinned sha256 and expected version, installed with `rpm -i`,
-and recorded in `delta.json`. The closure is already in the base, so no
-repository resolution happens and no base package is replaced. `/opt` is turned
-into a real directory first because Bluefin's `/opt` symlink into `/var` dangles
-inside a bootc deployment. A daily `upstream-watch` workflow bumps a pin and
-publishes a new signed image tag when upstream releases.
-
-**Not installed**: the HPLIP Qt GUI (`hplip-gui`). The inherited HPLIP core
-(CUPS/SANE backends, `hp-setup`) is asserted to be complete.
-
-## 6. Install media
-
-- `disk.yml` builds a qcow2 and an Anaconda ISO with bootc-image-builder, from
-  the same image digest, and names the ISO `Wraindrock-Live.iso`.
-- The ISO boot menu is patched to two entries:
-  1. `Install Wraindrock (interactive, choose disks)` — a partial kickstart
-     (`/interactive.ks`) only supplies the bootc payload location, so Anaconda
-     asks for the disk/partitioning and user account; language is chosen at
-     GNOME Initial Setup.
-  2. `Install Wraindrock - erase first disk (unattended)` — the generated
-     kickstart, an explicit opt-in that wipes the first disk.
-- Both kickstarts switch the installed system to
-  `ghcr.io/wraindrock/wraindrock-linux:44`, with the original digest as a
-  fallback, so installed machines track the moving channel instead of freezing
-  on one immutable tag.
-- CI installs the ISO under KVM, boots the installed disk to the GNOME welcome
-  screen, boots the qcow2 and requires `wraindrock login:`, and captures the
-  interactive installer screens.
-- Verified qcow2/ISO/SHA256SUMS are published as immutable OCI artifacts on
-  GHCR, and the ISO is also split into <2 GiB parts with a self-extracting
-  script and uploaded to a GitHub Release. `tools/get-live-iso.sh` downloads the
-  newest release without authentication and resumes interrupted transfers.
-
-## 7. Files added and modified
-
-Modified:
-
-- `/usr/lib/os-release`
-- `/etc/system-release`
-- `/usr/share/glib-2.0/schemas/gschemas.compiled`
-- `/usr/share/rpm/rpmdb.sqlite`
-- `/etc/dconf/db/distro`
-- `/opt`
-
-Added:
+Added (38):
 
 - `/usr/share/glib-2.0/schemas/zzzz-wraindrock.gschema.override`
 - `/usr/share/backgrounds/wraindrock/wraindrock-wallpaper.png`
@@ -272,34 +111,36 @@ Added:
 - `/etc/dconf/db/distro.d/10-wraindrock-folders`
 - `/usr/share/desktop-directories/wraindrock-accessories.directory`
 - `/usr/share/desktop-directories/wraindrock-social.directory`
+- `/etc/dconf/db/distro.d/20-wraindrock-keybindings`
+- `/etc/dconf/db/distro.d/21-wraindrock-logomenu`
+- `/etc/dconf/db/distro.d/22-wraindrock-searchlight`
+- `/etc/dconf/db/distro.d/23-wraindrock-blur`
+- `/usr/share/ublue-os/flatpak-overrides/io.github.kolunmi.Bazaar`
+- `/usr/lib/tmpfiles.d/bazaar-flatpak.conf`
+- `/etc/flatpak/remotes.d/flathub.flatpakrepo`
+- `/usr/share/gnome-shell/extensions/appindicatorsupport@rgcjonas.gmail.com`
+- `/usr/share/gnome-shell/extensions/bazaar-integration@kolunmi.github.io`
+- `/usr/share/gnome-shell/extensions/blur-my-shell@aunetx`
+- `/usr/share/gnome-shell/extensions/caffeine@patapon.info`
+- `/usr/share/gnome-shell/extensions/dash-to-dock@micxgx.gmail.com`
+- `/usr/share/gnome-shell/extensions/gradia-integration@alexandervanhee.github.io`
+- `/usr/share/gnome-shell/extensions/gsconnect@andyholmes.github.io`
+- `/usr/share/gnome-shell/extensions/logomenu@aryan_k`
+- `/usr/share/gnome-shell/extensions/search-light@icedman.github.com`
 
-RPM additions:
+## Install media and build
 
-- `clash-verge-2.5.8-1.x86_64`
-- `helium-bin-0.20.1.1-1.fc44.x86_64`
-- `rayburst-4.1.0-1.x86_64`
-- `sing-box-1.14.3-1.x86_64`
+- The ISO has two boot entries: interactive Anaconda (default) and an explicit
+  "erase first disk" unattended install. Installed systems follow the moving `:44`
+  channel tag, so `bootc update` keeps working.
+- Disk artifacts are immutable OCI artifacts on GHCR; the release workflow splits
+  the ISO into under-2-GiB parts with a self-extracting script and `SHA256SUMS`.
+- Every push lints; image builds run when a changed path can affect the image, and
+  parity compares the base and image RPM sets, files, identity, NVIDIA stack, DX
+  stack, extensions, folders and the Flatpak set.
 
-## 8. Build, CI and tooling
+## Not changed
 
-- Base image is resolved to a digest and passed as `BASE_REF`, so a moving tag
-  cannot change the build between pull and build.
-- `build.yml`: lint always, image build only when a changed path can affect the
-  image (docs/tools/tests-only pushes skip the build); parity, bootc lint, smoke
-  test, keyless cosign sign/verify, immutable tag guard, `:previous`
-  preservation, anonymous pull check.
-- `disk.yml`, `release-iso.yml`, `upstream-watch.yml` as described above.
-- Tests: `tests/lint.sh`, `parity.sh`, `smoke.sh`, `folders.py`, `vm-test.sh`,
-  `iso-menu.sh`, `iso-interactive-shots.sh`, `png-stats.py`.
-- `tools/get-live-iso.sh`, `release-iso.sh`, `scratch.sh`.
-
-## 9. Not changed, or explicitly out of scope
-
-- No fork of the kernel, systemd, GNOME or any Fedora/uBlue package.
-- No mutable `/usr`: software changes arrive as new image tags.
-- No physical A/B partitions: ostree deployments provide rollback; the C/D
-  dev/test data partitions are deferred.
-- No custom installer UI or encryption/partitioning defaults beyond the stock
-  unattended kickstart.
-- No self-built kernel modules: NVIDIA/KVM support comes from the uBlue base.
-- The project is a personal remix, not an independent distribution.
+- Kernel, firmware, GDM, GNOME Shell, bootloader binaries, systemd and the update
+  plumbing stay upstream; no Fedora or uBlue package is forked or replaced.
+- No mutable `/usr`, no physical A/B partitions, no custom installer UI.
