@@ -58,6 +58,29 @@ revision `ce6df12`), base digest `sha256:a41cf1eb…`, bluefin-dx RPM set
 throwaway systemd container the full capability set of its user namespace;
 journald and dbus cannot build their mount namespaces without it.
 
+## v0.8 — rebase onto uBlue Silverblue (done)
+
+**Goal:** return to a lean upstream base — Universal Blue's Silverblue — while
+keeping the NVIDIA driver stack, the DX tooling and every GNOME extension the
+image used to inherit from Bluefin DX.
+
+- [x] `BASE_IMAGE=ghcr.io/ublue-os/silverblue-main:44`; assertions `ID=fedora`,
+      `VARIANT_ID=silverblue`
+- [x] NVIDIA userland + kernel module staged from
+      `ghcr.io/ublue-os/akmods-nvidia-open:main-44-<kernel>`; the build fails if
+      the akmods kernel does not match the base kernel
+- [x] Docker, Incus, libvirt/QEMU, virt-manager and Distrobox installed from
+      Fedora/Docker repositories; `nvidia-container-toolkit` from uBlue's addons
+- [x] Nine Bluefin GNOME extensions + dconf presets and the seven Bluefin app
+      folders restored; enabled-extension list matches Bluefin DX
+- [x] Flathub remote and Bazaar `host-etc` preset provided by the image
+- [x] Delta grows from the 1,632-package base by 197 packages; parity still
+      requires exactly the declared additions and no removals
+
+**Test that must fail first:** parity requires the NVIDIA stack, the nine
+extension dirs and the DX packages; on the bare Silverblue base those checks
+fail.
+
 ## v0.5 — out-of-the-box preferences
 
 **Goal:** "install it and it is already mine", built only from mechanisms

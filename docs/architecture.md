@@ -5,41 +5,38 @@ filesystem is the operating system. This document covers how the image is
 produced, what is invariant about it, how releases are identified and signed,
 and what the project deliberately does not do.
 
-## Feeding from Bluefin DX
+## Feeding from uBlue Silverblue
 
-The base feedstock is Universal Blue's Bluefin DX:
+The base feedstock is Universal Blue's Silverblue image:
 
 ```
-ghcr.io/ublue-os/bluefin-dx-nvidia-open:stable
+ghcr.io/ublue-os/silverblue-main:44
 ```
 
-Bluefin DX is itself a bootc image: a GNOME desktop with developer tooling,
-uBlue's update and application plumbing, and (in `-nvidia` variants) prebuilt
-kernel modules. We consume it as an OCI base layer, pin the resolved digest at
-build time, and record it in the image. The identity contract the build requires
-is `ID=bluefin` with `VARIANT_ID=bluefin-dx-nvidia-open`.
+uBlue Silverblue is itself a bootc image: a GNOME desktop on Fedora Silverblue,
+with uBlue's update and application plumbing. We consume it as an OCI base
+layer, pin the resolved digest at build time, and record it in the image. The
+identity contract the build requires is `ID=fedora` with `VARIANT_ID=silverblue`.
 
-Bluefin's desktop defaults are inherited rather than copied: the GNOME
-extension set and its enabled subset, Extension Manager, the Flathub remote,
-the Flatpak presets in `/usr/share/ublue-os/flatpak-overrides`, and the GNOME
-look/keybinding overrides in `zz0-bluefin-modifications.gschema.override`.
-Parity compares the base image and ours for the extension set and the enabled
-list, so a Bluefin update moves both sides together; no extension is pinned
-locally. Choosing the NVIDIA
-variant is deliberate: the open driver stack (`nvidia-driver`, `kmod-nvidia`,
-`nvidia-container-toolkit`) and the virtualisation stack (QEMU/KVM, libvirt,
-virt-manager, Incus) are inherited artifacts, not our own builds. The build
-asserts them so a silent base change cannot ship without them.
+The base is deliberately lean, so this image reapplies the Bluefin DX layer:
+the nine Bluefin GNOME extensions and their dconf presets, the seven Bluefin
+application folders, the Flathub remote and Bazaar preset, and the NVIDIA +
+developer-tool stack. The NVIDIA userland and kernel module are staged from
+`ghcr.io/ublue-os/akmods-nvidia-open:main-44-<kernel>`; the kernel must match
+the base exactly, and the build fails if it does not. Docker, Incus, libvirt,
+QEMU, virt-manager and Distrobox are installed from Fedora and Docker
+repositories at build time. Parity asserts the extension set, the enabled list,
+the NVIDIA stack and the virtualisation stack, so a base refresh cannot
+silently drop them.
 
-Wraindrock does not own the desktop, kernel, firmware or driver stack. Those
-belong to Fedora and Universal Blue, and that is the point: the project is a
-small, declared, tested set of personal defaults on top of a distribution that
-already ships, signs and updates that stack. Maintaining a parallel OS is
-explicitly not the goal.
+Wraindrock still does not own the desktop, kernel, firmware or driver sources:
+those belong to Fedora and Universal Blue. What this repository owns is the
+declared, tested layer that turns the lean base into the Bluefin DX experience
+with personal defaults.
 
 ### Why bootc and not `rpm-ostree compose`
 
-Upstream already made this choice: Bluefin DX is a bootc image, and Fedora is
+Upstream already made this choice: uBlue Silverblue is a bootc image, and Fedora is
 moving Atomic Desktops to container-native builds (the "Build Atomic Desktops
 with Konflux" change targets Fedora 46). Building with bootc today:
 
@@ -82,13 +79,13 @@ image.env ──► workflow (lint) ──► pull base, resolve digest
                  push immutable tag ──► cosign sign ──► push channel tags
 ```
 
-Everything is driven by `image.env`, so "which Bluefin stream is this?" is a
+Everything is driven by `image.env`, so "which uBlue stream is this?" is a
 one-line, reviewable change.
 
 ### The delta invariant (v0.2+)
 
 v0.1–v0.3 enforced "identical to Fedora Silverblue". v0.4 moves the baseline to
-Bluefin DX and keeps the falsifiable part machine-checkable:
+uBlue Silverblue and keeps the falsifiable part machine-checkable:
 
 > The image's RPM set is the base's plus exactly the packages declared in
 > `/usr/share/wraindrock/delta.json`; no base package is removed or upgraded.
@@ -102,7 +99,7 @@ keys `NAME`, `PRETTY_NAME`, `DEFAULT_HOSTNAME` and the four URLs. A removed, add
 each declared value is then cross-checked against the actual file, so the
 manifest cannot drift into a polite fiction. The test also proves the wallpaper
 override is compiled into `gschemas.compiled` and that `rpm -V --nomtime` on the
-package owning `/usr/lib/os-release` (looked up dynamically — Bluefin owns it,
+package owning `/usr/lib/os-release` (looked up dynamically — the base owns it,
 not a Fedora identity package) reports exactly the two documented identity
 files, `/usr/lib/os-release` and `/etc/system-release`. (`--nomtime` is required: image layers store mtime 0 for
 ostree hardlinks while rpm headers record build time, so the timestamp check
@@ -128,7 +125,7 @@ hostname).
 fresh install came up as `fedora` in the v0.3 VM test. The image therefore ships
 `wraindrock-hostname-seed.service` (wired into `sysinit.target.wants`), which runs
 once before login. It reads `DEFAULT_HOSTNAME` from `/usr/lib/os-release` and
-replaces only an unconfigured value — empty, or the base default `bluefin` (or
+replaces only an unconfigured value — empty, or the base default `fedora` (or
 `fedora`) — then writes `/var/lib/wraindrock/hostname-seeded`. A hostname chosen by the user or
 installer is never overwritten, and the marker makes later boots no-ops. The
 unit is exercised in parity against a fixture with a temporary root.
@@ -144,15 +141,15 @@ the wallpaper, boot-entry naming and desktop grouping:
 | Change | Mechanism |
 | --- | --- |
 | display name, pretty name, default hostname | `sed` on `/usr/lib/os-release` |
-| `LOGO`, `ID`, `ID_LIKE`, `CPE_NAME`, version fields | left at upstream values — the icon stays Fedora's, uBlue tooling keys off `ID=bluefin`, and the CPE keeps naming Universal Blue |
+| `LOGO`, `ID`, `ID_LIKE`, `CPE_NAME`, version fields | left at upstream values — the icon stays Fedora's, uBlue tooling keys off `ID=fedora`, and the CPE keeps naming Fedora |
 | default desktop + GDM wallpaper | `/usr/share/backgrounds/wraindrock/wraindrock-wallpaper.png` + `[org.gnome.desktop.background]` in `zzzz-wraindrock.gschema.override` |
-| UEFI boot entry name | `/etc/system-release` rewritten to `Wraindrock release <ver> (Bluefin DX)`; bootupd derives the firmware label from it (`get_product_name`), falling back to os-release `NAME` |
+| UEFI boot entry name | `/etc/system-release` rewritten to `Wraindrock release <ver> (Silverblue)`; bootupd derives the firmware label from it (`get_product_name`), falling back to os-release `NAME` |
 | default dock | `[org.gnome.shell] favorite-apps` in `zzzz-wraindrock.gschema.override`: Helium, Rnote, Files, Bazaar, Mission Center, Terminal; a user's own value wins |
 | application folders | `/etc/dconf/db/distro.d/10-wraindrock-folders` extends `folder-children` with Virtualization, Proxies, Social (社交), Wraindrock and uBlue, lists their apps explicitly, and excludes re-homed apps from Bluefin's folders; one home per app; `dconf update` compiles the distro database |
 | default hostname | `DEFAULT_HOSTNAME` (no `/etc/hostname` is shipped; an installer or user file still wins) |
-| input method | IBus is inherited from GNOME/Bluefin (no Fcitx in the image). Keyboard layouts and input methods are distinct entries in the source list; the English (US) layout stays and the only addition is the `libpinyin` input method in `[org.gnome.desktop.input-sources]` (`zzzz-wraindrock.gschema.override`). A user's own value wins |
+| input method | IBus is inherited from GNOME (no Fcitx in the image). Keyboard layouts and input methods are distinct entries in the source list; the English (US) layout stays and the only addition is the `libpinyin` input method in `[org.gnome.desktop.input-sources]` (`zzzz-wraindrock.gschema.override`). A user's own value wins |
 
-The wallpaper override sorts after both Fedora's `10_*` and Bluefin's
+The wallpaper override sorts after Fedora's `10_*`
 `zz0-`/`zz1-` overrides (ours is `zzzz-`), and replaces `picture-uri` and
 `picture-uri-dark`. GDM's greeter reads the same
 `org.gnome.desktop.background` defaults, so the login background follows without
@@ -191,7 +188,7 @@ database. `gtk-update-icon-cache` is not run.
 Two delivery mechanisms keep the out-of-box set small and updatable:
 
 - **Flatpaks install on first boot.** `/usr/share/flatpak/preinstall.d/wraindrock.preinstall`
-  declares 43 apps and Bluefin's `flatpak-preinstall.service` runs
+  declares 43 apps and the retry wrapper runs
   `flatpak preinstall -y` once the network is up. That service gives up after
   three attempts, which a fresh install usually exhausts before Wi-Fi is
   configured, so `wraindrock-flatpak-preinstall.timer` retries our wrapper
@@ -202,7 +199,7 @@ Two delivery mechanisms keep the out-of-box set small and updatable:
   because Bluefin itself does not bake them.
 - **The four app RPMs are baked** (Helium from the official `imput/helium` COPR,
   Clash Verge Rev, Rayburst, sing-box/SFL) because they have no Flatpak.
-  HPLIP's core is inherited from Bluefin: the build asserts the CUPS/SANE
+  HPLIP's core is inherited from Fedora Silverblue: the build asserts the CUPS/SANE
   backends and `hp-setup` are present, and deliberately does not install the
   optional Qt GUI. Every baked RPM is downloaded at build time from a pinned
   upstream URL, checked against a pinned sha256 and expected version, and
@@ -211,7 +208,7 @@ Two delivery mechanisms keep the out-of-box set small and updatable:
   scriptlets run as root inside the build container. They update with the image;
   `rpm-ostree override replace`
   gives a per-package escape hatch between image releases. SFL installs only
-  under `/opt`; because Bluefin's `/opt` is a symlink into `/var` and a bootc
+  under `/opt`; because the base's `/opt` is a symlink into `/var` and a bootc
   deployment does not carry `/var`, the build replaces it with a real directory
   so the payload is part of the image (and therefore read-only at runtime).
 

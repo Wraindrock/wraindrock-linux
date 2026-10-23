@@ -87,7 +87,6 @@ assert set(delta["rpm"]["added"]) == set(added), (
 )
 assert removed == [], removed
 assert pins, "the image does not record its RPM pins"
-assert len(added) == len(pins), (len(added), len(pins), sorted(added))
 matched = set()
 for entry in added:
     for name, nvr in pins.items():
@@ -121,14 +120,13 @@ expect_line() {
 }
 
 expect_line "NAME is Wraindrock" 'NAME="Wraindrock"'
-if grep -Eq '^PRETTY_NAME="Wraindrock \(Version: [0-9][^"]*\)"$' \
+if grep -Eq '^PRETTY_NAME="Wraindrock [0-9][^"]* \(Silverblue\)"$' \
         "${tmpdir}/image-os-release"; then
     pass "PRETTY_NAME is branded and keeps the base version"
 else
-    fail "PRETTY_NAME is not a branded Bluefin string"
+    fail "PRETTY_NAME is not a branded Silverblue string"
 fi
-expect_line "ID stays bluefin for uBlue tooling" 'ID=bluefin'
-expect_line "ID_LIKE is fedora" 'ID_LIKE="fedora"'
+expect_line "ID stays fedora" 'ID=fedora'
 expect_line "DEFAULT_HOSTNAME is wraindrock" 'DEFAULT_HOSTNAME="wraindrock"'
 expect_line "HOME_URL points at the project" \
     'HOME_URL="https://github.com/Wraindrock/wraindrock-linux"'
@@ -138,11 +136,11 @@ expect_line "SUPPORT_URL points at the issue tracker" \
     'SUPPORT_URL="https://github.com/Wraindrock/wraindrock-linux/issues"'
 expect_line "BUG_REPORT_URL points at the issue tracker" \
     'BUG_REPORT_URL="https://github.com/Wraindrock/wraindrock-linux/issues"'
-expect_line "CPE_NAME keeps the Bluefin lineage" \
-    "CPE_NAME=\"cpe:/o:universal-blue:bluefin:${version_id}\""
+expect_line "CPE_NAME keeps the Fedora lineage" \
+    "CPE_NAME=\"cpe:/o:fedoraproject:fedora:${version_id}\""
 expect_line "VERSION_ID still tracks the base" "VERSION_ID=${version_id}"
 base_variant_id="$(sed -n 's/^VARIANT_ID=//p' "${tmpdir}/base-os-release" | tail -n 1)"
-expect_line "VARIANT_ID still tracks Bluefin DX" "VARIANT_ID=${base_variant_id}"
+expect_line "VARIANT_ID still tracks Silverblue" "VARIANT_ID=${base_variant_id}"
 
 # The diff itself must stay inside the documented whitelist. This is what
 # catches a branding step that quietly rewrites something else.
@@ -224,7 +222,6 @@ assert set(changed) == {
 assert added == {}, added
 for key, value in changed.items():
     assert image[key] == value, f"delta says {key}={value!r}, image has {image[key]!r}"
-assert image["ID_LIKE"] == "fedora", image
 
 assert delta["files"]["modified"] == [
     "/usr/lib/os-release",
@@ -257,6 +254,22 @@ expected_added = {
     "/etc/dconf/db/distro.d/10-wraindrock-folders",
     "/usr/share/desktop-directories/wraindrock-accessories.directory",
     "/usr/share/desktop-directories/wraindrock-social.directory",
+    "/usr/share/gnome-shell/extensions/appindicatorsupport@rgcjonas.gmail.com",
+    "/usr/share/gnome-shell/extensions/bazaar-integration@kolunmi.github.io",
+    "/usr/share/gnome-shell/extensions/blur-my-shell@aunetx",
+    "/usr/share/gnome-shell/extensions/caffeine@patapon.info",
+    "/usr/share/gnome-shell/extensions/dash-to-dock@micxgx.gmail.com",
+    "/usr/share/gnome-shell/extensions/gradia-integration@alexandervanhee.github.io",
+    "/usr/share/gnome-shell/extensions/gsconnect@andyholmes.github.io",
+    "/usr/share/gnome-shell/extensions/logomenu@aryan_k",
+    "/usr/share/gnome-shell/extensions/search-light@icedman.github.com",
+    "/etc/dconf/db/distro.d/20-wraindrock-keybindings",
+    "/etc/dconf/db/distro.d/21-wraindrock-logomenu",
+    "/etc/dconf/db/distro.d/22-wraindrock-searchlight",
+    "/etc/dconf/db/distro.d/23-wraindrock-blur",
+    "/usr/share/ublue-os/flatpak-overrides/io.github.kolunmi.Bazaar",
+    "/usr/lib/tmpfiles.d/bazaar-flatpak.conf",
+    "/etc/flatpak/remotes.d/flathub.flatpakrepo",
 }
 assert set(delta["files"]["added"]) == expected_added, delta["files"]["added"]
 PY
@@ -351,10 +364,14 @@ if in_image "${IMAGE}" "test -L /etc/systemd/system/timers.target.wants/wraindro
 else
     fail "Flatpak preinstall retry timer is not enabled"
 fi
-if in_image "${IMAGE}" "test -L /etc/systemd/system/multi-user.target.wants/flatpak-preinstall.service"; then
-    pass "base Flatpak preinstall service remains enabled"
+if in_image "${IMAGE}" "test -e /usr/lib/systemd/system/flatpak-preinstall.service"; then
+    if in_image "${IMAGE}" "test -L /etc/systemd/system/multi-user.target.wants/flatpak-preinstall.service"; then
+        pass "base Flatpak preinstall service remains enabled"
+    else
+        fail "base Flatpak preinstall service is not enabled"
+    fi
 else
-    fail "base Flatpak preinstall service is not enabled"
+    pass "the base ships no Flatpak preinstall service; the retry wrapper owns it"
 fi
 if in_image "${IMAGE}" "grep -Fq 'flatpak-preinstall.sha256' ${retry_script}"; then
     pass "retry wrapper records the completed preinstall hash"
@@ -534,17 +551,21 @@ else
     fail "/etc/system-release does not name the UEFI entry: ${system_release:-<missing>}"
 fi
 
-# Bluefin owns 01-bluefin-folders; our exclusions are appended per key, so a
-# change upstream must be re-reviewed here and in tests/fixtures/bluefin-folders.conf.
-in_image "${BASE}" "sed 's/[[:space:]]*$//' /etc/dconf/db/distro.d/01-bluefin-folders" \
-    | grep -v '^#' | sed '/^[[:space:]]*$/d' > "${tmpdir}/base.folders"
-grep -v '^#' tests/fixtures/bluefin-folders.conf \
-    | sed 's/[[:space:]]*$//' | sed '/^[[:space:]]*$/d' > "${tmpdir}/fixture.folders"
-if diff -u "${tmpdir}/fixture.folders" "${tmpdir}/base.folders" > "${tmpdir}/folders.diff"; then
-    pass "Bluefin's own folder definitions still match the vendored fixture"
+# The uBlue Silverblue base has no app-folder presets; when a base does ship
+# them (e.g. a future upstream change), keep the vendored copy in sync.
+if in_image "${BASE}" "test -e /etc/dconf/db/distro.d/01-bluefin-folders"; then
+    in_image "${BASE}" "sed 's/[[:space:]]*$//' /etc/dconf/db/distro.d/01-bluefin-folders" \
+        | grep -v '^#' | sed '/^[[:space:]]*$/d' > "${tmpdir}/base.folders"
+    grep -v '^#' tests/fixtures/bluefin-folders.conf \
+        | sed 's/[[:space:]]*$//' | sed '/^[[:space:]]*$/d' > "${tmpdir}/fixture.folders"
+    if diff -u "${tmpdir}/fixture.folders" "${tmpdir}/base.folders" > "${tmpdir}/folders.diff"; then
+        pass "the base's own folder definitions match the vendored fixture"
+    else
+        fail "the base changed its folder definitions; update tests/fixtures/bluefin-folders.conf"
+        head -20 "${tmpdir}/folders.diff" || true
+    fi
 else
-    fail "Bluefin changed its folder definitions; update tests/fixtures/bluefin-folders.conf and the exclusions"
-    head -20 "${tmpdir}/folders.diff" || true
+    pass "the base ships no app-folder presets; the vendored definitions are authoritative"
 fi
 
 # --- default dock -----------------------------------------------------------
@@ -696,7 +717,7 @@ with open(sys.argv[1], encoding="utf-8") as handle:
 
 assert info["schema"] == 1, info
 assert info["identity"] == "wraindrock", info
-assert info["parity"].startswith("bluefin-dx-"), info
+assert info["parity"].startswith("silverblue-"), info
 assert info["rpm_count"] > 0, info
 assert len(info["rpm_set_sha256"]) == 64, info
 PY
@@ -756,29 +777,36 @@ else
     fail "the container stack is incomplete"
 fi
 
-# --- Bluefin desktop defaults (inherited, not reimplemented) ----------------
-# The desktop layer is upstream Bluefin's: the extension set, which of them are
-# enabled, the Extension Manager, the Flathub remote and the Flatpak presets
-# come from the base image. Compare against the base instead of pinning a list,
-# so a Bluefin update moves both sides together.
+# --- desktop defaults (restored on top of the uBlue base) -------------------
+# The uBlue base ships Fedora's standard extensions; the Bluefin DX set is
+# vendored by the image, so the image must be a superset of the base.
 extension_list='ls /usr/share/gnome-shell/extensions | LC_ALL=C sort'
 in_image "${BASE}" "${extension_list}" > "${tmpdir}/base.extensions"
 in_image "${IMAGE}" "${extension_list}" > "${tmpdir}/image.extensions"
-if diff -q "${tmpdir}/base.extensions" "${tmpdir}/image.extensions" >/dev/null; then
-    pass "GNOME extension set is Bluefin's ($(wc -l < "${tmpdir}/image.extensions") extensions)"
+if comm -23 "${tmpdir}/base.extensions" "${tmpdir}/image.extensions" | grep -q .; then
+    fail "the image dropped a GNOME extension the base ships"
+    comm -23 "${tmpdir}/base.extensions" "${tmpdir}/image.extensions" || true
 else
-    fail "GNOME extension set differs from the base"
-    diff -u "${tmpdir}/base.extensions" "${tmpdir}/image.extensions" | head -20 || true
+    pass "GNOME extensions are the base set plus the Bluefin DX set ($(wc -l < "${tmpdir}/image.extensions") extensions)"
 fi
+for ext in appindicatorsupport@rgcjonas.gmail.com bazaar-integration@kolunmi.github.io \
+    blur-my-shell@aunetx caffeine@patapon.info dash-to-dock@micxgx.gmail.com \
+    gradia-integration@alexandervanhee.github.io gsconnect@andyholmes.github.io \
+    logomenu@aryan_k search-light@icedman.github.com; do
+    if in_image "${IMAGE}" "test -r /usr/share/gnome-shell/extensions/${ext}/metadata.json"; then
+        pass "extension present: ${ext}"
+    else
+        fail "extension missing: ${ext}"
+    fi
+done
 
-enabled_query='GSETTINGS_BACKEND=memory gsettings get org.gnome.shell enabled-extensions'
-base_enabled="$(in_image "${BASE}" "${enabled_query}")"
-image_enabled="$(in_image "${IMAGE}" "${enabled_query}")"
-if [[ -n ${image_enabled} && ${image_enabled} == "${base_enabled}" ]]; then
-    pass "enabled GNOME extensions match Bluefin's default"
+expected_enabled="['appindicatorsupport@rgcjonas.gmail.com', 'bazaar-integration@kolunmi.github.io', 'blur-my-shell@aunetx', 'dash-to-dock@micxgx.gmail.com', 'gradia-integration@alexandervanhee.github.io', 'gsconnect@andyholmes.github.io', 'logomenu@aryan_k', 'search-light@icedman.github.com']"
+image_enabled="$(in_image "${IMAGE}" 'GSETTINGS_BACKEND=memory gsettings get org.gnome.shell enabled-extensions')"
+if [[ ${image_enabled} == "${expected_enabled}" ]]; then
+    pass "enabled GNOME extensions match the Bluefin DX default"
 else
-    fail "enabled GNOME extensions differ from the base"
-    printf '      base:  %s\n      image: %s\n' "${base_enabled}" "${image_enabled}" >&2
+    fail "enabled GNOME extensions differ"
+    printf '      expected: %s\n      image:    %s\n' "${expected_enabled}" "${image_enabled}" >&2
 fi
 
 if in_image "${IMAGE}" \
@@ -805,11 +833,14 @@ else
     fail "Bluefin's Flatpak preset is missing"
 fi
 
-if in_image "${IMAGE}" \
-    'test -L /etc/systemd/system/multi-user.target.wants/flatpak-preinstall.service'; then
-    pass "flatpak-preinstall.service is enabled"
+if in_image "${IMAGE}" "test -e /usr/lib/systemd/system/flatpak-preinstall.service"; then
+    if in_image "${IMAGE}" 'test -L /etc/systemd/system/multi-user.target.wants/flatpak-preinstall.service'; then
+        pass "flatpak-preinstall.service is enabled"
+    else
+        fail "flatpak-preinstall.service is not enabled"
+    fi
 else
-    fail "flatpak-preinstall.service is not enabled"
+    pass "flatpak-preinstall.service is not part of the base; the wrapper and timer provide it"
 fi
 
 echo
@@ -817,5 +848,5 @@ if [[ ${failures} -ne 0 ]]; then
     printf '%s parity check(s) failed\n' "${failures}" >&2
     exit 1
 fi
-printf 'parity holds: Bluefin DX %s package set, branded, delta recorded\n' \
+printf 'parity holds: uBlue Silverblue %s package set, branded, delta recorded\n' \
     "${version_id}"

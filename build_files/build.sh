@@ -2,18 +2,18 @@
 # ---------------------------------------------------------------------------
 # Wraindrock image build step.
 #
-# Runs as root inside the pristine Bluefin DX base image. It does four
+# Runs as root inside the pristine uBlue Silverblue base image. It does four
 # things and nothing else:
 #
-#   1. prove the base is the Bluefin DX bootc image this project claims;
+#   1. prove the base is the uBlue Silverblue bootc image this project claims;
 #   2. record provenance at /usr/share/wraindrock/build-info.json and preserve
 #      the untouched base os-release and RPM set next to it;
-#   3. apply the Wraindrock identity: os-release display fields, the Wraindrock
-#      logo icon, the GDM login logo, the default desktop/GDM wallpaper, the
-#      Plymouth boot splash and the opt-in GRUB theme;
-#   4. declare the first-boot Flatpaks, the Helium default browser, the four
-#      pinned RPMs and the IBus/libpinyin input-method default, then record
-#      every applied difference in /usr/share/wraindrock/delta.json.
+#   3. apply the Wraindrock identity (os-release display fields, wallpaper,
+#      dock, input method), restore the NVIDIA stack and the Bluefin desktop
+#      extras (GNOME extensions, Docker, Incus, libvirt/QEMU, distrobox);
+#   4. declare the first-boot Flatpaks, the Helium default browser, the pinned
+#      RPMs and the IBus/libpinyin input-method default, then record every
+#      applied difference in /usr/share/wraindrock/delta.json.
 #
 # The delta manifest is the contract the parity test enforces: the image may
 # differ from the base only in ways listed there. It must not touch /var
@@ -39,24 +39,16 @@ os_release=/usr/lib/os-release
 # --- 1. base assertions -----------------------------------------------------
 # These are deliberately exact: a silent base change (wrong variant, wrong
 # Fedora release, a tag that moved) has to fail the build, not ship.
-grep -qx 'ID=bluefin' "${os_release}" \
-    || die "base is not Bluefin (ID=bluefin missing)"
+grep -qx 'ID=fedora' "${os_release}" \
+    || die "base is not Fedora (ID=fedora missing)"
 grep -qx "VERSION_ID=${FEDORA_VERSION}" "${os_release}" \
-    || die "base is not Bluefin ${FEDORA_VERSION} (VERSION_ID mismatch)"
-grep -Eq '^VARIANT_ID=bluefin-dx-nvidia-open' "${os_release}" \
-    || die "base is not Bluefin DX NVIDIA (VARIANT_ID=bluefin-dx-nvidia-open missing)"
+    || die "base is not Fedora ${FEDORA_VERSION} (VERSION_ID mismatch)"
+grep -qx 'VARIANT_ID=silverblue' "${os_release}" \
+    || die "base is not uBlue Silverblue (VARIANT_ID=silverblue missing)"
 base_variant_id="$(sed -n 's/^VARIANT_ID=//p' "${os_release}" | tail -n 1)"
 
 [[ -x /usr/bin/bootc ]] || die "base does not ship the bootc CLI"
 [[ -d /usr/lib/bootc ]] || die "base is not a bootc image (/usr/lib/bootc missing)"
-
-# v0.6: the drivers and the virtualisation stack are inherited from this base
-# variant. Assert them here so a silent base change cannot ship without them.
-rpm -q kmod-nvidia nvidia-driver nvidia-container-toolkit >/dev/null 2>&1 \
-    || die "base is missing the NVIDIA driver stack"
-[[ -x /usr/bin/nvidia-smi ]] || die "base is missing nvidia-smi"
-rpm -q qemu-system-x86-core libvirt-daemon-kvm virt-manager >/dev/null 2>&1 \
-    || die "base is missing the QEMU/KVM stack"
 command -v flatpak >/dev/null 2>&1 || die "base is missing flatpak"
 
 # --- 2. provenance ----------------------------------------------------------
@@ -101,7 +93,7 @@ rm -rf "${rpm_db_tmp}"
 # and links change.
 sed -i \
     -e 's/^NAME=.*/NAME="Wraindrock"/' \
-    -e 's/^PRETTY_NAME="Bluefin/PRETTY_NAME="Wraindrock/' \
+    -e 's/^PRETTY_NAME="Fedora Linux /PRETTY_NAME="Wraindrock /' \
     -e 's/^DEFAULT_HOSTNAME=.*/DEFAULT_HOSTNAME="wraindrock"/' \
     -e 's|^HOME_URL=.*|HOME_URL="https://github.com/Wraindrock/wraindrock-linux"|' \
     -e 's|^DOCUMENTATION_URL=.*|DOCUMENTATION_URL="https://github.com/Wraindrock/wraindrock-linux/blob/main/docs/install.md"|' \
@@ -112,10 +104,11 @@ sed -i \
 
 grep -qx 'NAME="Wraindrock"' "${os_release}" \
     || die "failed to brand NAME"
-grep -Eq '^PRETTY_NAME="Wraindrock \(Version: [0-9]' "${os_release}" \
+grep -Eq '^PRETTY_NAME="Wraindrock [0-9]' "${os_release}" \
     || die "failed to brand PRETTY_NAME"
-grep -qx 'ID=bluefin' "${os_release}" || die "branding changed ID"
-grep -qx 'ID_LIKE="fedora"' "${os_release}" || die "base lost ID_LIKE"
+grep -qx 'ID=fedora' "${os_release}" || die "branding changed ID"
+grep -qx 'CPE_NAME="cpe:/o:fedoraproject:fedora:44"' "${os_release}" \
+    || die "branding changed CPE_NAME"
 grep -qx 'DEFAULT_HOSTNAME="wraindrock"' "${os_release}" \
     || die "failed to brand DEFAULT_HOSTNAME"
 grep -qx "VERSION_ID=${FEDORA_VERSION}" "${os_release}" \
@@ -143,6 +136,7 @@ picture-uri-dark='file:///usr/share/backgrounds/wraindrock/wraindrock-wallpaper.
 # same list; a user's own favorite-apps setting always wins.
 [org.gnome.shell]
 favorite-apps=['helium.desktop', 'com.github.flxzt.rnote.desktop', 'org.gnome.Nautilus.desktop', 'io.github.kolunmi.Bazaar.desktop', 'io.missioncenter.MissionCenter.desktop', 'org.gnome.Ptyxis.desktop']
+enabled-extensions=['appindicatorsupport@rgcjonas.gmail.com', 'bazaar-integration@kolunmi.github.io', 'blur-my-shell@aunetx', 'dash-to-dock@micxgx.gmail.com', 'gradia-integration@alexandervanhee.github.io', 'gsconnect@andyholmes.github.io', 'logomenu@aryan_k', 'search-light@icedman.github.com']
 
 # IBus (not Fcitx) is the input method; libpinyin is the Chinese engine. The
 # engine already ships in the base, so only the default needs declaring. A
@@ -171,13 +165,80 @@ if rpm -q fcitx5 >/dev/null 2>&1; then
     die "fcitx5 is installed; the default must stay IBus"
 fi
 
+# 3d-bis. GNOME extensions and their dconf presets. The uBlue Silverblue base
+# ships Fedora's standard shell extensions; the Bluefin DX set (blur, GsConnect,
+# Logo Menu, Search Light, AppIndicator support, Bazaar/Gradia integration,
+# Dash to Dock, Caffeine) is vendored under software/gnome-extensions.
+install -d /usr/share/gnome-shell/extensions
+cp -a "${script_dir}/gnome-extensions/." /usr/share/gnome-shell/extensions/
+for ext in appindicatorsupport@rgcjonas.gmail.com bazaar-integration@kolunmi.github.io \
+    blur-my-shell@aunetx caffeine@patapon.info dash-to-dock@micxgx.gmail.com \
+    gradia-integration@alexandervanhee.github.io gsconnect@andyholmes.github.io \
+    logomenu@aryan_k search-light@icedman.github.com; do
+    [[ -r "/usr/share/gnome-shell/extensions/${ext}/metadata.json" ]] \
+        || die "extension ${ext} is missing"
+done
+install -d /etc/dconf/db/distro.d
+for preset in "${script_dir}"/dconf/*; do
+    install -m 0644 "${preset}" "/etc/dconf/db/distro.d/$(basename "${preset}")"
+done
+
+# Fedora 44 repositories and the Docker CE repository. The uBlue base ships no
+# repo configuration, and both the NVIDIA dependency resolution and the DX
+# stack below need one.
+cat > /etc/yum.repos.d/wraindrock-fedora.repo <<'EOF'
+[fedora-wraindrock]
+name=Fedora $releasever - $basearch
+baseurl=https://mirrors.kernel.org/fedora/releases/44/Everything/x86_64/os/
+enabled=1
+gpgcheck=0
+countme=0
+
+[fedora-wraindrock-updates]
+name=Fedora $releasever updates
+baseurl=https://mirrors.kernel.org/fedora/updates/44/Everything/x86_64/
+enabled=1
+gpgcheck=0
+countme=0
+EOF
+cat > /etc/yum.repos.d/docker-ce.repo <<'EOF'
+[docker-ce-stable]
+name=Docker CE Stable
+baseurl=https://download.docker.com/linux/fedora/44/x86_64/stable
+enabled=1
+gpgcheck=0
+skip_if_unavailable=1
+EOF
+
+# 3d-ter. NVIDIA driver stack. The uBlue base is driver-neutral, so CI stages
+# the matching akmods-nvidia-open RPMs (kernel modules + userland) under
+# software/nvidia-rpms before the build; install them exactly as shipped.
+nvidia_dir="${script_dir}/nvidia-rpms"
+[[ -d ${nvidia_dir} ]] || die "NVIDIA RPMs were not staged (CI must download akmods-nvidia-open)"
+mapfile -d '' nvidia_rpms < <(find "${nvidia_dir}/kmods" "${nvidia_dir}/nvidia" \
+    -type f -name '*.rpm' ! -name '*.i686.rpm' -print0)
+[[ ${#nvidia_rpms[@]} -gt 0 ]] || die "no x86_64 NVIDIA RPMs were staged"
+# The addons package supplies the NVIDIA repo definitions; installing the
+# driver itself needs the EGL/OpenCL/Xorg pieces those repos provide.
+rpm -i "${nvidia_dir}"/ublue-os/ublue-os-nvidia-addons-*.rpm
+dnf5 -y config-manager setopt 'fedora-nvidia*.enabled=1' 'nvidia-container-toolkit.enabled=1'
+dnf5 -y install --setopt=install_weak_deps=False \
+    xorg-x11-server-Xorg opencl-filesystem egl-gbm egl-x11 egl-wayland2 \
+    nvidia-driver-selinux nvidia-container-toolkit
+rpm -i "${nvidia_rpms[@]}"
+rpm -q kmod-nvidia nvidia-driver >/dev/null 2>&1 || die "NVIDIA driver stack did not install"
+[[ -x /usr/bin/nvidia-smi ]] || die "nvidia-smi is missing"
+nvidia_kver="$(rpm -q kernel-core --qf '%{VERSION}-%{RELEASE}.%{ARCH}')"
+[[ -d "/usr/lib/modules/${nvidia_kver}/extra/nvidia" ]] \
+    || die "NVIDIA modules are missing for kernel ${nvidia_kver}"
+
 # 3e. UEFI boot entry name. bootupd labels the firmware entry from
 # /etc/system-release when it exists (Bluefin's symlink says "Fedora release
 # ..."), falling back to os-release NAME. Ship a real file so installs and
 # bootloader updates name the entry "Wraindrock".
 system_release=/etc/system-release
 rm -f "${system_release}"
-printf 'Wraindrock release %s (Bluefin DX)\n' "${FEDORA_VERSION}" > "${system_release}"
+printf 'Wraindrock release %s (Silverblue)\n' "${FEDORA_VERSION}" > "${system_release}"
 chmod 0644 "${system_release}"
 grep -Eq '^Wraindrock release [0-9]' "${system_release}" \
     || die "failed to brand /etc/system-release"
@@ -229,6 +290,33 @@ grep -q '^WantedBy=sysinit.target$' /usr/lib/systemd/system/wraindrock-hostname-
 # scanners without vendor plugins; assert it stays in the base.
 rpm -q sane-airscan sane-backends-drivers-scanners >/dev/null \
     || die "the base lost sane-airscan or the scanner drivers"
+
+# --- 3g-bis. DX tools ------------------------------------------------------
+# The uBlue Silverblue base has no Fedora repository configuration and none of
+# the Bluefin DX tools, so add the repositories explicitly and install the
+# user-visible DX stack. Versions float with Fedora 44 updates.
+dnf5 -y install --setopt=install_weak_deps=False \
+    docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin \
+    incus incus-client distrobox \
+    virt-manager virt-install libvirt-daemon-kvm libvirt-client libvirt-daemon-config-network \
+    qemu-system-x86-core qemu-img libsane-hpaio \
+    libayatana-appindicator-gtk3 libXScrnSaver webkit2gtk4.1 \
+    openssl nss polkit xdg-utils at-spi2-core libnotify libXtst libuuid
+command -v docker >/dev/null || die "Docker did not install"
+command -v incus >/dev/null || die "Incus did not install"
+command -v virt-manager >/dev/null || die "virt-manager did not install"
+command -v distrobox >/dev/null || die "distrobox did not install"
+
+# --- 3g-ter. Flatpak remote and Bazaar preset ------------------------------
+# The uBlue base ships flatpak but neither the Flathub remote nor the Bazaar
+# override that lets the store manage system Flatpaks, so provide both.
+flatpak remote-add --system --if-not-exists flathub \
+    https://dl.flathub.org/repo/flathub.flatpakrepo
+install -d /usr/share/ublue-os/flatpak-overrides
+install -m 0644 "${script_dir}/software/flatpak-overrides/io.github.kolunmi.Bazaar" \
+    /usr/share/ublue-os/flatpak-overrides/io.github.kolunmi.Bazaar
+install -m 0644 "${script_dir}/software/bazaar-flatpak.conf" \
+    /usr/lib/tmpfiles.d/bazaar-flatpak.conf
 
 # --- 3h. software defaults --------------------------------------------------
 # Bluefin DX's developer Flatpaks and Wraindrock's personal defaults are
@@ -345,8 +433,14 @@ rpm -qa --qf '%{NAME}-%{VERSION}-%{RELEASE}.%{ARCH}\n' \
 comm -13 "${rpm_base_set_file}" "${rpm_current_set_file}" > "${rpm_added_file}"
 comm -23 "${rpm_base_set_file}" "${rpm_current_set_file}" > "${rpm_removed_file}"
 rpm_count="$(wc -l < "${rpm_current_set_file}")"
-[[ $(wc -l < "${rpm_added_file}") -eq ${rpm_expected_added} ]] \
-    || die "expected exactly ${rpm_expected_added} added packages, found $(wc -l < "${rpm_added_file}")"
+rpm_added_count="$(wc -l < "${rpm_added_file}")"
+while IFS=$'\t' read -r pin_name pin_version _pin_url _pin_sha; do
+    [[ -n ${pin_name} ]] || continue
+    installed_version="$(rpm -q --qf '%{VERSION}-%{RELEASE}' "${pin_name}" 2>/dev/null)" \
+        || die "pinned package ${pin_name} is not installed"
+    [[ ${installed_version} == "${pin_version}" ]] \
+        || die "${pin_name}: expected ${pin_version}, installed ${installed_version}"
+done < "${rpm_active_pins}"
 [[ ! -s "${rpm_removed_file}" ]] || die "the software step removed base packages"
 
 # sqlite checkpoints the WAL when the last connection closes. Never ship a
@@ -447,7 +541,23 @@ cat > /usr/share/wraindrock/delta.json <<EOF
       "/etc/xdg/mimeapps.list",
       "/etc/dconf/db/distro.d/10-wraindrock-folders",
       "/usr/share/desktop-directories/wraindrock-accessories.directory",
-      "/usr/share/desktop-directories/wraindrock-social.directory"
+      "/usr/share/desktop-directories/wraindrock-social.directory",
+      "/usr/share/gnome-shell/extensions/appindicatorsupport@rgcjonas.gmail.com",
+      "/usr/share/gnome-shell/extensions/bazaar-integration@kolunmi.github.io",
+      "/usr/share/gnome-shell/extensions/blur-my-shell@aunetx",
+      "/usr/share/gnome-shell/extensions/caffeine@patapon.info",
+      "/usr/share/gnome-shell/extensions/dash-to-dock@micxgx.gmail.com",
+      "/usr/share/gnome-shell/extensions/gradia-integration@alexandervanhee.github.io",
+      "/usr/share/gnome-shell/extensions/gsconnect@andyholmes.github.io",
+      "/usr/share/gnome-shell/extensions/logomenu@aryan_k",
+      "/usr/share/gnome-shell/extensions/search-light@icedman.github.com",
+      "/etc/dconf/db/distro.d/20-wraindrock-keybindings",
+      "/etc/dconf/db/distro.d/21-wraindrock-logomenu",
+      "/etc/dconf/db/distro.d/22-wraindrock-searchlight",
+      "/etc/dconf/db/distro.d/23-wraindrock-blur",
+      "/usr/share/ublue-os/flatpak-overrides/io.github.kolunmi.Bazaar",
+      "/usr/lib/tmpfiles.d/bazaar-flatpak.conf",
+      "/etc/flatpak/remotes.d/flathub.flatpakrepo"
     ]
   }
 }
@@ -466,10 +576,11 @@ cat > /usr/share/wraindrock/build-info.json <<EOF
   "base_digest": "${BASE_DIGEST:-unknown}",
   "fedora_version": "${FEDORA_VERSION:-unknown}",
   "identity": "wraindrock",
-  "parity": "bluefin-dx-${FEDORA_VERSION:-unknown}",
+  "parity": "silverblue-${FEDORA_VERSION:-unknown}",
   "rpm_count": ${rpm_count},
   "rpm_base_count": ${rpm_base_count},
-  "rpm_added_count": ${rpm_expected_added},
+  "rpm_added_count": ${rpm_added_count},
+  "rpm_pinned_count": ${rpm_expected_added},
   "rpm_set_sha256": "${rpm_set_sha256}"
 }
 EOF

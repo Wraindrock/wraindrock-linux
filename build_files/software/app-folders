@@ -1,22 +1,53 @@
-# Wraindrock application folders (dconf).
-#
-# Bluefin ships seven folders in 01-bluefin-folders and keeps ownership of
-# their apps/categories. This file only:
-#   * extends folder-children with the Wraindrock folders,
-#   * defines those folders with explicit apps lists and no categories,
-#   * excludes the apps we re-home from every Bluefin folder.
-#
-# GNOME puts an app in every folder where it matches
-# (apps ∪ categories) − excluded-apps, so moving an app requires excluding it
-# from the folder it would otherwise match. An app must live in exactly one
-# folder; tests/folders.py enforces that on the merged definition.
-
+# Wraindrock app folders. Bluefin's folders are vendored here because the
+# uBlue Silverblue base has no dconf app-folder presets; our own folders follow.
 [org/gnome/desktop/app-folders]
 folder-children=['Games', 'GamingUtilities', 'Accessories', 'Utilities', 'Development', 'Containers', 'Wine', 'Productivity', 'Virtualization', 'Proxies', 'Social', 'Wraindrock', 'uBlue']
 
-# GNOME's own desktop applications live in their own folder. The name points at
-# our .directory file because GNOME's X-GNOME-Utilities translation is "工具"
-# (Tools), while these are accessories ("附件").
+# Relocatable schemas are located here in dconf
+# Some Gnome extensions don't ship gschema XML, so their settings also need to go in dconf
+
+[org/gnome/desktop/app-folders/folders/GamingUtilities]
+apps=['protontricks.desktop', 'discover_overlay_configure.desktop', 'com.vysp3r.ProtonPlus.desktop', 'io.github.benjamimgois.goverlay.desktop', 'com.gerbilsoft.rom-properties.rp-config.desktop', 'steamos-nested-desktop.desktop']
+name='Gaming Utilities'
+translate=false
+excluded-apps=['virt-manager.desktop', 'io.podman_desktop.PodmanDesktop.desktop', 'Clash Verge.desktop', 'sing-box.desktop', 'helium.desktop', 'Rayburst.desktop', 'discourse.desktop', 'documentation.desktop', 'system-update.desktop', 'com.tencent.WeChat.desktop', 'com.qq.QQ.desktop', 'com.dingtalk.DingTalk.desktop']
+[org/gnome/desktop/app-folders/folders/Utilities]
+apps=['com.github.tchx84.Flatseal.desktop', 'io.github.flattool.Warehouse.desktop', 'com.mattjakeman.ExtensionManager.desktop', 'org.gnome.tweaks.desktop', 'firewall-config.desktop', 'ca.desrt.dconf-editor.desktop', 'org.gnome.Firmware', 'org.gnome.World.PikaBackup.desktop', 'input-leap.desktop', 'solaar.desktop', 'org.fedoraproject.MediaWriter.desktop', 'input-remapper-gtk.desktop', 'org.gnome.Sysprof.desktop', 'remote-viewer.desktop', 'io.github.flattool.Ignition.desktop', 'io.gitlab.adhami3310.Impression.desktop', 'page.tesk.Refine.desktop']
+categories=['X-GNOME-Utilities']
+name='X-GNOME-Utilities.directory'
+translate=true
+excluded-apps=['virt-manager.desktop', 'io.podman_desktop.PodmanDesktop.desktop', 'Clash Verge.desktop', 'sing-box.desktop', 'helium.desktop', 'Rayburst.desktop', 'discourse.desktop', 'documentation.desktop', 'system-update.desktop', 'org.gnome.Nautilus.desktop', 'org.gnome.Ptyxis.desktop', 'org.gnome.Settings.desktop', 'org.gnome.DiskUtility.desktop', 'org.gnome.SystemMonitor.desktop', 'org.gnome.Tour.desktop', 'org.gnome.tweaks.desktop', 'orca.desktop', 'org.gnome.Calculator.desktop', 'org.gnome.Calendar.desktop', 'org.gnome.Characters.desktop', 'org.gnome.Connections.desktop', 'org.gnome.Contacts.desktop', 'org.gnome.DejaDup.desktop', 'org.gnome.FileRoller.desktop', 'org.gnome.Firmware.desktop', 'org.gnome.Logs.desktop', 'org.gnome.Loupe.desktop', 'org.gnome.Maps.desktop', 'org.gnome.Papers.desktop', 'org.gnome.Showtime.desktop', 'org.gnome.SimpleScan.desktop', 'org.gnome.Snapshot.desktop', 'org.gnome.Decibels.desktop', 'org.gnome.TextEditor.desktop', 'org.gnome.Weather.desktop', 'org.gnome.baobab.desktop', 'org.gnome.clocks.desktop', 'org.gnome.font-viewer.desktop', 'com.tencent.WeChat.desktop', 'com.qq.QQ.desktop', 'com.dingtalk.DingTalk.desktop']
+[org/gnome/desktop/app-folders/folders/Games]
+excluded-apps=['steam.desktop', 'net.lutris.Lutris.desktop', 'io.github.benjamimgois.goverlay.desktop', 'com.vysp3r.ProtonPlus.desktop', 'io.github.fastrizwaan.WineZGUI.desktop', 'virt-manager.desktop', 'io.podman_desktop.PodmanDesktop.desktop', 'Clash Verge.desktop', 'sing-box.desktop', 'helium.desktop', 'Rayburst.desktop', 'discourse.desktop', 'documentation.desktop', 'system-update.desktop', 'com.tencent.WeChat.desktop', 'com.qq.QQ.desktop', 'com.dingtalk.DingTalk.desktop']
+categories=['Game']
+name='Games'
+translate=false
+
+[org/gnome/desktop/app-folders/folders/Containers]
+apps=['io.github.dvlv.boxbuddyrs.desktop', 'com.github.marhkb.Pods.desktop']
+categories=['Distrobox']
+name='Containers'
+translate=false
+excluded-apps=['virt-manager.desktop', 'io.podman_desktop.PodmanDesktop.desktop', 'Clash Verge.desktop', 'sing-box.desktop', 'helium.desktop', 'Rayburst.desktop', 'discourse.desktop', 'documentation.desktop', 'system-update.desktop', 'com.tencent.WeChat.desktop', 'com.qq.QQ.desktop', 'com.dingtalk.DingTalk.desktop']
+[org/gnome/desktop/app-folders/folders/Wine]
+apps=['winetricks.desktop']
+categories=['X-Wine', 'wine-wine']
+name='Wine'
+translate=false
+excluded-apps=['virt-manager.desktop', 'io.podman_desktop.PodmanDesktop.desktop', 'Clash Verge.desktop', 'sing-box.desktop', 'helium.desktop', 'Rayburst.desktop', 'discourse.desktop', 'documentation.desktop', 'system-update.desktop', 'com.tencent.WeChat.desktop', 'com.qq.QQ.desktop', 'com.dingtalk.DingTalk.desktop']
+[org/gnome/desktop/app-folders/folders/Development]
+apps=['dev-pod.desktop', 'code.desktop', 'virt-manager.desktop', 'io.podman_desktop.PodmanDesktop.desktop']
+excluded-apps=['org.gnome.Sysprof.desktop', 'virt-manager.desktop', 'io.podman_desktop.PodmanDesktop.desktop', 'Clash Verge.desktop', 'sing-box.desktop', 'helium.desktop', 'Rayburst.desktop', 'discourse.desktop', 'documentation.desktop', 'system-update.desktop', 'com.tencent.WeChat.desktop', 'com.qq.QQ.desktop', 'com.dingtalk.DingTalk.desktop']
+categories=['Development', 'IDE']
+name='Development'
+translate=false
+
+[org/gnome/desktop/app-folders/folders/Productivity]
+apps=['simple-scan.desktop', 'org.gnome.Papers.desktop', 'org.gnome.Connections.desktop']
+name='Productivity'
+translate=false
+excluded-apps=['org.gnome.Papers.desktop', 'org.gnome.SimpleScan.desktop', 'org.gnome.Connections.desktop', 'virt-manager.desktop', 'io.podman_desktop.PodmanDesktop.desktop', 'Clash Verge.desktop', 'sing-box.desktop', 'helium.desktop', 'Rayburst.desktop', 'discourse.desktop', 'documentation.desktop', 'system-update.desktop', 'com.tencent.WeChat.desktop', 'com.qq.QQ.desktop', 'com.dingtalk.DingTalk.desktop']
+
 [org/gnome/desktop/app-folders/folders/Accessories]
 apps=['org.gnome.Nautilus.desktop', 'org.gnome.Ptyxis.desktop', 'org.gnome.Settings.desktop', 'org.gnome.DiskUtility.desktop', 'org.gnome.SystemMonitor.desktop', 'org.gnome.Tour.desktop', 'org.gnome.tweaks.desktop', 'orca.desktop', 'org.gnome.Calculator.desktop', 'org.gnome.Calendar.desktop', 'org.gnome.Characters.desktop', 'org.gnome.Connections.desktop', 'org.gnome.Contacts.desktop', 'org.gnome.DejaDup.desktop', 'org.gnome.FileRoller.desktop', 'org.gnome.Firmware.desktop', 'org.gnome.Logs.desktop', 'org.gnome.Loupe.desktop', 'org.gnome.Maps.desktop', 'org.gnome.Papers.desktop', 'org.gnome.Showtime.desktop', 'org.gnome.SimpleScan.desktop', 'org.gnome.Snapshot.desktop', 'org.gnome.Decibels.desktop', 'org.gnome.TextEditor.desktop', 'org.gnome.Weather.desktop', 'org.gnome.baobab.desktop', 'org.gnome.clocks.desktop', 'org.gnome.font-viewer.desktop']
 name='wraindrock-accessories.directory'
@@ -51,25 +82,3 @@ translate=false
 # lists are repeated here with the re-homed apps appended (and the GNOME apps,
 # which match X-GNOME-Utilities), because a later dconf drop-in replaces a key
 # rather than extending it.
-[org/gnome/desktop/app-folders/folders/GamingUtilities]
-excluded-apps=['virt-manager.desktop', 'io.podman_desktop.PodmanDesktop.desktop', 'Clash Verge.desktop', 'sing-box.desktop', 'helium.desktop', 'Rayburst.desktop', 'discourse.desktop', 'documentation.desktop', 'system-update.desktop', 'com.tencent.WeChat.desktop', 'com.qq.QQ.desktop', 'com.dingtalk.DingTalk.desktop']
-
-[org/gnome/desktop/app-folders/folders/Utilities]
-# Tools: Bluefin's own utilities, minus Tweaks which now lives in Accessories.
-apps=['com.github.tchx84.Flatseal.desktop', 'io.github.flattool.Warehouse.desktop', 'com.mattjakeman.ExtensionManager.desktop', 'firewall-config.desktop', 'ca.desrt.dconf-editor.desktop', 'org.gnome.Firmware', 'org.gnome.World.PikaBackup.desktop', 'input-leap.desktop', 'solaar.desktop', 'org.fedoraproject.MediaWriter.desktop', 'input-remapper-gtk.desktop', 'org.gnome.Sysprof.desktop', 'remote-viewer.desktop', 'io.github.flattool.Ignition.desktop', 'io.gitlab.adhami3310.Impression.desktop', 'page.tesk.Refine.desktop']
-excluded-apps=['virt-manager.desktop', 'io.podman_desktop.PodmanDesktop.desktop', 'Clash Verge.desktop', 'sing-box.desktop', 'helium.desktop', 'Rayburst.desktop', 'discourse.desktop', 'documentation.desktop', 'system-update.desktop', 'org.gnome.Nautilus.desktop', 'org.gnome.Ptyxis.desktop', 'org.gnome.Settings.desktop', 'org.gnome.DiskUtility.desktop', 'org.gnome.SystemMonitor.desktop', 'org.gnome.Tour.desktop', 'org.gnome.tweaks.desktop', 'orca.desktop', 'org.gnome.Calculator.desktop', 'org.gnome.Calendar.desktop', 'org.gnome.Characters.desktop', 'org.gnome.Connections.desktop', 'org.gnome.Contacts.desktop', 'org.gnome.DejaDup.desktop', 'org.gnome.FileRoller.desktop', 'org.gnome.Firmware.desktop', 'org.gnome.Logs.desktop', 'org.gnome.Loupe.desktop', 'org.gnome.Maps.desktop', 'org.gnome.Papers.desktop', 'org.gnome.Showtime.desktop', 'org.gnome.SimpleScan.desktop', 'org.gnome.Snapshot.desktop', 'org.gnome.Decibels.desktop', 'org.gnome.TextEditor.desktop', 'org.gnome.Weather.desktop', 'org.gnome.baobab.desktop', 'org.gnome.clocks.desktop', 'org.gnome.font-viewer.desktop', 'com.tencent.WeChat.desktop', 'com.qq.QQ.desktop', 'com.dingtalk.DingTalk.desktop']
-
-[org/gnome/desktop/app-folders/folders/Games]
-excluded-apps=['steam.desktop', 'net.lutris.Lutris.desktop', 'io.github.benjamimgois.goverlay.desktop', 'com.vysp3r.ProtonPlus.desktop', 'io.github.fastrizwaan.WineZGUI.desktop', 'virt-manager.desktop', 'io.podman_desktop.PodmanDesktop.desktop', 'Clash Verge.desktop', 'sing-box.desktop', 'helium.desktop', 'Rayburst.desktop', 'discourse.desktop', 'documentation.desktop', 'system-update.desktop', 'com.tencent.WeChat.desktop', 'com.qq.QQ.desktop', 'com.dingtalk.DingTalk.desktop']
-
-[org/gnome/desktop/app-folders/folders/Containers]
-excluded-apps=['virt-manager.desktop', 'io.podman_desktop.PodmanDesktop.desktop', 'Clash Verge.desktop', 'sing-box.desktop', 'helium.desktop', 'Rayburst.desktop', 'discourse.desktop', 'documentation.desktop', 'system-update.desktop', 'com.tencent.WeChat.desktop', 'com.qq.QQ.desktop', 'com.dingtalk.DingTalk.desktop']
-
-[org/gnome/desktop/app-folders/folders/Wine]
-excluded-apps=['virt-manager.desktop', 'io.podman_desktop.PodmanDesktop.desktop', 'Clash Verge.desktop', 'sing-box.desktop', 'helium.desktop', 'Rayburst.desktop', 'discourse.desktop', 'documentation.desktop', 'system-update.desktop', 'com.tencent.WeChat.desktop', 'com.qq.QQ.desktop', 'com.dingtalk.DingTalk.desktop']
-
-[org/gnome/desktop/app-folders/folders/Development]
-excluded-apps=['org.gnome.Sysprof.desktop', 'virt-manager.desktop', 'io.podman_desktop.PodmanDesktop.desktop', 'Clash Verge.desktop', 'sing-box.desktop', 'helium.desktop', 'Rayburst.desktop', 'discourse.desktop', 'documentation.desktop', 'system-update.desktop', 'com.tencent.WeChat.desktop', 'com.qq.QQ.desktop', 'com.dingtalk.DingTalk.desktop']
-
-[org/gnome/desktop/app-folders/folders/Productivity]
-excluded-apps=['org.gnome.Papers.desktop', 'org.gnome.SimpleScan.desktop', 'org.gnome.Connections.desktop', 'virt-manager.desktop', 'io.podman_desktop.PodmanDesktop.desktop', 'Clash Verge.desktop', 'sing-box.desktop', 'helium.desktop', 'Rayburst.desktop', 'discourse.desktop', 'documentation.desktop', 'system-update.desktop', 'com.tencent.WeChat.desktop', 'com.qq.QQ.desktop', 'com.dingtalk.DingTalk.desktop']

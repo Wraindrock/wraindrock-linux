@@ -1,69 +1,71 @@
 # Wraindrock
 
-A personal, out-of-the-box remix of **Bluefin DX**, delivered as a bootc system
-image. Not an independent distribution and not a Fedora derivative: the desktop,
-kernel, drivers, uBlue tooling and update plumbing are upstream; this repository
-owns the identity, the presentation and a short list of personal defaults.
+A personal, out-of-the-box remix of **uBlue Silverblue** — Universal Blue's
+Fedora Silverblue base — delivered as a bootc system image. Not an independent
+distribution and not a Fedora derivative: the desktop, kernel, firmware and
+update plumbing are upstream, while this repository owns the identity, the
+personal defaults, and the NVIDIA + developer-tool stack that Bluefin DX used to
+add on top.
 
 [![build](https://github.com/Wraindrock/wraindrock-linux/actions/workflows/build.yml/badge.svg)](https://github.com/Wraindrock/wraindrock-linux/actions/workflows/build.yml)
 
-## What differs from Bluefin DX
+## What differs from uBlue Silverblue
 
 - `NAME` and `PRETTY_NAME` say **Wraindrock**; `ID`, `ID_LIKE`, `CPE_NAME` and
-  the version fields stay upstream's so uBlue tooling keeps working.
-- A 4K dark wallpaper replaces upstream's. Everything else visual — the logo,
-  GDM artwork, boot splash and boot-menu theme — is Bluefin's own.
-- The UEFI boot entry is labelled **Wraindrock** (not Fedora or Bluefin).
+  the version fields stay upstream's, so uBlue and Fedora tooling keep working.
+- The Bluefin DX experience is restored on top of the lean base: the NVIDIA open
+  driver and kernel module, `nvidia-container-toolkit`, Docker, Incus,
+  libvirt/QEMU, virt-manager, Distrobox, the nine Bluefin GNOME extensions and
+  their dconf presets, and the Bluefin application folders.
+- A 4K dark wallpaper replaces upstream's. Everything else visual — logo, GDM
+  artwork, boot splash and boot-menu theme — is stock Silverblue/GNOME.
+- The UEFI boot entry is labelled **Wraindrock** (not Fedora).
 - GNOME application folders group launchers by purpose: Accessories (附件) for
-  GNOME's own desktop apps, Utilities (工具) for Bluefin's tools, plus
-  Wraindrock, Virtualization, Proxies, Social (社交), uBlue and Bluefin's other
-  folders. Each
-  app appears in exactly one folder.
+  GNOME's own desktop apps, Utilities (工具) for the tools, plus Wraindrock,
+  Virtualization, Proxies, Social (社交), uBlue and the other Bluefin folders.
+  Each app appears in exactly one folder.
 - The dock starts as Helium, Rnote, Files, Bazaar, Mission Center, Terminal.
 - A fresh install seeds the hostname to `wraindrock`.
-- **NVIDIA open drivers**, QEMU/KVM with virt-manager, libvirt, Incus, Docker
-  and Distrobox come from the Bluefin DX NVIDIA base.
 
-Everything else matches Bluefin DX package for package, except the four
-software packages listed below. `/usr/share/wraindrock/delta.json` records every
-difference, and CI fails the build if the image carries anything that is not in
-that manifest.
+Everything else is stock uBlue Silverblue plus the four pinned RPMs and the
+Flatpak set below — 197 packages are added to the 1632-package base.
+`/usr/share/wraindrock/delta.json` records every difference, and CI fails the
+build if the image carries anything that is not in that manifest.
 
-## Bluefin defaults we keep
+## Defaults we restore
 
-The desktop is upstream Bluefin's, so its defaults are inherited rather than
-re-implemented — and the parity test compares the base and the image so they
-cannot drift apart silently.
+The base is deliberately lean; the Bluefin DX defaults are reapplied by this
+image, and parity compares the base and the image so the sets cannot drift
+silently.
 
-- 13 GNOME extensions are installed in `/usr/share/gnome-shell/extensions`;
-  8 are enabled by default: AppIndicator support, Bazaar integration,
-  Blur my Shell, Dash to Dock, Gradia integration, GSConnect, Logo Menu and
-  Search Light. The other five (`apps-menu`, `caffeine`, `places-menu`,
-  `window-list`, `launch-new-instance`) stay installed but off, exactly as
-  upstream ships them.
+- 14 GNOME extensions are installed: the 5 Fedora ones plus AppIndicator
+  support, Bazaar integration, Blur my Shell, Dash to Dock, Gradia integration,
+  GSConnect, Logo Menu and Search Light. The Bluefin DX enabled set is enabled
+  by default; `apps-menu`, `caffeine`, `places-menu`, `window-list` and
+  `launch-new-instance` stay installed but off.
 - Extension Manager (`com.mattjakeman.ExtensionManager`) is installed on first
   boot and wired into Logo Menu.
-- Flatpak defaults are Bluefin's: the Flathub remote, the first-boot app set,
-  the Bazaar `host-etc` preset, and `flatpak-preinstall.service`.
-- **IBus** is the input-method framework, exactly as in GNOME and Bluefin — we
-  install nothing and switch nothing. Our only input change is preloading the
+- The Flathub remote, the Bazaar `host-etc` preset, the first-boot app set and
+  the retry timer are provided by this image (the base ships none of them).
+- **IBus** is the input-method framework inherited from GNOME — we install
+  nothing and switch nothing. Our only input change is preloading the
   `libpinyin` engine in the source list (and `show-all-sources`), so Chinese
-  typing works on first login; the framework itself is upstream's.
-- GNOME look, fonts, dock, keybindings and favourite apps come from Bluefin's
-  `zz0-bluefin-modifications.gschema.override`; we only override the wallpaper
-  and the input-method default.
+  typing works on first login.
+- Look, fonts, dock, keybindings and the default favourite apps come from this
+  repository's dconf presets; we override the wallpaper and the input-method
+  default as well.
 
 ## Software
 
 The first boot installs **43 Flatpaks** (needs the network and a few GB); a
 timer retries every ten minutes until they are in, and
 `sudo systemctl start wraindrock-flatpak-preinstall.service` runs it now:
-Bluefin's core and DX applications — GNOME apps, Podman Desktop, GNOME Builder,
-DevToolbox, Clapgrep, Embellish, Bazaar, Flatseal, DistroShelf and the rest of
-the maintained set — plus DingTalk, QQ, Open Orpheus, WeChat, Rnote and Gear
-Lever. Firefox and Thunderbird are deliberately not preinstalled; both install
-from Bazaar (or `flatpak install flathub org.mozilla.firefox`). The two
-adw-gtk3 theme extensions and Tavern (no longer on Flathub) are skipped.
+the maintained Bluefin set — GNOME apps, Podman Desktop, GNOME Builder,
+DevToolbox, Clapgrep, Embellish, Bazaar, Flatseal, DistroShelf and more — plus
+DingTalk, QQ, Open Orpheus, WeChat, Rnote and Gear Lever. Firefox and
+Thunderbird are deliberately not preinstalled; both install from Bazaar (or
+`flatpak install flathub org.mozilla.firefox`). The two adw-gtk3 theme
+extensions and Tavern (no longer on Flathub) are skipped.
 
 **Helium is the default browser** for links and HTML. Four programs have no
 Flatpak, so their upstream RPMs are baked in at pinned versions: Helium
@@ -72,28 +74,29 @@ Rayburst 4.1.0 and sing-box (SFL) 1.14.3. Each upstream release is caught by the
 daily upstream-watch workflow, which bumps the pin and publishes a new signed
 image tag — the apps do not wait for a Fedora major release.
 
-Printing and scanning are inherited from Bluefin: HPLIP 3.26.6 is already in the
-base with the HP CUPS backend and filters, `hp-setup`/`hp-info`, and the
-`libsane-hpaio` SANE backend; the build asserts that this stack is present. The
-Qt graphical toolbox (`hplip-gui`) is intentionally not installed; use
-`hp-setup -i` or the CUPS web interface. `sane-airscan` and the SANE scanner
-drivers are also inherited, so network scanners appear in Document Scanner.
+Printing and scanning are inherited from Fedora Silverblue: HPLIP 3.26.6 is
+already in the base with the HP CUPS backend and filters, `hp-setup`/`hp-info`,
+and the `libsane-hpaio` SANE backend; the build asserts that this stack is
+present. The Qt graphical toolbox (`hplip-gui`) is intentionally not installed;
+use `hp-setup -i` or the CUPS web interface. `sane-airscan` and the SANE
+scanner drivers are also inherited, so network scanners appear in Document
+Scanner.
 
 Dell G15/G16 owners also get the
 [G15 control center](https://github.com/Wraindrock/Ian-g-control-center): a
 first-boot unit installs a pinned commit into `/var/opt/g15-controller` and
 starts its daemon, only when the DMI model matches. Other machines skip it.
 
-KVM (`virt-manager`, `libvirt`, `qemu-system-x86`), Incus and Docker are part of
-the inherited Bluefin DX base, so virtual machines work out of the box. The
-NVIDIA open driver stack (`nvidia-driver`, `kmod-nvidia`,
-`nvidia-container-toolkit`) is inherited from the NVIDIA base variant as well.
+KVM (`virt-manager`, `libvirt`, `qemu-system-x86`), Incus, Docker and Distrobox
+are installed by this image, so virtual machines work out of the box. The NVIDIA
+open driver stack (`nvidia-driver`, `kmod-nvidia`,
+`nvidia-container-toolkit`) is staged from uBlue's matching akmods build.
 
 Input: the keyboard layout and the input method are separate entries in the
-input-source list. Bluefin's English (US) layout stays; we add the **libpinyin
-input method** on top, so Super+Space switches between typing English (US) and
-Chinese (pinyin). The IBus framework itself is inherited from GNOME/Bluefin —
-Fcitx is not installed, and Noto Sans CJK ships in the base.
+input-source list. The English (US) layout stays; we add the **libpinyin input
+method** on top, so Super+Space switches between typing English (US) and
+Chinese (pinyin). The IBus framework is GNOME's — Fcitx is not installed, and
+Noto Sans CJK ships in the base.
 
 ## Screenshots
 
