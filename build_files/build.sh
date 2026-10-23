@@ -245,8 +245,10 @@ grep -aq 'Accessories' /etc/dconf/db/distro \
     || die "the Accessories folder was not compiled"
 grep -aq 'Social' /etc/dconf/db/distro \
     || die "the Social folder was not compiled"
-grep -Eq "folder-children=.*'Wraindrock'" "${folders_file}" \
-    || die "the Wraindrock folder is not declared"
+grep -Eq "folder-children=.*'Virtualization'" "${folders_file}" \
+    || die "the folder-children list is incomplete"
+grep -Fq "name='虚拟化'" "${folders_file}" \
+    || die "the folder names are not set"
 
 # 3g. First-boot hostname seeding. bootc-image-builder's install path does not
 # apply DEFAULT_HOSTNAME: the installed system inherits the base deployment's
