@@ -148,7 +148,7 @@ the wallpaper, boot-entry naming and desktop grouping:
 | default desktop + GDM wallpaper | `/usr/share/backgrounds/wraindrock/wraindrock-wallpaper.png` + `[org.gnome.desktop.background]` in `zzzz-wraindrock.gschema.override` |
 | UEFI boot entry name | `/etc/system-release` rewritten to `Wraindrock release <ver> (Bluefin DX)`; bootupd derives the firmware label from it (`get_product_name`), falling back to os-release `NAME` |
 | default dock | `[org.gnome.shell] favorite-apps` in `zzzz-wraindrock.gschema.override`: Helium, Rnote, Files, Bazaar, Mission Center, Terminal; a user's own value wins |
-| application folders | `/etc/dconf/db/distro.d/10-wraindrock-folders` extends `folder-children` with Virtualization, Proxies, Wraindrock and uBlue, lists their apps explicitly, and excludes re-homed apps from Bluefin's folders; one home per app; `dconf update` compiles the distro database |
+| application folders | `/etc/dconf/db/distro.d/10-wraindrock-folders` extends `folder-children` with Virtualization, Proxies, Social (社交), Wraindrock and uBlue, lists their apps explicitly, and excludes re-homed apps from Bluefin's folders; one home per app; `dconf update` compiles the distro database |
 | default hostname | `DEFAULT_HOSTNAME` (no `/etc/hostname` is shipped; an installer or user file still wins) |
 | input method | IBus is inherited from GNOME/Bluefin (no Fcitx in the image). Keyboard layouts and input methods are distinct entries in the source list; the English (US) layout stays and the only addition is the `libpinyin` input method in `[org.gnome.desktop.input-sources]` (`zzzz-wraindrock.gschema.override`). A user's own value wins |
 
@@ -172,7 +172,8 @@ upstream folder. GNOME matches `(apps ∪ categories) − excluded-apps` per fol
 so listing an app in two places shows it twice; `tests/folders.py` merges the
 upstream definition with ours and fails if any app would land in more than one
 folder. Channel folders (`Flatpak`, `AppImage`) were removed for this reason.
-A separate Accessories folder (附件) lists every GNOME desktop application (RPM
+A separate Social (社交) folder groups WeChat, QQ and DingTalk with their own
+`.directory` file. A separate Accessories folder (附件) lists every GNOME desktop application (RPM
 desktop files from the base rpmdb plus Flathub launchable ids); its name comes
 from `wraindrock-accessories.directory` (`Name=Accessories`, `Name[zh_CN]=附件`).
 Bluefin's Utilities folder (工具) keeps only its own tools, and the GNOME apps
@@ -201,15 +202,12 @@ Two delivery mechanisms keep the out-of-box set small and updatable:
   because Bluefin itself does not bake them.
 - **The four app RPMs are baked** (Helium from the official `imput/helium` COPR,
   Clash Verge Rev, Rayburst, sing-box/SFL) because they have no Flatpak.
-  HPLIP's core is inherited from Bluefin (the build asserts the CUPS/SANE
-  backends and `hp-setup`), and the pinned `hplip-gui` plus its Qt5/ReportLab
-  closure is added on top for the full toolbox. Every baked RPM is downloaded at
-  build time from a pinned upstream URL, checked against a pinned sha256 and
-  expected version, and installed with `rpm -i`; nothing is resolved from a
-  repository, and a removal of any base package fails the build. `hplip-gui` is
-  pinned twice (`3.26.6-1` and `-2`), each row conditioned on the `hplip` core
-  version the base ships, so a base refresh picks the matching GUI without
-  touching the core. Their `%post`
+  HPLIP's core is inherited from Bluefin: the build asserts the CUPS/SANE
+  backends and `hp-setup` are present, and deliberately does not install the
+  optional Qt GUI. Every baked RPM is downloaded at build time from a pinned
+  upstream URL, checked against a pinned sha256 and expected version, and
+  installed with `rpm -i`; nothing is resolved from a repository, and a removal
+  of any base package fails the build. Their `%post`
   scriptlets run as root inside the build container. They update with the image;
   `rpm-ostree override replace`
   gives a per-package escape hatch between image releases. SFL installs only

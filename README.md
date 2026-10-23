@@ -16,7 +16,8 @@ owns the identity, the presentation and a short list of personal defaults.
 - The UEFI boot entry is labelled **Wraindrock** (not Fedora or Bluefin).
 - GNOME application folders group launchers by purpose: Accessories (附件) for
   GNOME's own desktop apps, Utilities (工具) for Bluefin's tools, plus
-  Wraindrock, Virtualization, Proxies, uBlue and Bluefin's other folders. Each
+  Wraindrock, Virtualization, Proxies, Social (社交), uBlue and Bluefin's other
+  folders. Each
   app appears in exactly one folder.
 - The dock starts as Helium, Rnote, Files, Bazaar, Mission Center, Terminal.
 - A fresh install seeds the hostname to `wraindrock`.
@@ -74,10 +75,9 @@ image tag — the apps do not wait for a Fedora major release.
 Printing and scanning are inherited from Bluefin: HPLIP 3.26.6 is already in the
 base with the HP CUPS backend and filters, `hp-setup`/`hp-info`, and the
 `libsane-hpaio` SANE backend; the build asserts that this stack is present. The
-complete HPLIP toolset is included: the pinned `hplip-gui` package adds the Qt
-toolbox (`hp-toolbox`) and its printer/scanner utilities on top of Bluefin's
-core. `sane-airscan` and the SANE scanner drivers are also inherited, so network
-scanners appear in Document Scanner.
+Qt graphical toolbox (`hplip-gui`) is intentionally not installed; use
+`hp-setup -i` or the CUPS web interface. `sane-airscan` and the SANE scanner
+drivers are also inherited, so network scanners appear in Document Scanner.
 
 Dell G15/G16 owners also get the
 [G15 control center](https://github.com/Wraindrock/Ian-g-control-center): a

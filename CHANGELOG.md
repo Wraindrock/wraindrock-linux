@@ -5,6 +5,19 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 image versions are the upstream channel plus an immutable build tag, see
 [docs/architecture.md](docs/architecture.md).
 
+## [0.19.0] - 2026-10-23
+
+### Added
+
+- A Social (社交) application folder groups WeChat, QQ and DingTalk, with its
+  own `wraindrock-social.directory` so the name follows the system language.
+
+### Removed
+
+- The optional HPLIP Qt GUI again: `hplip-gui` and its Qt5/ReportLab closure are
+  no longer pinned. Bluefin's HPLIP core (CUPS/SANE backends, `hp-setup`) stays
+  inherited and asserted; the toolbox is not needed on this machine.
+
 ## [0.18.4] - 2026-10-23
 
 ### Added

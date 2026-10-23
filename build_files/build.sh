@@ -193,12 +193,16 @@ desktop_dirs=/usr/share/desktop-directories
 install -d -m 0755 "${desktop_dirs}"
 install -m 0644 "${script_dir}/software/wraindrock-accessories.directory" \
     "${desktop_dirs}/wraindrock-accessories.directory"
+install -m 0644 "${script_dir}/software/wraindrock-social.directory" \
+    "${desktop_dirs}/wraindrock-social.directory"
 command -v dconf >/dev/null 2>&1 || die "dconf is required to compile the app-folder database"
 dconf update
 grep -aq 'Virtualization' /etc/dconf/db/distro \
     || die "the app-folder database was not compiled"
 grep -aq 'Accessories' /etc/dconf/db/distro \
     || die "the Accessories folder was not compiled"
+grep -aq 'Social' /etc/dconf/db/distro \
+    || die "the Social folder was not compiled"
 grep -Eq "folder-children=.*'Wraindrock'" "${folders_file}" \
     || die "the Wraindrock folder is not declared"
 
@@ -281,7 +285,7 @@ ln -sfn /usr/lib/systemd/system/wraindrock-g15-install.service \
 # them without rewriting this script. The column order is:
 #   name <TAB> version-release <TAB> url <TAB> sha256 [<TAB> name=version-release]
 # The optional condition selects a row only when the base ships that exact
-# version (hplip-gui must match the inherited hplip core).
+# version (for example, a GUI package that must match an inherited core).
 rpm_pins_file="${script_dir}/software/rpms.tsv"
 rpm_active_pins="$(mktemp /tmp/wraindrock-active-pins.XXXXXX)"
 rpm_pin_active() {
@@ -300,8 +304,6 @@ while IFS=$'\t' read -r rpm_name rpm_version rpm_url rpm_sha256 rpm_condition; d
 done < "${rpm_pins_file}"
 rpm_expected_added="$(wc -l < "${rpm_active_pins}")"
 [[ ${rpm_expected_added} -gt 0 ]] || die "no RPM pin matches this base image"
-[[ $(awk -F'\t' '$1 == "hplip-gui"' "${rpm_active_pins}" | wc -l) -eq 1 ]] \
-    || die "no hplip-gui pin matches the base hplip version"
 
 say "installing pinned software RPMs"
 rpm_dir="$(mktemp -d /tmp/wraindrock-rpms.XXXXXX)"
@@ -334,11 +336,6 @@ rm -rf "${rpm_dir}"
 [[ -x /usr/bin/hp-setup ]] || die "HPLIP did not install /usr/bin/hp-setup"
 [[ -x /usr/lib/cups/backend/hp ]] || die "HPLIP did not install the CUPS backend"
 [[ -e /usr/lib64/sane/libsane-hpaio.so.1 ]] || die "HPLIP did not install the SANE backend"
-[[ -x /usr/bin/hp-toolbox ]] || die "hplip-gui did not install /usr/bin/hp-toolbox"
-[[ -e /usr/share/applications/hplip.desktop ]] || die "hplip-gui did not install its desktop entry"
-rpm -q hplip-gui >/dev/null || die "hplip-gui is not installed"
-[[ "$(rpm -q --qf '%{VERSION}-%{RELEASE}' hplip-gui)" == "$(rpm -q --qf '%{VERSION}-%{RELEASE}' hplip)" ]] \
-    || die "hplip-gui does not match the inherited hplip core"
 
 rpm_current_set_file="$(mktemp /tmp/wraindrock-current-rpm-set.XXXXXX)"
 rpm_added_file="$(mktemp /tmp/wraindrock-rpm-added.XXXXXX)"
@@ -449,7 +446,8 @@ cat > /usr/share/wraindrock/delta.json <<EOF
       "/etc/systemd/system/multi-user.target.wants/wraindrock-g15-install.service",
       "/etc/xdg/mimeapps.list",
       "/etc/dconf/db/distro.d/10-wraindrock-folders",
-      "/usr/share/desktop-directories/wraindrock-accessories.directory"
+      "/usr/share/desktop-directories/wraindrock-accessories.directory",
+      "/usr/share/desktop-directories/wraindrock-social.directory"
     ]
   }
 }

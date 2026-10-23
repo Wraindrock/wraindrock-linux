@@ -440,13 +440,12 @@ while IFS=$'\t' read -r name version; do
     fi
 done < "${tmpdir}/rpm-pins"
 
-if in_image "${IMAGE}" "rpm -q hplip hplip-common hplip-libs libsane-hpaio hplip-gui >/dev/null" \
+if in_image "${IMAGE}" "rpm -q hplip hplip-common hplip-libs libsane-hpaio >/dev/null" \
     && in_image "${IMAGE}" "test -x /usr/bin/hp-setup && test -x /usr/lib/cups/backend/hp" \
-    && in_image "${IMAGE}" "test -x /usr/bin/hp-toolbox && test -e /usr/share/applications/hplip.desktop" \
     && in_image "${IMAGE}" "test -e /usr/lib64/sane/libsane-hpaio.so.1"; then
-    pass "HPLIP (inherited core + pinned GUI) provides hp-setup, hp-toolbox, the CUPS backend and the SANE backend"
+    pass "HPLIP (inherited from Bluefin) provides hp-setup, the CUPS backend and the SANE backend"
 else
-    fail "HPLIP is incomplete (packages, hp-setup, hp-toolbox, CUPS backend or SANE backend missing)"
+    fail "HPLIP is incomplete (packages, hp-setup, CUPS backend or SANE backend missing)"
 fi
 
 # --- default wallpaper ------------------------------------------------------
@@ -562,7 +561,7 @@ if in_image "${IMAGE}" "test -s ${folders_file}"; then
 else
     fail "application folders are missing"
 fi
-for folder in Accessories Virtualization Proxies Wraindrock uBlue; do
+for folder in Accessories Virtualization Proxies Social Wraindrock uBlue; do
     if in_image "${IMAGE}" "grep -q '\[org/gnome/desktop/app-folders/folders/${folder}\]' ${folders_file}"; then
         pass "app folder declared: ${folder}"
     else
@@ -578,13 +577,20 @@ for gone in Flatpak AppImage Bluefin; do
 done
 for app in 'virt-manager.desktop' 'io.podman_desktop.PodmanDesktop.desktop' \
     'Clash Verge.desktop' 'helium.desktop' 'discourse.desktop' \
-    'documentation.desktop' 'system-update.desktop'; do
+    'documentation.desktop' 'system-update.desktop' \
+    'com.tencent.WeChat.desktop' 'com.qq.QQ.desktop' 'com.dingtalk.DingTalk.desktop'; do
     if in_image "${IMAGE}" "grep -Fq \"'${app}'\" ${folders_file}"; then
         pass "re-homed app is listed: ${app}"
     else
         fail "re-homed app is missing: ${app}"
     fi
 done
+social_dir=/usr/share/desktop-directories/wraindrock-social.directory
+if in_image "${IMAGE}" "test -s ${social_dir} && grep -q 'Name\[zh_CN\]=社交' ${social_dir}"; then
+    pass "Social folder has its simplified-Chinese name"
+else
+    fail "Social folder is missing or not named 社交"
+fi
 in_image "${IMAGE}" "cat ${folders_file}" > "${tmpdir}/app-folders"
 if python3 tests/folders.py tests/fixtures/bluefin-folders.conf "${tmpdir}/app-folders" >/dev/null; then
     pass "published app folders keep one folder per app"
