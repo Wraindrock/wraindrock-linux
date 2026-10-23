@@ -132,11 +132,10 @@ unit is exercised in parity against a fixture with a temporary root.
 
 ### Branding
 
-Visual personalisation was deliberately **removed** in v0.15: Bluefin's own
-logo, GDM artwork, Plymouth splash and boot-menu theme are better than what this
-image shipped, and they are upstream's to maintain. Wallpaper and other visual
-it is the one change that helps tell deployments apart. The delta is identity,
-identity stay stock; boot-entry naming and desktop grouping:
+Visual personalisation was deliberately removed: the logo, GDM artwork,
+Plymouth splash and boot-menu theme are better left upstream, and the wallpaper
+is stock Silverblue too. The delta is identity (display name and UEFI entry),
+application grouping, and the curated defaults below:
 
 | Change | Mechanism |
 | --- | --- |
