@@ -197,7 +197,9 @@ Two delivery mechanisms keep the out-of-box set small and updatable:
   because Bluefin itself does not bake them.
 - **The four app RPMs are baked** (Helium from the official `imput/helium` COPR,
   Clash Verge Rev, Rayburst, sing-box/SFL) because they have no Flatpak.
-  `ipp-duplexd` has no RPM either; its pinned upstream `.deb` is unpacked at
+  `hplip-gui` (the full HPLIP toolbox) and TuxTalk (dictation) are pinned the
+  same way, with a condition tying the HPLIP GUI pin to the inherited core
+  version. `ipp-duplexd` has no RPM either; its pinned upstream `.deb` is unpacked at
   build time into `/usr/bin`, a systemd user unit and docs. Its `qpdf`
   dependency is installed from Fedora's repositories.
   HPLIP's core is inherited from Fedora Silverblue: the build asserts the CUPS/SANE

@@ -73,6 +73,10 @@ Rayburst 4.1.0 and sing-box (SFL) 1.14.3. Each upstream release is caught by the
 daily upstream-watch workflow, which bumps the pin and publishes a new signed
 image tag — the apps do not wait for a Fedora major release.
 
+TuxTalk (offline voice dictation, `tuxtalk`) is installed from its pinned
+upstream RPM; hold its hotkey, speak, and the text is typed at the cursor. Its
+first run sets up a local hotkey helper; the app lives in `/opt/talktype`.
+
 Manual duplex printing is available through
 [ipp-duplexd](https://github.com/SamiKalliomaki/ipp-duplexd), a small virtual
 IPP printer that prints the odd pages, waits for you to flip the stack, then

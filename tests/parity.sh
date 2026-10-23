@@ -484,12 +484,18 @@ while IFS=$'\t' read -r name version; do
     fi
 done < "${tmpdir}/rpm-pins"
 
-if in_image "${IMAGE}" "rpm -q hplip hplip-common hplip-libs libsane-hpaio >/dev/null" \
-    && in_image "${IMAGE}" "test -x /usr/bin/hp-setup && test -x /usr/lib/cups/backend/hp" \
+if in_image "${IMAGE}" "rpm -q hplip hplip-common hplip-libs libsane-hpaio hplip-gui >/dev/null" \
+    && in_image "${IMAGE}" "test -x /usr/bin/hp-setup && test -x /usr/lib/cups/backend/hp && test -x /usr/bin/hp-toolbox" \
     && in_image "${IMAGE}" "test -e /usr/lib64/sane/libsane-hpaio.so.1"; then
-    pass "HPLIP (inherited from Bluefin) provides hp-setup, the CUPS backend and the SANE backend"
+    pass "full HPLIP provides hp-setup, the GUI toolbox, the CUPS backend and the SANE backend"
 else
-    fail "HPLIP is incomplete (packages, hp-setup, CUPS backend or SANE backend missing)"
+    fail "HPLIP is incomplete (packages, hp-setup, hp-toolbox, CUPS backend or SANE backend missing)"
+fi
+
+if in_image "${IMAGE}" "test -x /usr/bin/tuxtalk && test -e /usr/share/applications/io.github.ronb1964.TuxTalk.desktop"; then
+    pass "TuxTalk is installed with its desktop entry"
+else
+    fail "TuxTalk installation is incomplete"
 fi
 
 # --- wallpaper: the stock base default --------------------------------------

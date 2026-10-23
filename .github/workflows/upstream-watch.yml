@@ -101,6 +101,9 @@ jobs:
           ipp_version, ipp_url = latest_asset(
               "SamiKalliomaki/ipp-duplexd", r"ipp-duplexd_(.+?)_amd64\.deb"
           )
+          tux_version, tux_url = latest_asset(
+              "ronb1964/TuxTalk", r"tuxtalk-(.+?)-1\.x86_64\.rpm"
+          )
           resolved = {
               "helium-bin": helium(),
               "clash-verge": (clash_version, clash_url),
@@ -108,6 +111,8 @@ jobs:
               # SFL's asset name has no release field; its RPM release is 1.
               "sing-box": (f"{sfl_version}-1", sfl_url),
               "ipp-duplexd": (ipp_version, ipp_url),
+              # TuxTalk's asset name already includes the RPM release.
+              "tuxtalk": (f"{tux_version}-1", tux_url),
           }
 
           lines = open(TSV).read().splitlines()

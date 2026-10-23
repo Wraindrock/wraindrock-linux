@@ -336,17 +336,17 @@ for scheme in text/html application/xhtml+xml x-scheme-handler/http x-scheme-han
     fi
 done
 rpm_rows=$(awk 'NF && $1 !~ /^#/' build_files/software/rpms.tsv | wc -l)
-if [[ ${rpm_rows} == 4 ]]; then
-    pass "rpms.tsv pins 4 upstream packages"
+if [[ ${rpm_rows} -ge 4 ]]; then
+    pass "rpms.tsv pins ${rpm_rows} upstream packages"
 else
-    fail "rpms.tsv pins ${rpm_rows} packages, want 4"
+    fail "rpms.tsv pins ${rpm_rows} packages, want at least 4"
 fi
 if [[ $(awk -F'\t' 'NF && $1 !~ /^#/ {print $1 "-" $2}' build_files/software/rpms.tsv | sort | uniq -d | wc -l) -eq 0 ]]; then
     pass "rpms.tsv pins each name-version once"
 else
     fail "rpms.tsv contains duplicate package names"
 fi
-for name in helium-bin clash-verge rayburst sing-box; do
+for name in helium-bin clash-verge rayburst sing-box hplip-gui tuxtalk; do
     if awk -F'\t' -v n="${name}" 'NF && $1 == n && $2 != "" && $3 ~ /^https:\/\// && $4 ~ /^[0-9a-f]{64}$/' build_files/software/rpms.tsv | grep -q .; then
         pass "rpms.tsv has a complete pin for ${name}"
     else
@@ -361,7 +361,7 @@ for name in $(awk -F'\t' 'NF && $1 !~ /^#/ {print $1}' build_files/software/rpms
     fi
 done
 for needle in "flatpaks.txt" "mimeapps.list" "rpms.tsv" "rpm -i" "sha256sum -c" \
-    "rpm_base_set_file" "rpmdb.sqlite-wal" "hp-setup" "rpm-pins" "libsane-hpaio"; do
+    "rpm_base_set_file" "rpmdb.sqlite-wal" "hp-setup" "hp-toolbox" "tuxtalk" "rpm-pins" "libsane-hpaio"; do
     if grep -Fq -- "${needle}" build_files/build.sh; then
         pass "build.sh handles ${needle}"
     else

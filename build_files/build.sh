@@ -458,6 +458,11 @@ rm -rf "${rpm_dir}"
 [[ -x /opt/sing-box/sing-box ]] || die "SFL did not land under /opt/sing-box"
 [[ -x /opt/helium/helium ]] || die "Helium did not land under /opt/helium"
 [[ -x /usr/bin/hp-setup ]] || die "HPLIP did not install /usr/bin/hp-setup"
+[[ -x /usr/bin/hp-toolbox ]] || die "hplip-gui did not install /usr/bin/hp-toolbox"
+[[ -e /usr/share/applications/hplip.desktop ]] || die "hplip-gui did not install its desktop entry"
+[[ -x /usr/bin/tuxtalk ]] || die "TuxTalk did not install /usr/bin/tuxtalk"
+[[ -e /usr/share/applications/io.github.ronb1964.TuxTalk.desktop ]] \
+    || die "TuxTalk did not install its desktop entry"
 [[ -x /usr/lib/cups/backend/hp ]] || die "HPLIP did not install the CUPS backend"
 [[ -e /usr/lib64/sane/libsane-hpaio.so.1 ]] || die "HPLIP did not install the SANE backend"
 
@@ -599,7 +604,17 @@ cat > /usr/share/wraindrock/delta.json <<EOF
       "/usr/share/doc/ipp-duplexd/README.md",
       "/usr/share/doc/ipp-duplexd/changelog.gz",
       "/usr/share/doc/ipp-duplexd/copyright",
-      "/usr/share/doc/ipp-duplexd/ipp-duplexd.conf.example"
+      "/usr/share/doc/ipp-duplexd/ipp-duplexd.conf.example",
+      "/usr/bin/hp-toolbox",
+      "/usr/share/applications/hplip.desktop",
+      "/usr/bin/tuxtalk",
+      "/usr/bin/talktype",
+      "/usr/share/applications/io.github.ronb1964.TuxTalk.desktop",
+      "/usr/share/icons/hicolor/scalable/apps/io.github.ronb1964.TuxTalk.svg",
+      "/usr/share/pixmaps/io.github.ronb1964.TuxTalk.png",
+      "/usr/share/licenses/tuxtalk/LICENSE",
+      "/usr/share/licenses/tuxtalk/THIRD_PARTY_LICENSES.md",
+      "/opt/talktype"
     ]
   }
 }

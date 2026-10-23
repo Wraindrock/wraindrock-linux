@@ -5,6 +5,16 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 image versions are the upstream channel plus an immutable build tag, see
 [docs/architecture.md](docs/architecture.md).
 
+## [0.20.2] - 2026-10-23
+
+### Added
+
+- Full HPLIP: `hplip-gui` (with `hp-toolbox`) and its Qt5/ReportLab closure,
+  selected to match the inherited HPLIP core version.
+- TuxTalk 0.17.0-1 (offline voice dictation), pinned from its upstream RPM.
+- The Logo Menu GNOME extension is now the official upstream build (v25.2,
+  shell 49/50/51) instead of Bluefin's repackaged v38.
+
 ## [0.20.1] - 2026-10-23
 
 ### Added
