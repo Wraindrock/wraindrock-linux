@@ -12,10 +12,6 @@ image versions are the upstream channel plus an immutable build tag, see
 - Remove the stock Silverblue `firefox`, `firefox-langpacks` and `gnome-software`
   packages (plus the Fedora browser config and background-logo extension), so a
   fresh install shows Bazaar and Helium rather than Firefox and GNOME Software.
-- Restore the rest of the Bluefin DX package set that the rebase dropped:
-  cockpit, VS Code, fish, fastfetch, GNOME Tweaks, guestfs-tools, LXC,
-  podman-compose/machine/tui, qemu-user-static and the developer toolchain, pinned
-  in `build_files/software/bluefin-tools.txt`.
 - Fix the Flatpak preinstall wrapper's app list: it parsed `Branch=`/`IsRuntime=`
   lines as app IDs, so it never considered the set complete.
 

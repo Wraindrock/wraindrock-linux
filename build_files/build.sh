@@ -311,18 +311,6 @@ command -v incus >/dev/null || die "Incus did not install"
 command -v virt-manager >/dev/null || die "virt-manager did not install"
 command -v distrobox >/dev/null || die "distrobox did not install"
 
-# 3d-quinquies. The rest of the Bluefin DX package set (developer tools,
-# cockpit, extra fonts, remaining DX utilities). These are ordinary Fedora
-# packages, so dnf resolves their dependencies against the repos above.
-say "installing the rest of the Bluefin DX tool set"
-xargs -a "${script_dir}/software/bluefin-tools.txt" -r dnf5 install -y
-for tool in fish fastfetch gnome-tweaks guestfs-tools code lxc podman-compose qemu-user-static; do
-    rpm -q "${tool}" >/dev/null || die "Bluefin DX tool ${tool} did not install"
-done
-command -v code >/dev/null || die "code did not install"
-command -v fish >/dev/null || die "fish did not install"
-
-# --- 3g-ter. Flatpak remote and Bazaar preset ------------------------------
 # The uBlue base ships flatpak but neither the Flathub remote nor the Bazaar
 # override that lets the store manage system Flatpaks, so provide both.
 flatpak remote-add --system --if-not-exists flathub \

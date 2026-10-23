@@ -335,19 +335,6 @@ for scheme in text/html application/xhtml+xml x-scheme-handler/http x-scheme-han
         fail "Helium is not the default for ${scheme}"
     fi
 done
-if [[ -f build_files/software/bluefin-tools.txt ]] \
-    && [[ $(awk 'NF && $1 !~ /^#/' build_files/software/bluefin-tools.txt | wc -l) -ge 500 ]]; then
-    pass "bluefin-tools.txt carries the restored DX package set"
-else
-    fail "bluefin-tools.txt is missing or too short"
-fi
-for gone in firefox gnome-software fedora-bookmarks yelp; do
-    if grep -qx -- "${gone}" build_files/software/bluefin-tools.txt 2>/dev/null; then
-        fail "removed application ${gone} is still in bluefin-tools.txt"
-    else
-        pass "removed application ${gone} is not re-added"
-    fi
-done
 rpm_rows=$(awk 'NF && $1 !~ /^#/' build_files/software/rpms.tsv | wc -l)
 if [[ ${rpm_rows} -ge 4 ]]; then
     pass "rpms.tsv pins ${rpm_rows} upstream packages"
