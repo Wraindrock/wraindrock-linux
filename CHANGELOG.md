@@ -15,6 +15,21 @@ image versions are the upstream channel plus an immutable build tag, see
 - Fix the Flatpak preinstall wrapper's app list: it parsed `Branch=`/`IsRuntime=`
   lines as app IDs, so it never considered the set complete.
 
+## [0.21.0] - 2026-10-23
+
+### Changed
+
+- Scoped the software set to what this system actually uses: KVM/libvirt,
+  virt-manager, Incus and Distrobox (Docker and VS Code removed), a curated
+  development toolchain, extra fonts, LXC and cockpit. Flatpak preinstall is
+  now the eight personal apps plus Bazaar and Podman Desktop, not Bluefin's
+  default set.
+- Removed the Fedora defaults that reappeared with the Silverblue rebase:
+  Firefox, GNOME Software, bookmarks, Chromium config, background-logo extension
+  and yelp.
+- The Flatpak retry wrapper parses app IDs from the preinstall file's section
+  headers instead of every line, so it no longer treats `Branch=stable` as an app.
+
 ## [0.20.2] - 2026-10-23
 
 ### Added

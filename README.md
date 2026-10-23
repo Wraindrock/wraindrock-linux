@@ -56,15 +56,12 @@ silently.
 
 ## Software
 
-The first boot installs **43 Flatpaks** (needs the network and a few GB); a
-timer retries every ten minutes until they are in, and
+The first boot installs **8 Flatpaks** (needs the network and a few hundred
+MB); a timer retries every ten minutes until they are in, and
 `sudo systemctl start wraindrock-flatpak-preinstall.service` runs it now:
-the maintained Bluefin set — GNOME apps, Podman Desktop, GNOME Builder,
-DevToolbox, Clapgrep, Embellish, Bazaar, Flatseal, DistroShelf and more — plus
-DingTalk, QQ, Open Orpheus, WeChat, Rnote and Gear Lever. Firefox and
-Thunderbird are deliberately not preinstalled; both install from Bazaar (or
-`flatpak install flathub org.mozilla.firefox`). The two adw-gtk3 theme
-extensions and Tavern (no longer on Flathub) are skipped.
+Bazaar, Podman Desktop, WeChat, QQ, DingTalk, Open Orpheus, Rnote and Gear
+Lever. Bluefin's default app set is deliberately **not** preinstalled — add
+anything else from Bazaar. Firefox and Thunderbird are not preinstalled.
 
 **Helium is the default browser** for links and HTML. Four programs have no
 Flatpak, so their upstream RPMs are baked in at pinned versions: Helium
@@ -87,8 +84,8 @@ printer. Its `qpdf` dependency is installed too.
 Printing and scanning are inherited from Fedora Silverblue: HPLIP 3.26.6 is
 already in the base with the HP CUPS backend and filters, `hp-setup`/`hp-info`,
 and the `libsane-hpaio` SANE backend; the build asserts that this stack is
-present. The Qt graphical toolbox (`hplip-gui`) is intentionally not installed;
-use `hp-setup -i` or the CUPS web interface. `sane-airscan` and the SANE
+present. The full Qt toolset is included: the pinned `hplip-gui` adds
+`hp-toolbox` and its printer/scanner utilities on top of the inherited core. `sane-airscan` and the SANE
 scanner drivers are also inherited, so network scanners appear in Document
 Scanner.
 
@@ -97,8 +94,10 @@ Dell G15/G16 owners also get the
 first-boot unit installs a pinned commit into `/var/opt/g15-controller` and
 starts its daemon, only when the DMI model matches. Other machines skip it.
 
-KVM (`virt-manager`, `libvirt`, `qemu-system-x86`), Incus, Docker and Distrobox
-are installed by this image, so virtual machines work out of the box. The NVIDIA
+KVM (`virt-manager`, `libvirt`, `qemu-system-x86`), Incus and Distrobox are
+installed by this image; Docker and VS Code are deliberately not. A curated
+development toolchain, extra fonts, LXC and cockpit are included as selected
+tools, not as a full Bluefin DX package set. The NVIDIA
 open driver stack (`nvidia-driver`, `kmod-nvidia`,
 `nvidia-container-toolkit`) is staged from uBlue's matching akmods build.
 
@@ -229,7 +228,7 @@ scratch machine, with data disks detached, or in a VM.
 cat /usr/lib/os-release              # NAME="Wraindrock", ID=bluefin
 cat /usr/share/wraindrock/delta.json # every intended difference
 hostnamectl                          # wraindrock
-flatpak list --system                # the 43 declared preinstalls
+flatpak list --system                # the 8 declared preinstalls
 rpm -q helium-bin clash-verge rayburst sing-box # the four baked packages
 cosign verify \
   --certificate-identity-regexp '^https://github.com/Wraindrock/wraindrock-linux/' \

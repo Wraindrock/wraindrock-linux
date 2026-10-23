@@ -1,50 +1,12 @@
 # Flatpaks installed on first boot by flatpak-preinstall.service.
-# Source: projectbluefin/common system-flatpaks.Brewfile and
-# system-dx-flatpaks.Brewfile, minus Firefox (Helium is the default browser and
-# the user asked for no Firefox preinstall) and minus the two GTK3 theme
-# extensions (flatpak preinstall only handles apps). Zen is replaced by the
-# Helium RPM. Tavern is left out because it is no longer on Flathub. The last
-# Personal defaults: DingTalk, QQ, Open Orpheus, WeChat, Rnote and Gear Lever.
-be.alexandervanhee.gradia
-com.github.PintaProject.Pinta
-com.github.tchx84.Flatseal
-com.mattjakeman.ExtensionManager
-com.ranfdev.DistroShelf
-io.github.flattool.Ignition
+# Only what this system needs: Bazaar (the store), Podman Desktop, and the
+# personal messengers/notes/download-tool set. Bluefin's default Flatpaks are
+# deliberately not preinstalled.
 io.github.kolunmi.Bazaar
-io.gitlab.adhami3310.Impression
-io.missioncenter.MissionCenter
-org.gnome.Calculator
-org.gnome.Calendar
-org.gnome.Characters
-org.gnome.Connections
-org.gnome.Contacts
-org.gnome.DejaDup
-org.gnome.FileRoller
-org.gnome.Firmware
-org.gnome.Logs
-org.gnome.Loupe
-org.gnome.Maps
-org.gnome.NautilusPreviewer
-org.gnome.Papers
-org.gnome.Showtime
-org.gnome.SimpleScan
-org.gnome.Snapshot
-org.gnome.Decibels
-org.gnome.TextEditor
-org.gnome.Weather
-org.gnome.baobab
-org.gnome.clocks
-org.gnome.font-viewer
-page.tesk.Refine
-de.leopoldluley.Clapgrep
-io.github.getnf.embellish
 io.podman_desktop.PodmanDesktop
-me.iepure.devtoolbox
-org.gnome.Builder
 com.tencent.WeChat
+com.qq.QQ
+com.dingtalk.DingTalk
+io.github.yucling.open-orpheus
 com.github.flxzt.rnote
 it.mijorus.gearlever
-com.dingtalk.DingTalk
-com.qq.QQ
-io.github.yucling.open-orpheus

@@ -193,7 +193,7 @@ Two delivery mechanisms keep the out-of-box set small and updatable:
   every ten minutes until the preinstall file's hash is recorded in
   `/var/lib/wraindrock/flatpak-preinstall.sha256`. Helium is the default
   handler in `/etc/xdg/mimeapps.list`; Firefox stays installed and selectable.
-  The other Bluefin apps remain a one-liner (`ujust install-system-flatpaks`)
+  Bluefin's default apps are not preinstalled; anything else comes from Bazaar
   because Bluefin itself does not bake them.
 - **The four app RPMs are baked** (Helium from the official `imput/helium` COPR,
   Clash Verge Rev, Rayburst, sing-box/SFL) because they have no Flatpak.

@@ -197,22 +197,6 @@ enabled=1
 gpgcheck=0
 countme=0
 EOF
-cat > /etc/yum.repos.d/docker-ce.repo <<'EOF'
-[docker-ce-stable]
-name=Docker CE Stable
-baseurl=https://download.docker.com/linux/fedora/44/x86_64/stable
-enabled=1
-gpgcheck=0
-skip_if_unavailable=1
-
-[code]
-name=Visual Studio Code
-baseurl=https://packages.microsoft.com/yumrepos/vscode
-enabled=1
-gpgcheck=0
-skip_if_unavailable=1
-EOF
-
 # 3d-ter. NVIDIA driver stack. The uBlue base is driver-neutral, so CI stages
 # the matching akmods-nvidia-open RPMs (kernel modules + userland) under
 # software/nvidia-rpms before the build; install them exactly as shipped.
@@ -294,22 +278,34 @@ grep -q '^WantedBy=sysinit.target$' /usr/lib/systemd/system/wraindrock-hostname-
 rpm -q sane-airscan sane-backends-drivers-scanners >/dev/null \
     || die "the base lost sane-airscan or the scanner drivers"
 
-# --- 3g-bis. DX tools ------------------------------------------------------
-# The uBlue Silverblue base has no Fedora repository configuration and none of
-# the Bluefin DX tools, so add the repositories explicitly and install the
-# user-visible DX stack. Versions float with Fedora 44 updates.
+# --- 3g-bis. Selected system tools -----------------------------------------
+# The uBlue Silverblue base has no Fedora repository configuration, so add the
+# repositories above and install only the stack this system actually uses:
+# virtualization (KVM/libvirt/virt-manager, Incus, Distrobox), the development
+# toolchain, extra fonts, LXC and cockpit. Docker and VS Code are deliberately
+# not installed.
 dnf5 -y install --setopt=install_weak_deps=False \
-    docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin \
     incus incus-client distrobox \
     virt-manager virt-install libvirt-daemon-kvm libvirt-client libvirt-daemon-config-network \
     qemu-system-x86-core qemu-img libsane-hpaio \
+    gcc gcc-c++ clang llvm make cmake ninja-build meson autoconf automake \
+    libtool pkgconf-pkg-config binutils bison flex gdb strace patch diffutils \
+    python3-devel python3-pip rpm-build redhat-rpm-config \
+    jetbrains-mono-fonts jetbrains-mono-nl-fonts cascadia-code-fonts \
+    adwaita-fonts-all rsms-inter-fonts \
+    lxc lxc-libs lxc-templates lxcfs \
+    cockpit-bridge cockpit-system cockpit-machines cockpit-networkmanager \
+    cockpit-podman cockpit-storaged cockpit-selinux \
     libayatana-appindicator-gtk3 libXScrnSaver webkit2gtk4.1 \
     openssl nss polkit xdg-utils at-spi2-core libnotify libXtst libuuid \
     qpdf zstd
-command -v docker >/dev/null || die "Docker did not install"
 command -v incus >/dev/null || die "Incus did not install"
 command -v virt-manager >/dev/null || die "virt-manager did not install"
 command -v distrobox >/dev/null || die "distrobox did not install"
+command -v gcc >/dev/null || die "the development toolchain did not install"
+rpm -q lxc cockpit-system >/dev/null || die "LXC or cockpit did not install"
+[[ ! -e /usr/bin/docker ]] || die "Docker must not be installed"
+[[ ! -e /usr/bin/code ]] || die "VS Code must not be installed"
 
 # The uBlue base ships flatpak but neither the Flathub remote nor the Bazaar
 # override that lets the store manage system Flatpaks, so provide both.
