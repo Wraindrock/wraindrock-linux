@@ -276,6 +276,16 @@ expected_added = {
     "/usr/share/doc/ipp-duplexd/changelog.gz",
     "/usr/share/doc/ipp-duplexd/copyright",
     "/usr/share/doc/ipp-duplexd/ipp-duplexd.conf.example",
+    "/usr/bin/hp-toolbox",
+    "/usr/share/applications/hplip.desktop",
+    "/usr/bin/tuxtalk",
+    "/usr/bin/talktype",
+    "/usr/share/applications/io.github.ronb1964.TuxTalk.desktop",
+    "/usr/share/icons/hicolor/scalable/apps/io.github.ronb1964.TuxTalk.svg",
+    "/usr/share/pixmaps/io.github.ronb1964.TuxTalk.png",
+    "/usr/share/licenses/tuxtalk/LICENSE",
+    "/usr/share/licenses/tuxtalk/THIRD_PARTY_LICENSES.md",
+    "/opt/talktype",
 }
 assert set(delta["files"]["added"]) == expected_added, delta["files"]["added"]
 PY
