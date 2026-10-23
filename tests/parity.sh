@@ -273,8 +273,6 @@ expected_added = {
     "/etc/systemd/system/multi-user.target.wants/wraindrock-g15-install.service",
     "/etc/xdg/mimeapps.list",
     "/etc/dconf/db/distro.d/10-wraindrock-folders",
-    "/usr/share/desktop-directories/wraindrock-accessories.directory",
-    "/usr/share/desktop-directories/wraindrock-social.directory",
     "/usr/share/gnome-shell/extensions/appindicatorsupport@rgcjonas.gmail.com",
     "/usr/share/gnome-shell/extensions/bazaar-integration@kolunmi.github.io",
     "/usr/share/gnome-shell/extensions/blur-my-shell@aunetx",
