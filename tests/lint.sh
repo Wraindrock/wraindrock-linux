@@ -137,11 +137,14 @@ for folder in Accessories System HP Tools Development; do
         fail "app folder is missing: ${folder}"
     fi
 done
-for name in 附件 系统 HP 工具 开发; do
-    if grep -Fq "name='${name}'" build_files/software/app-folders; then
-        pass "app folder has its Chinese name: ${name}"
+for pair in "accessories:附件" "system:系统" "hp:HP" "tools:工具" "development:开发"; do
+    slug=${pair%%:*}; zh=${pair#*:}
+    directory="build_files/software/wraindrock-${slug}.directory"
+    if grep -Fq "name='wraindrock-${slug}.directory'" build_files/software/app-folders \
+        && grep -Fq "Name[zh_CN]=${zh}" "${directory}"; then
+        pass "app folder follows the session language: ${zh}"
     else
-        fail "app folder is missing the Chinese name: ${name}"
+        fail "app folder is not localized: ${zh}"
     fi
 done
 for gone in Flatpak AppImage Bluefin Utilities Games Wine Productivity Containers GamingUtilities uBlue Wraindrock Network Proxies Social Office Virtualization; do

@@ -237,18 +237,26 @@ dconf_dir=/etc/dconf/db/distro.d
 install -d -m 0755 "${dconf_dir}"
 folders_file="${dconf_dir}/10-wraindrock-folders"
 install -m 0644 "${script_dir}/software/app-folders" "${folders_file}"
+directories_dir=/usr/share/desktop-directories
+install -d -m 0755 "${directories_dir}"
+for name in accessories system hp tools development; do
+    install -m 0644 "${script_dir}/software/wraindrock-${name}.directory" \
+        "${directories_dir}/wraindrock-${name}.directory"
+done
 command -v dconf >/dev/null 2>&1 || die "dconf is required to compile the app-folder database"
 dconf update
-grep -aq 'Virtualization' /etc/dconf/db/distro \
+for folder in Accessories System HP Tools Development; do
+    grep -Eq "folder-children=.*'${folder}'" "${folders_file}" \
+        || die "the folder-children list is missing ${folder}"
+done
+for name in accessories system hp tools development; do
+    grep -Fq "name='wraindrock-${name}.directory'" "${folders_file}" \
+        || die "the ${name} folder does not use its localized directory file"
+    [[ -s ${directories_dir}/wraindrock-${name}.directory ]] \
+        || die "the ${name} directory file is missing"
+done
+grep -aq 'wraindrock-accessories.directory' /etc/dconf/db/distro \
     || die "the app-folder database was not compiled"
-grep -aq 'Accessories' /etc/dconf/db/distro \
-    || die "the Accessories folder was not compiled"
-grep -aq 'Social' /etc/dconf/db/distro \
-    || die "the Social folder was not compiled"
-grep -Eq "folder-children=.*'Virtualization'" "${folders_file}" \
-    || die "the folder-children list is incomplete"
-grep -Fq "name='虚拟化'" "${folders_file}" \
-    || die "the folder names are not set"
 
 # 3g. First-boot hostname seeding. bootc-image-builder's install path does not
 # apply DEFAULT_HOSTNAME: the installed system inherits the base deployment's
@@ -631,6 +639,11 @@ cat > /usr/share/wraindrock/delta.json <<EOF
       "/etc/systemd/system/multi-user.target.wants/wraindrock-g15-install.service",
       "/etc/xdg/mimeapps.list",
       "/etc/dconf/db/distro.d/10-wraindrock-folders",
+      "/usr/share/desktop-directories/wraindrock-development.directory",
+      "/usr/share/desktop-directories/wraindrock-tools.directory",
+      "/usr/share/desktop-directories/wraindrock-hp.directory",
+      "/usr/share/desktop-directories/wraindrock-system.directory",
+      "/usr/share/desktop-directories/wraindrock-accessories.directory",
       "/usr/share/gnome-shell/extensions/appindicatorsupport@rgcjonas.gmail.com",
       "/usr/share/gnome-shell/extensions/bazaar-integration@kolunmi.github.io",
       "/usr/share/gnome-shell/extensions/blur-my-shell@aunetx",

@@ -273,6 +273,11 @@ expected_added = {
     "/etc/systemd/system/multi-user.target.wants/wraindrock-g15-install.service",
     "/etc/xdg/mimeapps.list",
     "/etc/dconf/db/distro.d/10-wraindrock-folders",
+    "/usr/share/desktop-directories/wraindrock-accessories.directory",
+    "/usr/share/desktop-directories/wraindrock-system.directory",
+    "/usr/share/desktop-directories/wraindrock-hp.directory",
+    "/usr/share/desktop-directories/wraindrock-tools.directory",
+    "/usr/share/desktop-directories/wraindrock-development.directory",
     "/usr/share/gnome-shell/extensions/appindicatorsupport@rgcjonas.gmail.com",
     "/usr/share/gnome-shell/extensions/bazaar-integration@kolunmi.github.io",
     "/usr/share/gnome-shell/extensions/blur-my-shell@aunetx",
@@ -569,11 +574,13 @@ for folder in Accessories System HP Tools Development; do
         fail "app folder missing: ${folder}"
     fi
 done
-for name in 附件 系统 HP 工具 开发; do
-    if in_image "${IMAGE}" "grep -Fq \"name='${name}'\" ${folders_file}"; then
-        pass "app folder has its Chinese name: ${name}"
+for pair in "accessories:附件" "system:系统" "hp:HP" "tools:工具" "development:开发"; do
+    slug=${pair%%:*}; zh=${pair#*:}
+    directory=/usr/share/desktop-directories/wraindrock-${slug}.directory
+    if in_image "${IMAGE}" "grep -Fq \"name='wraindrock-${slug}.directory'\" ${folders_file} && grep -Fq 'Name[zh_CN]=${zh}' ${directory}"; then
+        pass "app folder follows the session language: ${zh}"
     else
-        fail "app folder is missing the Chinese name: ${name}"
+        fail "app folder is not localized: ${zh}"
     fi
 done
 for app in 'virt-manager.desktop' 'io.podman_desktop.PodmanDesktop.desktop' \

@@ -5,6 +5,17 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 image versions are the upstream channel plus an immutable build tag, see
 [docs/architecture.md](docs/architecture.md).
 
+## [0.21.3] - 2026-10-24
+
+### Fixed
+
+- App-folder labels now come from shipped `.directory` files with
+  `Name[zh_CN]`/`Name[zh_TW]`, so they follow the session language instead of
+  hard-coded Chinese strings. The 系统 folder now mirrors the Fedora
+  Workstation 44 default System app list (GNOME Shell 50.6) where those apps
+  are installed, and the 工具 list follows Bluefin DX's official Utilities
+  definitions.
+
 ## [0.21.2] - 2026-10-24
 
 ### Changed

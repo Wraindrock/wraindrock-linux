@@ -1,8 +1,11 @@
 # Wraindrock application folders.
 #
-# Five purpose folders, every app in exactly one. The 附件 group is GNOME's own
-# software, 系统 is the Fedora Workstation style settings/system group, HP is
-# the printer stack, 工具 mirrors Bluefin DX's Tools, and 开发 merges Bluefin
+# Five purpose folders, every app in exactly one. Folder labels are looked up
+# through the shipped .directory files, so they follow the session language
+# (附件/系统/HP/工具/开发 in Chinese, Accessories/System/HP/Tools/Development in
+# English). The 附件 group is GNOME's own software, 系统 mirrors the Fedora
+# Workstation 44 default System folder plus the system tools requested here, HP
+# is the printer stack, 工具 mirrors Bluefin DX's Tools, and 开发 merges Bluefin
 # DX's Development folder with virtualisation. Everything else stays ungrouped,
 # deliberately. tests/folders.py enforces one home per app and no empty folder.
 
@@ -10,26 +13,26 @@
 folder-children=['Accessories','System','HP','Tools','Development']
 
 [org/gnome/desktop/app-folders/folders/Accessories]
-name='附件'
-translate=false
-apps=['org.gnome.Nautilus.desktop','org.gnome.Ptyxis.desktop','org.gnome.Tour.desktop','org.gnome.ColorProfileViewer.desktop','org.gnome.DiskUtility.desktop','org.freedesktop.MalcontentControl.desktop']
+name='wraindrock-accessories.directory'
+translate=true
+apps=['org.gnome.Nautilus.desktop','org.gnome.Ptyxis.desktop','org.gnome.Tour.desktop']
 
 [org/gnome/desktop/app-folders/folders/System]
-name='系统'
-translate=false
-apps=['org.gnome.Settings.desktop','org.gnome.SystemMonitor.desktop','htop.desktop','nvtop.desktop','nvidia-settings.desktop','rygel-preferences.desktop','Clash Verge.desktop','sing-box.desktop']
+name='wraindrock-system.directory'
+translate=true
+apps=['org.gnome.Settings.desktop','org.gnome.SystemMonitor.desktop','org.gnome.DiskUtility.desktop','org.freedesktop.MalcontentControl.desktop','org.gnome.ColorProfileViewer.desktop','htop.desktop','nvtop.desktop','nvidia-settings.desktop','rygel-preferences.desktop','Clash Verge.desktop','sing-box.desktop']
 
 [org/gnome/desktop/app-folders/folders/HP]
-name='HP'
-translate=false
+name='wraindrock-hp.directory'
+translate=true
 apps=['hplip.desktop','hp-uiscan.desktop']
 
 [org/gnome/desktop/app-folders/folders/Tools]
-name='工具'
-translate=false
-apps=['com.github.tchx84.Flatseal.desktop','io.github.flattool.Warehouse.desktop','com.mattjakeman.ExtensionManager.desktop','firewall-config.desktop','org.fedoraproject.MediaWriter.desktop','input-remapper.desktop','org.gnome.Sysprof.desktop','org.virt_manager.virt-viewer.desktop','io.github.flattool.Ignition.desktop','io.gitlab.adhami3310.Impression.desktop','page.tesk.Refine.desktop','com.github.PintaProject.Pinta.desktop']
+name='wraindrock-tools.directory'
+translate=true
+apps=['com.github.tchx84.Flatseal.desktop','io.github.flattool.Warehouse.desktop','com.mattjakeman.ExtensionManager.desktop','firewall-config.desktop','org.fedoraproject.MediaWriter.desktop','input-remapper-gtk.desktop','org.gnome.Sysprof.desktop','org.virt_manager.virt-viewer.desktop','io.github.flattool.Ignition.desktop','io.gitlab.adhami3310.Impression.desktop','page.tesk.Refine.desktop','com.github.PintaProject.Pinta.desktop']
 
 [org/gnome/desktop/app-folders/folders/Development]
-name='开发'
-translate=false
+name='wraindrock-development.directory'
+translate=true
 apps=['virt-manager.desktop','io.podman_desktop.PodmanDesktop.desktop','org.gnome.Builder.desktop','me.iepure.devtoolbox.desktop','com.github.marhkb.Pods.desktop','com.ranfdev.DistroShelf.desktop']
