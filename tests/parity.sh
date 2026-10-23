@@ -269,6 +269,13 @@ expected_added = {
     "/usr/share/ublue-os/flatpak-overrides/io.github.kolunmi.Bazaar",
     "/usr/lib/tmpfiles.d/bazaar-flatpak.conf",
     "/etc/flatpak/remotes.d/flathub.flatpakrepo",
+    "/usr/bin/ipp-duplexd",
+    "/usr/bin/ipp-duplexd-setup",
+    "/usr/lib/systemd/user/ipp-duplexd.service",
+    "/usr/share/doc/ipp-duplexd/README.md",
+    "/usr/share/doc/ipp-duplexd/changelog.gz",
+    "/usr/share/doc/ipp-duplexd/copyright",
+    "/usr/share/doc/ipp-duplexd/ipp-duplexd.conf.example",
 }
 assert set(delta["files"]["added"]) == expected_added, delta["files"]["added"]
 PY
@@ -305,6 +312,26 @@ if in_image "${IMAGE}" "test -e /usr/share/rpm/rpmdb.sqlite-shm"; then
     pass "RPM database ships its sqlite shared-memory file"
 else
     fail "RPM database is missing rpmdb.sqlite-shm"
+fi
+
+# --- ipp-duplexd ------------------------------------------------------------
+if in_image "${IMAGE}" \
+    'test -x /usr/bin/ipp-duplexd && test -x /usr/bin/ipp-duplexd-setup \
+        && test -r /usr/lib/systemd/user/ipp-duplexd.service \
+        && test -r /usr/share/doc/ipp-duplexd/ipp-duplexd.conf.example'; then
+    pass "ipp-duplexd binaries, unit and example config are installed"
+else
+    fail "ipp-duplexd installation is incomplete"
+fi
+if in_image "${IMAGE}" '/usr/bin/ipp-duplexd --help 2>&1 | grep -Fq -- "--printer"'; then
+    pass "ipp-duplexd runs and advertises --printer"
+else
+    fail "ipp-duplexd does not run"
+fi
+if in_image "${IMAGE}" 'rpm -q qpdf >/dev/null 2>&1'; then
+    pass "ipp-duplexd runtime dependency qpdf is present"
+else
+    fail "qpdf is missing"
 fi
 
 # --- software ---------------------------------------------------------------

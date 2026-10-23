@@ -75,6 +75,8 @@ Restored on top of the lean base (197 added packages in total):
 - Runtime dependencies the pinned apps need (for example `libayatana-appindicator-gtk3`,
   `libXScrnSaver`, `webkit2gtk4.1`) and their transitive Fedora packages.
 - Flathub is added as a system remote, plus the Bazaar `host-etc` Flatpak preset.
+- `ipp-duplexd` 0.1.3-1 (manual duplex virtual IPP printer) from its pinned
+  upstream Debian package, plus its `qpdf` runtime dependency.
 
 The complete, exact package list is in `delta.json` (`rpm.added`); the base is
 1,632 packages and the image is 1,829.
@@ -86,7 +88,7 @@ Modified (6): `/usr/lib/os-release`, `/etc/system-release`,
 `/etc/dconf/db/distro`, `/opt` (bluefin used a symlink into `/var`; the image needs a
 real directory so `/opt` payloads survive).
 
-Added (37):
+Added (44):
 
 - `/usr/share/glib-2.0/schemas/zzzz-wraindrock.gschema.override`
 - `/usr/libexec/wraindrock-hostname-seed`
@@ -116,6 +118,13 @@ Added (37):
 - `/usr/share/ublue-os/flatpak-overrides/io.github.kolunmi.Bazaar`
 - `/usr/lib/tmpfiles.d/bazaar-flatpak.conf`
 - `/etc/flatpak/remotes.d/flathub.flatpakrepo`
+- `/usr/bin/ipp-duplexd`
+- `/usr/bin/ipp-duplexd-setup`
+- `/usr/lib/systemd/user/ipp-duplexd.service`
+- `/usr/share/doc/ipp-duplexd/README.md`
+- `/usr/share/doc/ipp-duplexd/changelog.gz`
+- `/usr/share/doc/ipp-duplexd/copyright`
+- `/usr/share/doc/ipp-duplexd/ipp-duplexd.conf.example`
 - `/usr/share/gnome-shell/extensions/appindicatorsupport@rgcjonas.gmail.com`
 - `/usr/share/gnome-shell/extensions/bazaar-integration@kolunmi.github.io`
 - `/usr/share/gnome-shell/extensions/blur-my-shell@aunetx`

@@ -287,7 +287,8 @@ dnf5 -y install --setopt=install_weak_deps=False \
     virt-manager virt-install libvirt-daemon-kvm libvirt-client libvirt-daemon-config-network \
     qemu-system-x86-core qemu-img libsane-hpaio \
     libayatana-appindicator-gtk3 libXScrnSaver webkit2gtk4.1 \
-    openssl nss polkit xdg-utils at-spi2-core libnotify libXtst libuuid
+    openssl nss polkit xdg-utils at-spi2-core libnotify libXtst libuuid \
+    qpdf zstd
 command -v docker >/dev/null || die "Docker did not install"
 command -v incus >/dev/null || die "Incus did not install"
 command -v virt-manager >/dev/null || die "virt-manager did not install"
@@ -303,6 +304,54 @@ install -m 0644 "${script_dir}/software/flatpak-overrides/io.github.kolunmi.Baza
     /usr/share/ublue-os/flatpak-overrides/io.github.kolunmi.Bazaar
 install -m 0644 "${script_dir}/software/bazaar-flatpak.conf" \
     /usr/lib/tmpfiles.d/bazaar-flatpak.conf
+
+# --- 3g-quater. ipp-duplexd (upstream ships .deb only) ----------------------
+# A dependency-free Rust daemon; upstream publishes Arch and Debian packages,
+# so take the pinned .deb, verify it and install its small file set.
+ipp_pin="${script_dir}/software/ipp-duplexd.tsv"
+IFS=$'\t' read -r ipp_name ipp_version ipp_url ipp_sha256 < "${ipp_pin}"
+[[ -n ${ipp_name} && ${ipp_name} != \#* ]] || die "ipp-duplexd pin is missing"
+ipp_tmp="$(mktemp -d /tmp/wraindrock-ipp.XXXXXX)"
+curl -fsSL --retry 3 --retry-delay 2 -o "${ipp_tmp}/ipp.deb" "${ipp_url}" \
+    || die "could not download ${ipp_name}"
+printf '%s  %s\n' "${ipp_sha256}" "${ipp_tmp}/ipp.deb" | sha256sum -c - >/dev/null \
+    || die "sha256 mismatch for ${ipp_name}"
+python3 - "${ipp_tmp}/ipp.deb" "${ipp_tmp}" <<'PYIPP'
+import sys
+
+data = open(sys.argv[1], "rb").read()
+assert data[:8] == b"!<arch>\n", "not a Debian archive"
+pos = 8
+found = False
+while pos < len(data):
+    header = data[pos:pos + 60]
+    name = header[:16].decode().strip()
+    size = int(header[48:58].decode().strip())
+    body = data[pos + 60:pos + 60 + size]
+    if name.startswith("data.tar"):
+        open(sys.argv[2] + "/data.tar.zst", "wb").write(body)
+        found = True
+    pos += 60 + size + (size % 2)
+assert found, "data.tar member is missing"
+PYIPP
+mkdir -p "${ipp_tmp}/root"
+tar --zstd -x -f "${ipp_tmp}/data.tar.zst" -C "${ipp_tmp}/root"
+install -D -m 0755 "${ipp_tmp}/root/usr/bin/ipp-duplexd" /usr/bin/ipp-duplexd
+install -D -m 0755 "${ipp_tmp}/root/usr/bin/ipp-duplexd-setup" /usr/bin/ipp-duplexd-setup
+install -D -m 0644 "${ipp_tmp}/root/usr/lib/systemd/user/ipp-duplexd.service" \
+    /usr/lib/systemd/user/ipp-duplexd.service
+install -d /usr/share/doc/ipp-duplexd
+for doc in README.md changelog.gz copyright ipp-duplexd.conf.example; do
+    install -m 0644 "${ipp_tmp}/root/usr/share/doc/ipp-duplexd/${doc}" \
+        "/usr/share/doc/ipp-duplexd/${doc}"
+done
+[[ -x /usr/bin/ipp-duplexd && -x /usr/bin/ipp-duplexd-setup ]] \
+    || die "ipp-duplexd binaries are missing"
+[[ -r /usr/lib/systemd/user/ipp-duplexd.service ]] \
+    || die "ipp-duplexd user unit is missing"
+/usr/bin/ipp-duplexd --help 2>&1 | grep -Fq -- '--printer' \
+    || die "ipp-duplexd did not run"
+rm -rf "${ipp_tmp}"
 
 # --- 3h. software defaults --------------------------------------------------
 # Bluefin DX's developer Flatpaks and Wraindrock's personal defaults are
@@ -542,7 +591,14 @@ cat > /usr/share/wraindrock/delta.json <<EOF
       "/etc/dconf/db/distro.d/23-wraindrock-blur",
       "/usr/share/ublue-os/flatpak-overrides/io.github.kolunmi.Bazaar",
       "/usr/lib/tmpfiles.d/bazaar-flatpak.conf",
-      "/etc/flatpak/remotes.d/flathub.flatpakrepo"
+      "/etc/flatpak/remotes.d/flathub.flatpakrepo",
+      "/usr/bin/ipp-duplexd",
+      "/usr/bin/ipp-duplexd-setup",
+      "/usr/lib/systemd/user/ipp-duplexd.service",
+      "/usr/share/doc/ipp-duplexd/README.md",
+      "/usr/share/doc/ipp-duplexd/changelog.gz",
+      "/usr/share/doc/ipp-duplexd/copyright",
+      "/usr/share/doc/ipp-duplexd/ipp-duplexd.conf.example"
     ]
   }
 }

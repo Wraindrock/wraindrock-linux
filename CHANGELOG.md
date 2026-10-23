@@ -5,6 +5,15 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 image versions are the upstream channel plus an immutable build tag, see
 [docs/architecture.md](docs/architecture.md).
 
+## [0.20.1] - 2026-10-23
+
+### Added
+
+- `ipp-duplexd` 0.1.3-1 (manual duplex printing via a virtual IPP printer),
+  installed from its pinned upstream Debian package because upstream ships no
+  RPM. `qpdf` is installed as its runtime dependency; users run
+  `ipp-duplexd-setup` once to configure the real printer.
+
 ## [0.20.0] - 2026-10-23
 
 ### Changed

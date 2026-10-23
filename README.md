@@ -73,6 +73,13 @@ Rayburst 4.1.0 and sing-box (SFL) 1.14.3. Each upstream release is caught by the
 daily upstream-watch workflow, which bumps the pin and publishes a new signed
 image tag — the apps do not wait for a Fedora major release.
 
+Manual duplex printing is available through
+[ipp-duplexd](https://github.com/SamiKalliomaki/ipp-duplexd), a small virtual
+IPP printer that prints the odd pages, waits for you to flip the stack, then
+prints the backs. It is installed from its pinned upstream `.deb` (upstream
+publishes no RPM); run `ipp-duplexd-setup` once to point it at your real
+printer. Its `qpdf` dependency is installed too.
+
 Printing and scanning are inherited from Fedora Silverblue: HPLIP 3.26.6 is
 already in the base with the HP CUPS backend and filters, `hp-setup`/`hp-info`,
 and the `libsane-hpaio` SANE backend; the build asserts that this stack is
