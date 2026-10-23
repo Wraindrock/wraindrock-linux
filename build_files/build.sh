@@ -557,7 +557,7 @@ cat > /usr/share/wraindrock/delta.json <<EOF
       "/etc/dconf/db/distro.d/23-wraindrock-blur",
       "/usr/share/ublue-os/flatpak-overrides/io.github.kolunmi.Bazaar",
       "/usr/lib/tmpfiles.d/bazaar-flatpak.conf",
-      "/etc/flatpak/remotes.d/flathub.flatpakrepo",
+      "/etc/flatpak/remotes.d/flathub.flatpakrepo"
     ]
   }
 }
