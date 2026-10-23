@@ -298,7 +298,9 @@ dnf5 -y install --setopt=install_weak_deps=False \
     docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin \
     incus incus-client distrobox \
     virt-manager virt-install libvirt-daemon-kvm libvirt-client libvirt-daemon-config-network \
-    qemu-system-x86-core qemu-img libsane-hpaio
+    qemu-system-x86-core qemu-img libsane-hpaio \
+    libayatana-appindicator-gtk3 libXScrnSaver webkit2gtk4.1 \
+    openssl nss polkit xdg-utils at-spi2-core libnotify libXtst libuuid
 command -v docker >/dev/null || die "Docker did not install"
 command -v incus >/dev/null || die "Incus did not install"
 command -v virt-manager >/dev/null || die "virt-manager did not install"
