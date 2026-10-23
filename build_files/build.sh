@@ -183,13 +183,47 @@ for preset in "${script_dir}"/dconf/*; do
     install -m 0644 "${preset}" "/etc/dconf/db/distro.d/$(basename "${preset}")"
 done
 
+# Fedora 44 repositories and the Docker CE repository. The uBlue base ships no
+# repo configuration, and both the NVIDIA dependency resolution and the DX
+# stack below need one.
+cat > /etc/yum.repos.d/wraindrock-fedora.repo <<'EOF'
+[fedora-wraindrock]
+name=Fedora $releasever - $basearch
+baseurl=https://mirrors.kernel.org/fedora/releases/44/Everything/x86_64/os/
+enabled=1
+gpgcheck=0
+countme=0
+
+[fedora-wraindrock-updates]
+name=Fedora $releasever updates
+baseurl=https://mirrors.kernel.org/fedora/updates/44/Everything/x86_64/
+enabled=1
+gpgcheck=0
+countme=0
+EOF
+cat > /etc/yum.repos.d/docker-ce.repo <<'EOF'
+[docker-ce-stable]
+name=Docker CE Stable
+baseurl=https://download.docker.com/linux/fedora/44/x86_64/stable
+enabled=1
+gpgcheck=0
+skip_if_unavailable=1
+EOF
+
 # 3d-ter. NVIDIA driver stack. The uBlue base is driver-neutral, so CI stages
 # the matching akmods-nvidia-open RPMs (kernel modules + userland) under
 # software/nvidia-rpms before the build; install them exactly as shipped.
 nvidia_dir="${script_dir}/nvidia-rpms"
 [[ -d ${nvidia_dir} ]] || die "NVIDIA RPMs were not staged (CI must download akmods-nvidia-open)"
-mapfile -d '' nvidia_rpms < <(find "${nvidia_dir}" -type f -name '*.rpm' ! -name '*.i686.rpm' -print0)
+mapfile -d '' nvidia_rpms < <(find "${nvidia_dir}/kmods" "${nvidia_dir}/nvidia" \
+    -type f -name '*.rpm' ! -name '*.i686.rpm' -print0)
 [[ ${#nvidia_rpms[@]} -gt 0 ]] || die "no x86_64 NVIDIA RPMs were staged"
+# The addons package supplies the NVIDIA repo definitions; installing the
+# driver itself needs the EGL/OpenCL/Xorg pieces those repos provide.
+rpm -i "${nvidia_dir}"/ublue-os/ublue-os-nvidia-addons-*.rpm
+dnf5 -y config-manager setopt 'fedora-nvidia*.enabled=1' 'nvidia-container-toolkit.enabled=1'
+dnf5 -y install --setopt=install_weak_deps=False \
+    xorg-x11-server-Xorg opencl-filesystem egl-gbm egl-x11 egl-wayland2 nvidia-driver-selinux
 rpm -i "${nvidia_rpms[@]}"
 rpm -q kmod-nvidia nvidia-driver >/dev/null 2>&1 || die "NVIDIA driver stack did not install"
 [[ -x /usr/bin/nvidia-smi ]] || die "nvidia-smi is missing"
@@ -260,29 +294,6 @@ rpm -q sane-airscan sane-backends-drivers-scanners >/dev/null \
 # The uBlue Silverblue base has no Fedora repository configuration and none of
 # the Bluefin DX tools, so add the repositories explicitly and install the
 # user-visible DX stack. Versions float with Fedora 44 updates.
-cat > /etc/yum.repos.d/wraindrock-fedora.repo <<'EOF'
-[fedora-wraindrock]
-name=Fedora $releasever - $basearch
-baseurl=https://mirrors.kernel.org/fedora/releases/44/Everything/x86_64/os/
-enabled=1
-gpgcheck=0
-countme=0
-
-[fedora-wraindrock-updates]
-name=Fedora $releasever updates
-baseurl=https://mirrors.kernel.org/fedora/updates/44/Everything/x86_64/
-enabled=1
-gpgcheck=0
-countme=0
-EOF
-cat > /etc/yum.repos.d/docker-ce.repo <<'EOF'
-[docker-ce-stable]
-name=Docker CE Stable
-baseurl=https://download.docker.com/linux/fedora/44/x86_64/stable
-enabled=1
-gpgcheck=0
-skip_if_unavailable=1
-EOF
 dnf5 -y install --setopt=install_weak_deps=False \
     docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin \
     incus incus-client distrobox \
