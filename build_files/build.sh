@@ -223,7 +223,8 @@ mapfile -d '' nvidia_rpms < <(find "${nvidia_dir}/kmods" "${nvidia_dir}/nvidia" 
 rpm -i "${nvidia_dir}"/ublue-os/ublue-os-nvidia-addons-*.rpm
 dnf5 -y config-manager setopt 'fedora-nvidia*.enabled=1' 'nvidia-container-toolkit.enabled=1'
 dnf5 -y install --setopt=install_weak_deps=False \
-    xorg-x11-server-Xorg opencl-filesystem egl-gbm egl-x11 egl-wayland2 nvidia-driver-selinux
+    xorg-x11-server-Xorg opencl-filesystem egl-gbm egl-x11 egl-wayland2 \
+    nvidia-driver-selinux nvidia-container-toolkit
 rpm -i "${nvidia_rpms[@]}"
 rpm -q kmod-nvidia nvidia-driver >/dev/null 2>&1 || die "NVIDIA driver stack did not install"
 [[ -x /usr/bin/nvidia-smi ]] || die "nvidia-smi is missing"
@@ -305,6 +306,17 @@ command -v docker >/dev/null || die "Docker did not install"
 command -v incus >/dev/null || die "Incus did not install"
 command -v virt-manager >/dev/null || die "virt-manager did not install"
 command -v distrobox >/dev/null || die "distrobox did not install"
+
+# --- 3g-ter. Flatpak remote and Bazaar preset ------------------------------
+# The uBlue base ships flatpak but neither the Flathub remote nor the Bazaar
+# override that lets the store manage system Flatpaks, so provide both.
+flatpak remote-add --system --if-not-exists flathub \
+    https://dl.flathub.org/repo/flathub.flatpakrepo
+install -d /usr/share/ublue-os/flatpak-overrides
+install -m 0644 "${script_dir}/software/flatpak-overrides/io.github.kolunmi.Bazaar" \
+    /usr/share/ublue-os/flatpak-overrides/io.github.kolunmi.Bazaar
+install -m 0644 "${script_dir}/software/bazaar-flatpak.conf" \
+    /usr/lib/tmpfiles.d/bazaar-flatpak.conf
 
 # --- 3h. software defaults --------------------------------------------------
 # Bluefin DX's developer Flatpaks and Wraindrock's personal defaults are

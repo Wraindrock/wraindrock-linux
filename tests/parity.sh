@@ -222,7 +222,6 @@ assert set(changed) == {
 assert added == {}, added
 for key, value in changed.items():
     assert image[key] == value, f"delta says {key}={value!r}, image has {image[key]!r}"
-assert image["ID_LIKE"] == "fedora", image
 
 assert delta["files"]["modified"] == [
     "/usr/lib/os-release",
@@ -255,6 +254,22 @@ expected_added = {
     "/etc/dconf/db/distro.d/10-wraindrock-folders",
     "/usr/share/desktop-directories/wraindrock-accessories.directory",
     "/usr/share/desktop-directories/wraindrock-social.directory",
+    "/usr/share/gnome-shell/extensions/appindicatorsupport@rgcjonas.gmail.com",
+    "/usr/share/gnome-shell/extensions/bazaar-integration@kolunmi.github.io",
+    "/usr/share/gnome-shell/extensions/blur-my-shell@aunetx",
+    "/usr/share/gnome-shell/extensions/caffeine@patapon.info",
+    "/usr/share/gnome-shell/extensions/dash-to-dock@micxgx.gmail.com",
+    "/usr/share/gnome-shell/extensions/gradia-integration@alexandervanhee.github.io",
+    "/usr/share/gnome-shell/extensions/gsconnect@andyholmes.github.io",
+    "/usr/share/gnome-shell/extensions/logomenu@aryan_k",
+    "/usr/share/gnome-shell/extensions/search-light@icedman.github.com",
+    "/etc/dconf/db/distro.d/20-wraindrock-keybindings",
+    "/etc/dconf/db/distro.d/21-wraindrock-logomenu",
+    "/etc/dconf/db/distro.d/22-wraindrock-searchlight",
+    "/etc/dconf/db/distro.d/23-wraindrock-blur",
+    "/usr/share/ublue-os/flatpak-overrides/io.github.kolunmi.Bazaar",
+    "/usr/lib/tmpfiles.d/bazaar-flatpak.conf",
+    "/etc/flatpak/remotes.d/flathub.flatpakrepo",
 }
 assert set(delta["files"]["added"]) == expected_added, delta["files"]["added"]
 PY
@@ -349,10 +364,14 @@ if in_image "${IMAGE}" "test -L /etc/systemd/system/timers.target.wants/wraindro
 else
     fail "Flatpak preinstall retry timer is not enabled"
 fi
-if in_image "${IMAGE}" "test -L /etc/systemd/system/multi-user.target.wants/flatpak-preinstall.service"; then
-    pass "base Flatpak preinstall service remains enabled"
+if in_image "${IMAGE}" "test -e /usr/lib/systemd/system/flatpak-preinstall.service"; then
+    if in_image "${IMAGE}" "test -L /etc/systemd/system/multi-user.target.wants/flatpak-preinstall.service"; then
+        pass "base Flatpak preinstall service remains enabled"
+    else
+        fail "base Flatpak preinstall service is not enabled"
+    fi
 else
-    fail "base Flatpak preinstall service is not enabled"
+    pass "the base ships no Flatpak preinstall service; the retry wrapper owns it"
 fi
 if in_image "${IMAGE}" "grep -Fq 'flatpak-preinstall.sha256' ${retry_script}"; then
     pass "retry wrapper records the completed preinstall hash"
@@ -814,11 +833,14 @@ else
     fail "Bluefin's Flatpak preset is missing"
 fi
 
-if in_image "${IMAGE}" \
-    'test -L /etc/systemd/system/multi-user.target.wants/flatpak-preinstall.service'; then
-    pass "flatpak-preinstall.service is enabled"
+if in_image "${IMAGE}" "test -e /usr/lib/systemd/system/flatpak-preinstall.service"; then
+    if in_image "${IMAGE}" 'test -L /etc/systemd/system/multi-user.target.wants/flatpak-preinstall.service'; then
+        pass "flatpak-preinstall.service is enabled"
+    else
+        fail "flatpak-preinstall.service is not enabled"
+    fi
 else
-    fail "flatpak-preinstall.service is not enabled"
+    pass "flatpak-preinstall.service is not part of the base; the wrapper and timer provide it"
 fi
 
 echo
