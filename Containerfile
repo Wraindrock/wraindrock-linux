@@ -2,7 +2,7 @@
 #
 # Wraindrock - a uBlue Silverblue based atomic desktop, tuned out of the box.
 #
-# v0.3 is a *branded parity build*: the RPM set is still exactly Fedora
+# The delta build: a declared set of additions on top of uBlue Silverblue.
 # Bluefin DX 44, plus a presentation delta (os-release display fields, logo
 # icon, GDM logo, default wallpaper, Plymouth boot splash, GRUB theme assets
 # and an opt-in boot-menu helper) recorded in
@@ -19,7 +19,7 @@ ARG BASE_REF=ghcr.io/ublue-os/silverblue-main:44
 FROM ${BASE_REF}
 
 ARG BASE_REF
-ARG BASE_IMAGE=ghcr.io/ublue-os/bluefin-dx:stable
+ARG BASE_IMAGE=ghcr.io/ublue-os/silverblue-main:44
 ARG BASE_DIGEST=unknown
 ARG IMAGE_NAME=wraindrock-linux
 ARG IMAGE_REGISTRY=ghcr.io/wraindrock
@@ -48,7 +48,7 @@ LABEL org.opencontainers.image.title="Wraindrock" \
       org.wraindrock.base.image="${BASE_IMAGE}" \
       org.wraindrock.base.digest="${BASE_DIGEST}" \
       org.wraindrock.fedora.version="${FEDORA_VERSION}" \
-      org.wraindrock.parity="bluefin-dx-${FEDORA_VERSION}"
+      org.wraindrock.parity="silverblue-${FEDORA_VERSION}"
 
 # Apply the identity delta and record provenance, refusing to build on a base
 # that is not the bootc image this project claims to derive from. See

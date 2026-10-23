@@ -13,7 +13,7 @@
 #   * the wallpaper override is compiled into the schema cache;
 #   * the Plymouth boot splash is installed, selected, and complete.
 #
-#   tests/parity.sh ghcr.io/ublue-os/bluefin-dx:stable \
+#   tests/parity.sh ghcr.io/ublue-os/silverblue-main:44 \
 #                   localhost/wraindrock-linux:44
 #
 # Needs podman and python3; both images must be available locally.
