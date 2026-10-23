@@ -143,7 +143,7 @@ application grouping, and the curated defaults below:
 | `LOGO`, `ID`, `ID_LIKE`, `CPE_NAME`, version fields | left at upstream values — the icon stays Fedora's, uBlue tooling keys off `ID=fedora`, and the CPE keeps naming Fedora |
 | UEFI boot entry name | `/etc/system-release` rewritten to `Wraindrock release <ver> (Silverblue)`; bootupd derives the firmware label from it (`get_product_name`), falling back to os-release `NAME` |
 | default dock | `[org.gnome.shell] favorite-apps` in `zzzz-wraindrock.gschema.override`: Helium, Rnote, Files, Bazaar, Mission Center, Terminal; a user's own value wins |
-| application folders | `/etc/dconf/db/distro.d/10-wraindrock-folders` extends `folder-children` with Virtualization, Proxies, Social (社交), Wraindrock and uBlue, lists their apps explicitly, and excludes re-homed apps from Bluefin's folders; one home per app; `dconf update` compiles the distro database |
+| application folders | `/etc/dconf/db/distro.d/10-wraindrock-folders` defines the folder set explicitly (附件, 工具, 系统, 网络, 代理, 社交, 办公, 虚拟化), lists every app once, and uses no categories; one home per app; `dconf update` compiles the distro database |
 | default hostname | `DEFAULT_HOSTNAME` (no `/etc/hostname` is shipped; an installer or user file still wins) |
 | input method | IBus is inherited from GNOME (no Fcitx in the image). Keyboard layouts and input methods are distinct entries in the source list; the English (US) layout stays and the only addition is the `libpinyin` input method in `[org.gnome.desktop.input-sources]` (`zzzz-wraindrock.gschema.override`). A user's own value wins |
 
@@ -160,83 +160,13 @@ with a real file owned by no package path, so it is declared under
 `files.modified` and parity expects it alongside `os-release`.
 
 Application folders are declarative dconf, so a user can still move launchers.
-Bluefin's seven folders (Games, GamingUtilities, Utilities, Development,
-Containers, Wine, Productivity) keep their upstream apps and categories; the
-drop-in adds one folder per purpose and excludes the re-homed apps from every
-upstream folder. GNOME matches `(apps ∪ categories) − excluded-apps` per folder,
-so listing an app in two places shows it twice; `tests/folders.py` merges the
-upstream definition with ours and fails if any app would land in more than one
-folder. Channel folders (`Flatpak`, `AppImage`) were removed for this reason.
-A separate Social (社交) folder groups WeChat, QQ and DingTalk with their own
-`.directory` file. A separate Accessories folder (附件) lists every GNOME desktop application (RPM
-desktop files from the base rpmdb plus Flathub launchable ids); its name comes
-from `wraindrock-accessories.directory` (`Name=Accessories`, `Name[zh_CN]=附件`).
-Bluefin's Utilities folder (工具) keeps only its own tools, and the GNOME apps
-are excluded from it, so Accessories and Tools never overlap. The ids are kept
-in `tests/fixtures/gnome-desktop-apps.txt`, and lint/parity fail if any of them
-is no longer filed under Accessories.
-
-`glib-compile-schemas` *is* run, because GSettings only reads compiled schemas;
-that rewrites `/usr/share/glib-2.0/schemas/gschemas.compiled`, which the delta
-lists under `files.modified`. `dconf update` does the same for the distro
-database. `gtk-update-icon-cache` is not run.
-
-### Software
-
-Two delivery mechanisms keep the out-of-box set small and updatable:
-
-- **Flatpaks install on first boot.** `/usr/share/flatpak/preinstall.d/wraindrock.preinstall`
-  declares 43 apps and the retry wrapper runs
-  `flatpak preinstall -y` once the network is up. That service gives up after
-  three attempts, which a fresh install usually exhausts before Wi-Fi is
-  configured, so `wraindrock-flatpak-preinstall.timer` retries our wrapper
-  every ten minutes until the preinstall file's hash is recorded in
-  `/var/lib/wraindrock/flatpak-preinstall.sha256`. Helium is the default
-  handler in `/etc/xdg/mimeapps.list`; Firefox stays installed and selectable.
-  Bluefin's default apps are not preinstalled; anything else comes from Bazaar
-  because Bluefin itself does not bake them.
-- **The four app RPMs are baked** (Helium from the official `imput/helium` COPR,
-  Clash Verge Rev, Rayburst, sing-box/SFL) because they have no Flatpak.
-  `hplip-gui` (the full HPLIP toolbox) and TuxTalk (dictation) are pinned the
-  same way, with a condition tying the HPLIP GUI pin to the inherited core
-  version. `ipp-duplexd` has no RPM either; its pinned upstream `.deb` is unpacked at
-  build time into `/usr/bin`, a systemd user unit and docs. Its `qpdf`
-  dependency is installed from Fedora's repositories.
-  HPLIP's core is inherited from Fedora Silverblue: the build asserts the CUPS/SANE
-  backends and `hp-setup` are present, and deliberately does not install the
-  optional Qt GUI. Every baked RPM is downloaded at build time from a pinned
-  upstream URL, checked against a pinned sha256 and expected version, and
-  installed with `rpm -i`; nothing is resolved from a repository, and a removal
-  of any base package fails the build. Their `%post`
-  scriptlets run as root inside the build container. They update with the image;
-  `rpm-ostree override replace`
-  gives a per-package escape hatch between image releases. SFL installs only
-  under `/opt`; because the base's `/opt` is a symlink into `/var` and a bootc
-  deployment does not carry `/var`, the build replaces it with a real directory
-  so the payload is part of the image (and therefore read-only at runtime).
-
-Backend caveats are deliberate and documented rather than patched: Clash Verge
-and SFL both want TUN/network control and should not run at the same time;
-WeChat runs through XWayland/portals; Gear Lever needs FUSE for AppImages;
-the first-boot preinstall needs working networking.
-
-### Provenance
-
-`build_files/build.sh` writes three files:
-
-- `/usr/share/wraindrock/build-info.json` — schema, image/version, build
-  number, git SHA, build date, base image + digest, Bluefin version, identity
-  marker, RPM count, RPM-set SHA-256.
-- `/usr/share/wraindrock/delta.json` — every intended difference from the base:
-  changed/added os-release keys with their actual values, modified files and
-  added files. This is the manifest the parity test enforces.
-- `/usr/share/wraindrock/base-os-release` — pristine copy of the base's
-  `/usr/lib/os-release`, so "what was this built from?" survives even though
-  the live file is now branded.
-
-The build fails if the base is not `ID=bluefin`, `VERSION_ID=44`,
-`VARIANT_ID=bluefin-dx*`, or if `/usr/bin/bootc` / `/usr/lib/bootc` are missing.
-That is a single-match assertion on the base, not a comment.
+The drop-in defines the complete set — 附件 (Accessories), 工具 (Tools), 系统
+(System), 网络 (Network), 代理 (Proxies), 社交 (Social), 办公 (Office) and
+虚拟化 (Virtualization) — gives every folder an explicit `apps` list, uses no
+`categories`, and keeps the lists disjoint. The folder names are literal Chinese
+strings, so no extra `.directory` files are needed. `tests/folders.py` fails if
+an app appears twice, a folder is empty, or `folder-children` drifts from the
+defined set; parity runs it on the generated image file.
 
 ## Tags and release identity
 

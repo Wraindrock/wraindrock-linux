@@ -5,6 +5,14 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 image versions are the upstream channel plus an immutable build tag, see
 [docs/architecture.md](docs/architecture.md).
 
+## [0.21.1] - 2026-10-23
+
+### Changed
+
+- App folders are now a complete, flat set (附件, 工具, 系统, 网络, 代理, 社交,
+  办公, 虚拟化) with explicit apps lists and no categories or upstream merging.
+  Every visible app has exactly one home, and empty legacy folders are gone.
+
 ## [0.20.3] - 2026-10-23
 
 ### Fixed

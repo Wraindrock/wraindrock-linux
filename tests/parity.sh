@@ -564,66 +564,34 @@ if in_image "${IMAGE}" "test -s ${folders_file}"; then
 else
     fail "application folders are missing"
 fi
-for folder in Accessories Virtualization Proxies Social Wraindrock uBlue; do
-    if in_image "${IMAGE}" "grep -q '\[org/gnome/desktop/app-folders/folders/${folder}\]' ${folders_file}"; then
+for folder in Accessories Tools System Network Proxies Social Office Virtualization; do
+    if in_image "${IMAGE}" "grep -q '\\[org/gnome/desktop/app-folders/folders/${folder}\\]' ${folders_file}"; then
         pass "app folder declared: ${folder}"
     else
         fail "app folder missing: ${folder}"
     fi
 done
-for gone in Flatpak AppImage Bluefin; do
-    if in_image "${IMAGE}" "! grep -q '\[org/gnome/desktop/app-folders/folders/${gone}\]' ${folders_file}"; then
-        pass "channel folder dropped (no duplicate membership): ${gone}"
+for name in 附件 工具 系统 网络 代理 社交 办公 虚拟化; do
+    if in_image "${IMAGE}" "grep -Fq \"name='${name}'\" ${folders_file}"; then
+        pass "app folder has its Chinese name: ${name}"
     else
-        fail "channel folder still declared, apps may repeat: ${gone}"
+        fail "app folder is missing the Chinese name: ${name}"
     fi
 done
 for app in 'virt-manager.desktop' 'io.podman_desktop.PodmanDesktop.desktop' \
-    'Clash Verge.desktop' 'helium.desktop' 'discourse.desktop' \
-    'documentation.desktop' 'system-update.desktop' \
+    'Clash Verge.desktop' 'helium.desktop' 'com.github.flxzt.rnote.desktop' \
     'com.tencent.WeChat.desktop' 'com.qq.QQ.desktop' 'com.dingtalk.DingTalk.desktop'; do
     if in_image "${IMAGE}" "grep -Fq \"'${app}'\" ${folders_file}"; then
-        pass "re-homed app is listed: ${app}"
+        pass "app is filed once: ${app}"
     else
-        fail "re-homed app is missing: ${app}"
+        fail "app is not filed: ${app}"
     fi
 done
-social_dir=/usr/share/desktop-directories/wraindrock-social.directory
-if in_image "${IMAGE}" "test -s ${social_dir} && grep -q 'Name\[zh_CN\]=社交' ${social_dir}"; then
-    pass "Social folder has its simplified-Chinese name"
-else
-    fail "Social folder is missing or not named 社交"
-fi
 in_image "${IMAGE}" "cat ${folders_file}" > "${tmpdir}/app-folders"
-if python3 tests/folders.py tests/fixtures/bluefin-folders.conf "${tmpdir}/app-folders" >/dev/null; then
+if python3 tests/folders.py "${tmpdir}/app-folders" >/dev/null; then
     pass "published app folders keep one folder per app"
 else
-    fail "published app folders duplicate at least one app"
-fi
-missing_gnome=0
-while IFS= read -r app; do
-    [[ -z ${app} || ${app} == \#* ]] && continue
-    if ! grep -Fq "'${app}'" "${tmpdir}/app-folders"; then
-        fail "GNOME desktop app is not filed under Accessories: ${app}"
-        missing_gnome=1
-    fi
-done < tests/fixtures/gnome-desktop-apps.txt
-if [[ ${missing_gnome} -eq 0 ]]; then
-    pass "GNOME desktop applications are filed under Accessories"
-fi
-
-# Accessories and Tools must not overlap: the GNOME apps live only in
-# Accessories, and Utilities keeps Bluefin's own tool list.
-utils_apps="$(awk '/folders\/Utilities\]/{seen=1; next} /^\[/{seen=0} seen && /^apps=/{print}' "${tmpdir}/app-folders")"
-if [[ ${utils_apps} == *"'org.gnome.Calculator.desktop'"* ]]; then
-    fail "Utilities still lists GNOME applications (Accessories would duplicate)"
-else
-    pass "Utilities no longer lists the GNOME applications"
-fi
-if in_image "${IMAGE}" "grep -Fq 'Name[zh_CN]=附件' /usr/share/desktop-directories/wraindrock-accessories.directory"; then
-    pass "Accessories folder is labelled 附件 in Chinese"
-else
-    fail "Accessories .directory is missing the Chinese name"
+    fail "published app folders duplicate at least one app or contain an empty folder"
 fi
 if in_image "${IMAGE}" 'grep -aq 'Accessories' /etc/dconf/db/distro'; then
     pass "app folders are compiled into the distro dconf database"

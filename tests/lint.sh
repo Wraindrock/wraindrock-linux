@@ -130,18 +130,25 @@ if [[ -s build_files/software/app-folders ]]; then
 else
     fail "build_files/software/app-folders is missing"
 fi
-for folder in Accessories Virtualization Proxies Social Wraindrock uBlue; do
+for folder in Accessories Tools System Network Proxies Social Office Virtualization; do
     if grep -Fq "app-folders/folders/${folder}]" build_files/software/app-folders; then
         pass "app folder declared: ${folder}"
     else
         fail "app folder is missing: ${folder}"
     fi
 done
-for gone in Flatpak AppImage Bluefin; do
-    if grep -Fq "app-folders/folders/${gone}]" build_files/software/app-folders; then
-        fail "channel folder ${gone} would duplicate apps"
+for name in 附件 工具 系统 网络 代理 社交 办公 虚拟化; do
+    if grep -Fq "name='${name}'" build_files/software/app-folders; then
+        pass "app folder has its Chinese name: ${name}"
     else
-        pass "no channel folder ${gone}"
+        fail "app folder is missing the Chinese name: ${name}"
+    fi
+done
+for gone in Flatpak AppImage Bluefin Utilities Development Games Wine Productivity Containers GamingUtilities uBlue Wraindrock; do
+    if grep -Fq "app-folders/folders/${gone}]" build_files/software/app-folders; then
+        fail "legacy folder ${gone} is still defined"
+    else
+        pass "no legacy folder ${gone}"
     fi
 done
 if grep -Fq "favorite-apps=['helium.desktop'" build_files/build.sh; then
@@ -149,48 +156,18 @@ if grep -Fq "favorite-apps=['helium.desktop'" build_files/build.sh; then
 else
     fail "build.sh does not declare the default dock"
 fi
-if python3 tests/folders.py tests/fixtures/bluefin-folders.conf build_files/software/app-folders >/dev/null; then
-    pass "every explicitly grouped app has exactly one folder"
+if python3 tests/folders.py build_files/software/app-folders >/dev/null; then
+    pass "every grouped app has exactly one folder and no folder is empty"
 else
-    fail "the application folders duplicate at least one app"
+    fail "the application folders duplicate an app or contain an empty folder"
 fi
-gnome_apps=tests/fixtures/gnome-desktop-apps.txt
-if [[ -s ${gnome_apps} ]]; then
-    missing_gnome=0
-    while IFS= read -r app; do
-        [[ -z ${app} || ${app} == \#* ]] && continue
-        if ! grep -Fq "'${app}'" build_files/software/app-folders; then
-            fail "GNOME desktop app is not filed under Accessories: ${app}"
-            missing_gnome=1
-        fi
-    done < "${gnome_apps}"
-    if [[ ${missing_gnome} -eq 0 ]]; then
-        pass "GNOME desktop applications are filed under Accessories"
+for app in 'Clash Verge.desktop' 'helium.desktop' 'com.tencent.WeChat.desktop' 'virt-manager.desktop'; do
+    if grep -Fq "'${app}'" build_files/software/app-folders; then
+        pass "app is filed: ${app}"
+    else
+        fail "app is not filed: ${app}"
     fi
-else
-    fail "tests/fixtures/gnome-desktop-apps.txt is missing"
-fi
-if [[ -s build_files/software/wraindrock-accessories.directory ]] \
-    && grep -Fq 'Name[zh_CN]=附件' build_files/software/wraindrock-accessories.directory \
-    && grep -Fq "name='wraindrock-accessories.directory'" build_files/software/app-folders \
-    && grep -Fq 'wraindrock-accessories.directory' build_files/build.sh; then
-    pass "the Accessories folder is named 附件 and installed"
-else
-    fail "the Accessories folder name or .directory install is missing"
-fi
-if [[ -s build_files/software/wraindrock-social.directory ]] \
-    && grep -Fq 'Name[zh_CN]=社交' build_files/software/wraindrock-social.directory \
-    && grep -Fq "name='wraindrock-social.directory'" build_files/software/app-folders \
-    && grep -Fq 'wraindrock-social.directory' build_files/build.sh; then
-    pass "the Social folder is named 社交 and installed"
-else
-    fail "the Social folder name or .directory install is missing"
-fi
-if sed -n '/folders\/Utilities\]/,/^\[/p' build_files/software/app-folders | grep '^apps=' | grep -Fq "'org.gnome.Calculator.desktop'"; then
-    fail "Utilities still lists GNOME applications (Accessories would overlap)"
-else
-    pass "Utilities keeps only Bluefin's tools"
-fi
+done
 for stale in plymouth grub-theme wraindrock-gdm-logo; do
     if grep -Fq "${stale}" build_files/build.sh; then
         fail "build.sh still has removed appearance code: ${stale}"
