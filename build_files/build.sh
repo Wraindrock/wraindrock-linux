@@ -284,6 +284,7 @@ dnf5 -y install --setopt=install_weak_deps=False \
     incus incus-client distrobox \
     virt-manager virt-install libvirt-daemon-kvm libvirt-client libvirt-daemon-config-network \
     qemu-system-x86-core qemu-img libsane-hpaio \
+    firewall-config input-remapper sysprof \
     gcc gcc-c++ clang llvm make cmake ninja-build meson autoconf automake \
     libtool pkgconf-pkg-config binutils bison flex gdb strace patch diffutils \
     python3-devel python3-pip rpm-build redhat-rpm-config \

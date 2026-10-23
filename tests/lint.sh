@@ -130,21 +130,21 @@ if [[ -s build_files/software/app-folders ]]; then
 else
     fail "build_files/software/app-folders is missing"
 fi
-for folder in Accessories Tools System Network Proxies Social Office Virtualization; do
+for folder in Accessories System HP Tools Development; do
     if grep -Fq "app-folders/folders/${folder}]" build_files/software/app-folders; then
         pass "app folder declared: ${folder}"
     else
         fail "app folder is missing: ${folder}"
     fi
 done
-for name in 附件 工具 系统 网络 代理 社交 办公 虚拟化; do
+for name in 附件 系统 HP 工具 开发; do
     if grep -Fq "name='${name}'" build_files/software/app-folders; then
         pass "app folder has its Chinese name: ${name}"
     else
         fail "app folder is missing the Chinese name: ${name}"
     fi
 done
-for gone in Flatpak AppImage Bluefin Utilities Development Games Wine Productivity Containers GamingUtilities uBlue Wraindrock; do
+for gone in Flatpak AppImage Bluefin Utilities Games Wine Productivity Containers GamingUtilities uBlue Wraindrock Network Proxies Social Office Virtualization; do
     if grep -Fq "app-folders/folders/${gone}]" build_files/software/app-folders; then
         fail "legacy folder ${gone} is still defined"
     else
@@ -161,7 +161,7 @@ if python3 tests/folders.py build_files/software/app-folders >/dev/null; then
 else
     fail "the application folders duplicate an app or contain an empty folder"
 fi
-for app in 'Clash Verge.desktop' 'helium.desktop' 'com.tencent.WeChat.desktop' 'virt-manager.desktop'; do
+for app in 'Clash Verge.desktop' 'com.github.tchx84.Flatseal.desktop' 'org.gnome.Builder.desktop' 'hplip.desktop' 'virt-manager.desktop'; do
     if grep -Fq "'${app}'" build_files/software/app-folders; then
         pass "app is filed: ${app}"
     else
@@ -204,10 +204,10 @@ for asset in build_files/software/flatpaks.txt build_files/software/mimeapps.lis
     fi
 done
 flatpak_count=$(grep -v '^#' build_files/software/flatpaks.txt | sed '/^[[:space:]]*$/d' | wc -l)
-if [[ ${flatpak_count} == 9 ]]; then
-    pass "flatpaks.txt declares 9 Flatpaks"
+if [[ ${flatpak_count} == 21 ]]; then
+    pass "flatpaks.txt declares 21 Flatpaks"
 else
-    fail "flatpaks.txt declares ${flatpak_count} Flatpaks, want 9"
+    fail "flatpaks.txt declares ${flatpak_count} Flatpaks, want 21"
 fi
 if grep -Ev '^#|^[[:space:]]*$' build_files/software/flatpaks.txt \
         | grep -Eqv '^[A-Za-z0-9_-]+(\.[A-Za-z0-9_-]+)+$'; then
@@ -292,7 +292,8 @@ else
 fi
 for app in io.github.kolunmi.Bazaar io.podman_desktop.PodmanDesktop \
     com.tencent.WeChat com.github.flxzt.rnote it.mijorus.gearlever \
-    com.dingtalk.DingTalk com.qq.QQ io.github.yucling.open-orpheus com.ranfdev.DistroShelf; do
+    com.dingtalk.DingTalk com.qq.QQ io.github.yucling.open-orpheus com.ranfdev.DistroShelf \
+    com.github.tchx84.Flatseal org.gnome.Builder com.github.PintaProject.Pinta; do
     if grep -Fxq "${app}" build_files/software/flatpaks.txt; then
         pass "flatpaks.txt lists ${app}"
     else

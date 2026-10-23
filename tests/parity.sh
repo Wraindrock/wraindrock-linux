@@ -562,14 +562,14 @@ if in_image "${IMAGE}" "test -s ${folders_file}"; then
 else
     fail "application folders are missing"
 fi
-for folder in Accessories Tools System Network Proxies Social Office Virtualization; do
+for folder in Accessories System HP Tools Development; do
     if in_image "${IMAGE}" "grep -q '\\[org/gnome/desktop/app-folders/folders/${folder}\\]' ${folders_file}"; then
         pass "app folder declared: ${folder}"
     else
         fail "app folder missing: ${folder}"
     fi
 done
-for name in 附件 工具 系统 网络 代理 社交 办公 虚拟化; do
+for name in 附件 系统 HP 工具 开发; do
     if in_image "${IMAGE}" "grep -Fq \"name='${name}'\" ${folders_file}"; then
         pass "app folder has its Chinese name: ${name}"
     else
@@ -577,8 +577,8 @@ for name in 附件 工具 系统 网络 代理 社交 办公 虚拟化; do
     fi
 done
 for app in 'virt-manager.desktop' 'io.podman_desktop.PodmanDesktop.desktop' \
-    'Clash Verge.desktop' 'helium.desktop' 'com.github.flxzt.rnote.desktop' \
-    'com.tencent.WeChat.desktop' 'com.qq.QQ.desktop' 'com.dingtalk.DingTalk.desktop'; do
+    'Clash Verge.desktop' 'com.github.tchx84.Flatseal.desktop' \
+    'org.gnome.Builder.desktop' 'hplip.desktop' 'org.gnome.Nautilus.desktop'; do
     if in_image "${IMAGE}" "grep -Fq \"'${app}'\" ${folders_file}"; then
         pass "app is filed once: ${app}"
     else

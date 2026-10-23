@@ -11,3 +11,17 @@ io.github.yucling.open-orpheus
 com.github.flxzt.rnote
 it.mijorus.gearlever
 com.ranfdev.DistroShelf
+# Bluefin DX's official Tools and Development groups (Builder, Dev Toolbox and
+# Pods are the dev apps; VS Code is intentionally not included).
+com.github.tchx84.Flatseal
+io.github.flattool.Warehouse
+com.mattjakeman.ExtensionManager
+org.fedoraproject.MediaWriter
+org.virt_manager.virt-viewer
+io.github.flattool.Ignition
+io.gitlab.adhami3310.Impression
+page.tesk.Refine
+com.github.PintaProject.Pinta
+org.gnome.Builder
+me.iepure.devtoolbox
+com.github.marhkb.Pods

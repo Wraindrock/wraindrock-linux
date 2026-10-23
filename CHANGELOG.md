@@ -5,6 +5,19 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 image versions are the upstream channel plus an immutable build tag, see
 [docs/architecture.md](docs/architecture.md).
 
+## [0.21.2] - 2026-10-24
+
+### Changed
+
+- App folders now follow the requested layout: 附件 (GNOME apps), 系统
+  (settings/system tools plus the proxy clients), HP (HPLIP), 工具 (Bluefin
+  DX's Tools) and 开发 (Bluefin DX's Development merged with virtualisation).
+  The 网络/办公/社交/代理 folders are gone; apps without a group stay loose.
+- Added Bluefin DX's Tools Flatpaks (Flatseal, Warehouse, Extension Manager,
+  Media Writer, virt-viewer, Ignition, Impression, Refine, Pinta) and RPM tools
+  (firewall-config, input-remapper, sysprof), plus Builder, Dev Toolbox and
+  Pods for the Development folder.
+
 ## [0.21.1] - 2026-10-23
 
 ### Changed

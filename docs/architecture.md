@@ -143,7 +143,7 @@ application grouping, and the curated defaults below:
 | `LOGO`, `ID`, `ID_LIKE`, `CPE_NAME`, version fields | left at upstream values — the icon stays Fedora's, uBlue tooling keys off `ID=fedora`, and the CPE keeps naming Fedora |
 | UEFI boot entry name | `/etc/system-release` rewritten to `Wraindrock release <ver> (Silverblue)`; bootupd derives the firmware label from it (`get_product_name`), falling back to os-release `NAME` |
 | default dock | `[org.gnome.shell] favorite-apps` in `zzzz-wraindrock.gschema.override`: Helium, Rnote, Files, Bazaar, Mission Center, Terminal; a user's own value wins |
-| application folders | `/etc/dconf/db/distro.d/10-wraindrock-folders` defines the folder set explicitly (附件, 工具, 系统, 网络, 代理, 社交, 办公, 虚拟化), lists every app once, and uses no categories; one home per app; `dconf update` compiles the distro database |
+| application folders | `/etc/dconf/db/distro.d/10-wraindrock-folders` defines the folder set explicitly (附件, 系统, HP, 工具, 开发), lists every app once, and uses no categories; one home per app; `dconf update` compiles the distro database |
 | default hostname | `DEFAULT_HOSTNAME` (no `/etc/hostname` is shipped; an installer or user file still wins) |
 | input method | IBus is inherited from GNOME (no Fcitx in the image). Keyboard layouts and input methods are distinct entries in the source list; the English (US) layout stays and the only addition is the `libpinyin` input method in `[org.gnome.desktop.input-sources]` (`zzzz-wraindrock.gschema.override`). A user's own value wins |
 
@@ -160,12 +160,14 @@ with a real file owned by no package path, so it is declared under
 `files.modified` and parity expects it alongside `os-release`.
 
 Application folders are declarative dconf, so a user can still move launchers.
-The drop-in defines the complete set — 附件 (Accessories), 工具 (Tools), 系统
-(System), 网络 (Network), 代理 (Proxies), 社交 (Social), 办公 (Office) and
-虚拟化 (Virtualization) — gives every folder an explicit `apps` list, uses no
-`categories`, and keeps the lists disjoint. The folder names are literal Chinese
-strings, so no extra `.directory` files are needed. `tests/folders.py` fails if
-an app appears twice, a folder is empty, or `folder-children` drifts from the
+The drop-in defines the complete set — 附件 (GNOME's own apps), 系统 (settings
+and system tools, including Clash Verge and sing-box), HP (HPLIP and hp-uiscan),
+工具 (Bluefin DX's Tools) and 开发 (Bluefin DX's Development merged with
+virtualisation) — gives every folder an explicit `apps` list, uses no
+`categories`, and keeps the lists disjoint. Apps outside these groups
+(Helium, Rayburst, Rnote, Open Orpheus, WeChat, QQ, DingTalk, TuxTalk,
+Gear Lever, Bazaar) stay ungrouped by request. `tests/folders.py` fails if an
+app appears twice, a folder is empty, or `folder-children` drifts from the
 defined set; parity runs it on the generated image file.
 
 ## Tags and release identity

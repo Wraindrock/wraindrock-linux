@@ -20,10 +20,13 @@ add on top.
 - The wallpaper, logo, GDM artwork, boot splash and boot-menu theme are stock
   Silverblue/GNOME; personal visual branding is deliberately left out.
 - The UEFI boot entry is labelled **Wraindrock** (not Fedora).
-- GNOME application folders group every launcher by purpose: 附件 (Accessories),
-  工具 (Tools), 系统 (System), 网络 (Network), 代理 (Proxies), 社交 (Social),
-  办公 (Office) and 虚拟化 (Virtualization). Each app sits in exactly one folder,
-  so the app grid has no loose icons and nothing appears twice.
+- Five application folders follow the requested layout: 附件 (GNOME apps),
+  系统 (settings and system tools, including the proxy clients), HP (the
+  printer stack), 工具 (Bluefin DX's Tools: Flatseal, Warehouse, Extension
+  Manager, firewall, Media Writer, Input Remapper, Sysprof, remote viewer,
+  Ignition, Impression, Refine, Pinta) and 开发 (Bluefin DX's Development plus
+  virtualisation: virt-manager, Podman Desktop, Builder, Dev Toolbox, Pods,
+  DistroShelf). Other apps stay ungrouped by request.
 - The dock starts as Helium, Rnote, DistroShelf, Files, Bazaar, Mission Center, Terminal.
 - A fresh install seeds the hostname to `wraindrock`.
 
