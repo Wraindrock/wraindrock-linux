@@ -130,7 +130,7 @@ grep -qx "VARIANT_ID=${base_variant_id}" "${os_release}" \
 install -D -m 0644 "${branding_dir}/wraindrock-wallpaper.png" \
     /usr/share/backgrounds/wraindrock/wraindrock-wallpaper.png
 
-# 3d. GDM logo and default wallpaper. Override files are merged in name order,
+# 3d. Default wallpaper, dock and input sources. Override files merge in name order,
 # so zz- wins over Fedora's 10_* override.
 gschema_dir=/usr/share/glib-2.0/schemas
 override="${gschema_dir}/zzzz-wraindrock.gschema.override"

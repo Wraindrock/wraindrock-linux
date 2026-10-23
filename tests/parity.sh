@@ -256,6 +256,7 @@ expected_added = {
     "/etc/xdg/mimeapps.list",
     "/etc/dconf/db/distro.d/10-wraindrock-folders",
     "/usr/share/desktop-directories/wraindrock-accessories.directory",
+    "/usr/share/desktop-directories/wraindrock-social.directory",
 }
 assert set(delta["files"]["added"]) == expected_added, delta["files"]["added"]
 PY
