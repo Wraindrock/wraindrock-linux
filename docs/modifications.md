@@ -63,9 +63,11 @@ Docker and VS Code are deliberately **not** installed.
 
 ## Software
 
-- Nine Flatpaks are installed at build time when the container allows it:
-  Bazaar, Podman Desktop, WeChat, QQ, DingTalk, Open Orpheus, Rnote, Gear Lever,
-  DistroShelf. `apply_extra` apps cannot run under the build container's bwrap
+- Twenty-one Flatpaks are declared: Bazaar, Podman Desktop, WeChat, QQ, DingTalk,
+  Open Orpheus, Rnote, Gear Lever, DistroShelf, plus Bluefin DX's Tools set
+  (Flatseal, Warehouse, Extension Manager, Media Writer, virt-viewer, Ignition,
+  Impression, Refine, Pinta) and Development set (Builder, Dev Toolbox, Pods).
+  Those that install at build time are baked; `apply_extra` apps cannot run under the build container's bwrap
   (`/proc/sys/user/max_user_namespaces` is read-only), so those fall back to the
   first-boot preinstall service, which retries every ten minutes until the network
   is up and every declared app is present.
