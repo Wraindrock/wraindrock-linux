@@ -141,7 +141,7 @@ glib-compile-schemas "${gschema_dir}"
 GSETTINGS_BACKEND=memory gsettings get org.gnome.desktop.input-sources sources \
     | grep -q "libpinyin" \
     || die "the compiled schemas do not report the IBus libpinyin default"
-expected_dock="['helium.desktop', 'com.github.flxzt.rnote.desktop', 'org.gnome.Nautilus.desktop', 'io.github.kolunmi.Bazaar.desktop', 'io.missioncenter.MissionCenter.desktop', 'org.gnome.Ptyxis.desktop']"
+expected_dock="['helium.desktop', 'com.github.flxzt.rnote.desktop', 'com.ranfdev.DistroShelf.desktop', 'org.gnome.Nautilus.desktop', 'io.github.kolunmi.Bazaar.desktop', 'io.missioncenter.MissionCenter.desktop', 'org.gnome.Ptyxis.desktop']"
 actual_dock="$(GSETTINGS_BACKEND=memory gsettings get org.gnome.shell favorite-apps)"
 [[ ${actual_dock} == "${expected_dock}" ]] \
     || die "the compiled schemas do not report the dock defaults: ${actual_dock}"
