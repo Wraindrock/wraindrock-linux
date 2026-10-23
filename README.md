@@ -56,11 +56,12 @@ silently.
 
 ## Software
 
-The first boot installs **8 Flatpaks** (needs the network and a few hundred
-MB); a timer retries every ten minutes until they are in, and
-`sudo systemctl start wraindrock-flatpak-preinstall.service` runs it now:
-Bazaar, Podman Desktop, WeChat, QQ, DingTalk, Open Orpheus, Rnote and Gear
-Lever. Bluefin's default app set is deliberately **not** preinstalled — add
+The image bakes **9 Flatpaks** at build time (Bazaar, Podman Desktop,
+DistroShelf, WeChat, QQ, DingTalk, Open Orpheus, Rnote and Gear Lever), so an
+offline install still has them. Apps whose manifests need `apply_extra` cannot
+run bubblewrap inside the build container; those fall back to the first-boot
+service, which retries every ten minutes until the network is up
+(`sudo systemctl start wraindrock-flatpak-preinstall.service` runs it now). Bluefin's default app set is deliberately **not** preinstalled — add
 anything else from Bazaar. Firefox and Thunderbird are not preinstalled.
 
 **Helium is the default browser** for links and HTML. Four programs have no
@@ -228,7 +229,7 @@ scratch machine, with data disks detached, or in a VM.
 cat /usr/lib/os-release              # NAME="Wraindrock", ID=bluefin
 cat /usr/share/wraindrock/delta.json # every intended difference
 hostnamectl                          # wraindrock
-flatpak list --system                # the 8 declared preinstalls
+flatpak list --system                # the 9 declared preinstalls
 rpm -q helium-bin clash-verge rayburst sing-box # the four baked packages
 cosign verify \
   --certificate-identity-regexp '^https://github.com/Wraindrock/wraindrock-linux/' \

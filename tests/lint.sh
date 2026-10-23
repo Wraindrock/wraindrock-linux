@@ -227,10 +227,10 @@ for asset in build_files/software/flatpaks.txt build_files/software/mimeapps.lis
     fi
 done
 flatpak_count=$(grep -v '^#' build_files/software/flatpaks.txt | sed '/^[[:space:]]*$/d' | wc -l)
-if [[ ${flatpak_count} == 8 ]]; then
-    pass "flatpaks.txt declares 8 Flatpaks"
+if [[ ${flatpak_count} == 9 ]]; then
+    pass "flatpaks.txt declares 9 Flatpaks"
 else
-    fail "flatpaks.txt declares ${flatpak_count} Flatpaks, want 8"
+    fail "flatpaks.txt declares ${flatpak_count} Flatpaks, want 9"
 fi
 if grep -Ev '^#|^[[:space:]]*$' build_files/software/flatpaks.txt \
         | grep -Eqv '^[A-Za-z0-9_-]+(\.[A-Za-z0-9_-]+)+$'; then
@@ -315,7 +315,7 @@ else
 fi
 for app in io.github.kolunmi.Bazaar io.podman_desktop.PodmanDesktop \
     com.tencent.WeChat com.github.flxzt.rnote it.mijorus.gearlever \
-    com.dingtalk.DingTalk com.qq.QQ io.github.yucling.open-orpheus; do
+    com.dingtalk.DingTalk com.qq.QQ io.github.yucling.open-orpheus com.ranfdev.DistroShelf; do
     if grep -Fxq "${app}" build_files/software/flatpaks.txt; then
         pass "flatpaks.txt lists ${app}"
     else

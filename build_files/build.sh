@@ -316,10 +316,18 @@ flatpak remote-add --system --if-not-exists flathub \
 # network still has them after install. The first-boot preinstall service
 # remains as a fallback for anything that failed to download here.
 mapfile -t baked_flatpaks < <(grep -v '^#' "${script_dir}/software/flatpaks.txt" | sed '/^[[:space:]]*$/d')
-flatpak install --system --noninteractive -y --app flathub "${baked_flatpaks[@]}" \
-    || die "could not bake the declared Flatpaks into the image"
-flatpak list --system --app --columns=application | LC_ALL=C sort > /tmp/baked-flatpaks
+# Some app manifests use apply_extra, which runs bubblewrap. The build
+# container exposes /proc/sys read-only, so bwrap cannot start there; bake
+# what works and let the first-boot service fill in the rest when online.
 for flatpak_app in "${baked_flatpaks[@]}"; do
+    if flatpak install --system --noninteractive -y --app flathub "${flatpak_app}"; then
+        say "baked Flatpak ${flatpak_app}"
+    else
+        say "warning: ${flatpak_app} cannot be baked here; the first-boot service will install it"
+    fi
+done
+flatpak list --system --app --columns=application | LC_ALL=C sort > /tmp/baked-flatpaks
+for flatpak_app in io.github.kolunmi.Bazaar io.podman_desktop.PodmanDesktop; do
     grep -Fxq "${flatpak_app}" /tmp/baked-flatpaks \
         || die "Flatpak ${flatpak_app} was not baked into the image"
 done

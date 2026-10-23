@@ -22,8 +22,10 @@ image versions are the upstream channel plus an immutable build tag, see
 - Scoped the software set to what this system actually uses: KVM/libvirt,
   virt-manager, Incus and Distrobox (Docker and VS Code removed), a curated
   development toolchain, extra fonts, LXC and cockpit. Flatpak preinstall is
-  now the eight personal apps plus Bazaar and Podman Desktop, not Bluefin's
-  default set.
+  now the nine personal apps plus Bazaar and Podman Desktop, not Bluefin's
+  default set. Flatpaks are baked into the image at build time; apps whose
+  manifests need `apply_extra` fall back to the first-boot service because
+  bubblewrap cannot run inside the build container.
 - Removed the Fedora defaults that reappeared with the Silverblue rebase:
   Firefox, GNOME Software, bookmarks, Chromium config, background-logo extension
   and yelp.

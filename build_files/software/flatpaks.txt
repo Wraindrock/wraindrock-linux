@@ -10,3 +10,4 @@ com.dingtalk.DingTalk
 io.github.yucling.open-orpheus
 com.github.flxzt.rnote
 it.mijorus.gearlever
+com.ranfdev.DistroShelf
