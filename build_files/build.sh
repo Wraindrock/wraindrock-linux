@@ -619,8 +619,8 @@ cat > /usr/share/wraindrock/delta.json <<EOF
       "/usr/share/glib-2.0/schemas/gschemas.compiled",
       "/usr/share/rpm/rpmdb.sqlite",
       "/etc/dconf/db/distro",
-      "/opt",
-      ],
+      "/opt"
+    ],
     "added": [
       "/usr/share/glib-2.0/schemas/zzzz-wraindrock.gschema.override",
       "/usr/libexec/wraindrock-hostname-seed",
