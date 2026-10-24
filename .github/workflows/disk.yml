@@ -89,46 +89,50 @@ jobs:
           oras version
 
       - name: Mount podman storage on a loopback btrfs
-        # BIB keeps the pulled image, the uncompressed layer copies and the
-        # deployment in this store; 60 GB was exhausted once the Flatpaks were
-        # baked in. The runner root has ~119 GB free, and the outputs live
-        # there too, so use 90 GB for the store.
+        # Building a disk image needs ~3-4x the final root size: the container
+        # store, BIB's imported copy and the ostree deployment coexist.
+        # With Flatpaks baked in, 60 GB was exhausted; the runner root has
+        # ~119 GB free, so give the store 90 GB.
         run: |
           set -euo pipefail
           img=/mnt/podman-storage.img
           if [ ! -d /mnt ]; then img=/var/tmp/podman-storage.img; fi
           sudo mkdir -p /var/lib/containers/storage
-          sudo truncate -s 60G "$img"
+          sudo truncate -s 90G "$img"
           sudo mkfs.btrfs -f "$img"
           sudo podman system reset --force || true
           sudo systemctl stop podman.service podman.socket 2>/dev/null || true
           sudo mount -o compress=zstd:1 "$img" /var/lib/containers/storage
           sudo df -h /var/lib/containers/storage
 
-      - name: Pull the builder and resolve the image
+      - name: Pull image and builder
         run: |
           set -euo pipefail
-          sudo podman pull "${BIB_IMAGE}"
-          # Resolve the target image from the registry without copying it into
-          # podman storage: bootc-image-builder pulls it into its own storage,
-          # and a host copy would be a second full uncompressed copy (several
-          # GB) on a runner that already holds the deployment and the output.
-          mkdir -p output
-          sudo skopeo inspect "docker://${{ inputs.image_ref }}" > output/image-inspect.json
-          image_digest=$(python3 -c 'import json;print(json.load(open("output/image-inspect.json"))["Digest"])')
-          channel_digest=$(sudo skopeo inspect "docker://${{ inputs.channel_ref }}" | python3 -c 'import json,sys;print(json.load(sys.stdin)["Digest"])')
-          if [ "${image_digest}" != "${channel_digest}" ]; then
+          # bootc-image-builder inspects the target image in the shared
+          # containers-storage; it does not pull from the registry itself, so
+          # the image must be present here.
+          for ref in "${{ inputs.image_ref }}" "${{ inputs.channel_ref }}"; do
+            for attempt in 1 2 3; do
+              sudo podman pull "${ref}" && break
+              [ "$attempt" = 3 ] && { echo "::error::cannot pull ${ref}"; exit 1; }
+              sleep $((attempt * 20))
+            done
+          done
+          image_id=$(sudo podman image inspect --format '{{ .Id }}' "${{ inputs.image_ref }}")
+          channel_id=$(sudo podman image inspect --format '{{ .Id }}' "${{ inputs.channel_ref }}")
+          if [ "${image_id}" != "${channel_id}" ]; then
             echo "::error::channel tag and requested image differ; refusing to build"
             exit 1
           fi
+          sudo podman pull "${BIB_IMAGE}"
 
       - name: Record image identity
         id: image
         run: |
           set -euo pipefail
-          VERSION=$(python3 -c 'import json;print(json.load(open("output/image-inspect.json"))["Labels"]["org.opencontainers.image.version"])')
-          REVISION=$(python3 -c 'import json;print(json.load(open("output/image-inspect.json"))["Labels"]["org.opencontainers.image.revision"])')
-          DIGEST=$(python3 -c 'import json;print(json.load(open("output/image-inspect.json"))["Digest"])')
+          VERSION=$(sudo podman image inspect --format '{{ index .Labels "org.opencontainers.image.version" }}' "${{ inputs.image_ref }}")
+          REVISION=$(sudo podman image inspect --format '{{ index .Labels "org.opencontainers.image.revision" }}' "${{ inputs.image_ref }}")
+          DIGEST=$(sudo podman image inspect --format '{{ .Digest }}' "${{ inputs.image_ref }}")
           [ -n "${VERSION}" ] && [ -n "${REVISION}" ]
           {
             echo "version=${VERSION}"
