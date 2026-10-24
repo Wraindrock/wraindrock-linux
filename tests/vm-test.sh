@@ -134,8 +134,13 @@ elif [[ "${mode}" == iso ]]; then
 else
     # A live ISO boots entirely from the medium; give it room for the squashfs
     # and the writable overlay.
+    # The Titanoboa ISO is UEFI-only (GPT + EFI system partition; no BIOS
+    # El Torito). SeaBIOS reports "no bootable device", so boot OVMF.
+    ovmf=/usr/share/OVMF/OVMF_CODE.fd
+    [[ -f ${ovmf} ]] || { echo "error: ${ovmf} is missing (install edk2-ovmf)" >&2; exit 1; }
     qemu_args+=(
         -m 6144
+        -bios "${ovmf}"
         -boot "order=d,menu=off"
         -drive "file=${artifact},media=cdrom,readonly=on"
     )

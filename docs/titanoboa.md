@@ -91,3 +91,7 @@ work with a Titanoboa live ISO as-is.
    upstream README uses `@main`; Bluefin pins `840217d97b…` and uses the
    Justfile instead of the action.
 3. Keep the split self-extracting release (yes per earlier decision)?
+
+## Firmware
+
+The live ISO is UEFI-only: Titanoboa assembles a GPT disk with an EFI system partition and no BIOS El Torito image. Machines that boot legacy BIOS cannot use this ISO. The image keeps its stock initramfs for disk installs; the live initramfs is generated separately as `initramfs-live.img` and substituted when Titanoboa copies it.

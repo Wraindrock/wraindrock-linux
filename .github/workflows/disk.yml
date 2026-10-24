@@ -227,6 +227,7 @@ jobs:
           command -v mkfs.btrfs >/dev/null || missing+=(btrfs-progs)
           command -v qemu-system-x86_64 >/dev/null || missing+=(qemu-system-x86)
           command -v skopeo >/dev/null || missing+=(skopeo)
+          [ -f /usr/share/OVMF/OVMF_CODE.fd ] || missing+=(ovmf)
           if [ "${#missing[@]}" -gt 0 ]; then
             sudo apt-get update
             sudo apt-get install -y "${missing[@]}"
@@ -279,6 +280,9 @@ jobs:
           git -C /tmp/titanoboa fetch -q --depth 1 origin 5c457c3d0518bd17e754be0fd98a60d29d26abb4
           git -C /tmp/titanoboa checkout -q FETCH_HEAD
           sed -i 's|quay.io/fedora/fedora:latest|docker.io/library/fedora:latest|g' /tmp/titanoboa/main.sh
+          # The image keeps its stock initramfs for disk installs; the live
+          # ISO must use the separate dmsquash-live initramfs.
+          sed -i 's|initramfs\.img|initramfs-live.img|g' /tmp/titanoboa/build_iso.sh
           mkdir -p output/bootiso
           sudo env TITANOBOA_CTR_IMAGE="${{ inputs.channel_ref }}" \
             TITANOBOA_OUTPUT_DIR="${PWD}/output/bootiso" bash /tmp/titanoboa/main.sh

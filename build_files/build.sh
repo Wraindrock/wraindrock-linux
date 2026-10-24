@@ -488,10 +488,13 @@ dnf5 install -y --setopt=install_weak_deps=False \
     dracut-live livesys-scripts grub2-efi-x64-cdboot grub2-pc-modules
 kver="$(ls -1 /usr/lib/modules | head -n 1)"
 [[ -n ${kver} ]] || die "no kernel found under /usr/lib/modules"
+# Keep the stock initramfs for disk installs, and generate a separate
+# dmsquash-live initramfs for the live ISO. Overwriting initramfs.img made
+# bootc-installed qcow2 images fail to switch root.
 dracut --force --zstd --reproducible --no-hostonly \
     --add "dmsquash-live dmsquash-live-autooverlay" \
-    "/usr/lib/modules/${kver}/initramfs.img" "${kver}"
-[[ -s /usr/lib/modules/${kver}/initramfs.img ]] || die "live initramfs was not generated"
+    "/usr/lib/modules/${kver}/initramfs-live.img" "${kver}"
+[[ -s /usr/lib/modules/${kver}/initramfs-live.img ]] || die "live initramfs was not generated"
 systemctl enable livesys.service livesys-late.service >/dev/null
 
 install -d /boot/efi
@@ -617,8 +620,7 @@ cat > /usr/share/wraindrock/delta.json <<EOF
       "/usr/share/rpm/rpmdb.sqlite",
       "/etc/dconf/db/distro",
       "/opt",
-      "/usr/lib/modules/${kver}/initramfs.img"
-    ],
+      ],
     "added": [
       "/usr/share/glib-2.0/schemas/zzzz-wraindrock.gschema.override",
       "/usr/libexec/wraindrock-hostname-seed",
@@ -686,7 +688,8 @@ cat > /usr/share/wraindrock/delta.json <<EOF
       "/usr/share/pixmaps/io.github.ronb1964.TuxTalk.png",
       "/usr/share/licenses/tuxtalk/LICENSE",
       "/usr/share/licenses/tuxtalk/THIRD_PARTY_LICENSES.md",
-      "/opt/talktype"
+      "/opt/talktype",
+    "/usr/lib/modules/${kver}/initramfs-live.img"
     ]
   }
 }

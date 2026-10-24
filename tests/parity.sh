@@ -255,8 +255,7 @@ assert modified[:6] == [
     "/etc/dconf/db/distro",
     "/opt",
 ], modified
-assert len(modified) == 7, modified
-assert re.fullmatch(r"/usr/lib/modules/[^/]+/initramfs.img", modified[6]), modified[6]
+assert len(modified) == 6, modified
 expected_added = {
     "/usr/share/glib-2.0/schemas/zzzz-wraindrock.gschema.override",
     "/usr/share/wraindrock/base-os-release",
@@ -326,7 +325,14 @@ expected_added = {
     "/usr/share/licenses/tuxtalk/THIRD_PARTY_LICENSES.md",
     "/opt/talktype",
 }
-assert set(delta["files"]["added"]) == expected_added, delta["files"]["added"]
+# The live initramfs path carries the kernel version, so match it by shape.
+declared_added = set(delta["files"]["added"])
+dynamic = {
+    path for path in declared_added
+    if re.fullmatch(r"/usr/lib/modules/[^/]+/initramfs-live\.img", path)
+}
+assert len(dynamic) == 1, declared_added
+assert declared_added - dynamic == expected_added, declared_added
 PY
 then
     pass "delta manifest matches the image"
@@ -640,7 +646,7 @@ else
     fail "live-session units are not enabled"
 fi
 kver_in_image="$(in_image "${IMAGE}" 'ls -1 /usr/lib/modules | head -n 1')"
-if in_image "${IMAGE}" "lsinitrd /usr/lib/modules/${kver_in_image}/initramfs.img 2>/dev/null | grep -q dmsquash-live"; then
+if in_image "${IMAGE}" "lsinitrd /usr/lib/modules/${kver_in_image}/initramfs-live.img 2>/dev/null | grep -q dmsquash-live"; then
     pass "live initramfs contains the dmsquash-live module"
 else
     fail "live initramfs does not contain dmsquash-live"
