@@ -88,14 +88,16 @@ jobs:
           oras version
 
       - name: Mount podman storage on a loopback btrfs
-        # The runner's root filesystem is too small for image build tree +
-        # podman storage + qcow2 + ISO at once. /mnt has ~70 GB free.
+        # BIB keeps the pulled image, the uncompressed layer copies and the
+        # deployment in this store; 60 GB was exhausted once the Flatpaks were
+        # baked in. The runner root has ~119 GB free, and the outputs live
+        # there too, so use 90 GB for the store.
         run: |
           set -euo pipefail
           img=/mnt/podman-storage.img
           if [ ! -d /mnt ]; then img=/var/tmp/podman-storage.img; fi
           sudo mkdir -p /var/lib/containers/storage
-          sudo truncate -s 60G "$img"
+          sudo truncate -s 90G "$img"
           sudo mkfs.btrfs -f "$img"
           sudo podman system reset --force || true
           sudo systemctl stop podman.service podman.socket 2>/dev/null || true
