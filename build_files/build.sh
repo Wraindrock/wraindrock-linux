@@ -485,7 +485,7 @@ done
 # the EFI binaries, the iso.yaml, and an explicitly-gated autoinstall unit.
 say "preparing the Titanoboa live ISO contract"
 dnf5 install -y --setopt=install_weak_deps=False \
-    dracut-live livesys-scripts grub2-efi-x64-cdboot
+    dracut-live livesys-scripts grub2-efi-x64-cdboot grub2-pc-modules
 kver="$(ls -1 /usr/lib/modules | head -n 1)"
 [[ -n ${kver} ]] || die "no kernel found under /usr/lib/modules"
 dracut --force --zstd --reproducible --no-hostonly \

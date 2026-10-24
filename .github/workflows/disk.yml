@@ -86,12 +86,14 @@ jobs:
 
       - name: Mount podman storage on a loopback btrfs
         # Only the qcow2 build runs here: image store + BIB copy + deployment.
+        # 55 GB was exhausted while importing the ostree deployment; the image
+        # unpacks to roughly 25 GB and BIB keeps a second copy.
         run: |
           set -euo pipefail
           img=/mnt/podman-storage.img
           if [ ! -d /mnt ]; then img=/var/tmp/podman-storage.img; fi
           sudo mkdir -p /var/lib/containers/storage
-          sudo truncate -s 55G "$img"
+          sudo truncate -s 75G "$img"
           sudo mkfs.btrfs -f "$img"
           sudo podman system reset --force || true
           sudo systemctl stop podman.service podman.socket 2>/dev/null || true
