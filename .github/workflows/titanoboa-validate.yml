@@ -34,11 +34,15 @@ jobs:
       - name: Pull the images
         run: |
           set -euxo pipefail
-          sudo podman pull "${IMAGE_REF}"
-          for attempt in 1 2 3; do
-            sudo podman pull quay.io/fedora/fedora:latest && break
-            sleep 10
+          ok=0
+          for attempt in 1 2 3 4 5; do
+            if sudo podman pull "${IMAGE_REF}" && sudo podman pull quay.io/fedora/fedora:latest; then
+              ok=1
+              break
+            fi
+            sleep 15
           done
+          [[ ${ok} == 1 ]] || { echo "::error:could not pull the images"; exit 1; }
       - name: Build the ISO with Titanoboa
         id: build
         run: |
@@ -46,7 +50,10 @@ jobs:
           mkdir -p "${RUNNER_TEMP}/iso"
           iso="$(TITANOBOA_CTR_IMAGE="${IMAGE_REF}" \
                  TITANOBOA_OUTPUT_DIR="${RUNNER_TEMP}/iso" \
-                 "${GITHUB_WORKSPACE}/titanoboa/main.sh")"
+                 "${GITHUB_WORKSPACE}/titanoboa/main.sh")" || {
+            echo "::error:Titanoboa failed"
+            exit 1
+          }
           [[ -f "${iso}" ]] || { echo "::error:no ISO at ${iso}"; exit 1; }
           echo "iso-dest=${iso}" >> "$GITHUB_OUTPUT"
       - name: Verify the ISO
