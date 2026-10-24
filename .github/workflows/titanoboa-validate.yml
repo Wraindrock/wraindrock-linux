@@ -41,12 +41,17 @@ jobs:
           set -euxo pipefail
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends podman xorriso
+      - name: Use Docker Hub for the builder image
+        run: |
+          set -euxo pipefail
+          sed -i 's|quay.io/fedora/fedora:latest|docker.io/library/fedora:latest|g' titanoboa/main.sh
+          grep -F 'docker.io/library/fedora:latest' titanoboa/main.sh
       - name: Pull the images
         run: |
           set -euxo pipefail
           ok=0
           for attempt in 1 2 3 4 5; do
-            if sudo podman pull "${IMAGE_REF}" && sudo podman pull quay.io/fedora/fedora:latest; then
+            if sudo podman pull "${IMAGE_REF}" && sudo podman pull docker.io/library/fedora:latest; then
               ok=1
               break
             fi
