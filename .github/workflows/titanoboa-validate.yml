@@ -26,18 +26,18 @@ jobs:
         run: sudo podman pull "${IMAGE_REF}"
       - name: Prepare the ISO destination
         run: |
-          mkdir -p output
-          : > output/Wraindrock-Live.iso
+          mkdir -p "${RUNNER_TEMP}/iso"
+          : > "${RUNNER_TEMP}/iso/Wraindrock-Live.iso"
       - name: Build the ISO with Titanoboa
         id: build
         uses: ublue-os/titanoboa@5c457c3d0518bd17e754be0fd98a60d29d26abb4
         with:
           image-ref: ${{ env.IMAGE_REF }}
-          iso-dest: ${{ github.workspace }}/output/Wraindrock-Live.iso
+          iso-dest: ${{ runner.temp }}/iso/Wraindrock-Live.iso
       - name: Verify the ISO
         run: |
           set -euxo pipefail
-          iso="${{ steps.build.outputs.iso-dest }}"
+          iso="${{ runner.temp }}/iso/Wraindrock-Live.iso"
           ls -l "${iso}"
           xorriso -indev "${iso}" -find / -type f 2>/dev/null | grep -E '^/EFI/BOOT/(BOOTX64|grubx64|mmx64)\.efi$|^/images/pxeboot/(vmlinuz|initrd\.img)$'
           sha256sum "${iso}" | tee "${iso}.sha256"
@@ -45,5 +45,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: titanoboa-validate-iso
-          path: output/
+          path: ${{ runner.temp }}/iso/
           retention-days: 3
