@@ -22,8 +22,14 @@ jobs:
           set -euxo pipefail
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends podman xorriso
-      - name: Pull the image
-        run: sudo podman pull "${IMAGE_REF}"
+      - name: Pull the images
+        run: |
+          set -euxo pipefail
+          sudo podman pull "${IMAGE_REF}"
+          for attempt in 1 2 3; do
+            sudo podman pull quay.io/fedora/fedora:latest && break
+            sleep 10
+          done
       - name: Prepare the ISO destination
         run: |
           mkdir -p "${RUNNER_TEMP}/iso"
