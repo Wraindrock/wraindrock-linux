@@ -95,7 +95,7 @@ jobs:
           img=/mnt/podman-storage.img
           if [ ! -d /mnt ]; then img=/var/tmp/podman-storage.img; fi
           sudo mkdir -p /var/lib/containers/storage
-          sudo truncate -s 40G "$img"
+          sudo truncate -s 60G "$img"
           sudo mkfs.btrfs -f "$img"
           sudo podman system reset --force || true
           sudo systemctl stop podman.service podman.socket 2>/dev/null || true
