@@ -11,3 +11,6 @@ grub2:
     - name: "Wraindrock Live (Safe Graphics)"
       linux: "/images/pxeboot/vmlinuz quiet rhgb root=live:CDLABEL=Wraindrock-Live enforcing=0 rd.live.image nomodeset"
       initrd: "/images/pxeboot/initrd.img"
+    - name: "Wraindrock Autoinstall (edit to add wraindrock.disk=)"
+      linux: "/images/pxeboot/vmlinuz quiet rhgb root=live:CDLABEL=Wraindrock-Live enforcing=0 rd.live.image wraindrock.autoinstall=1 wraindrock.disk="
+      initrd: "/images/pxeboot/initrd.img"

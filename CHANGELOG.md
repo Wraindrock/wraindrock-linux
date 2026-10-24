@@ -5,6 +5,19 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 image versions are the upstream channel plus an immutable build tag, see
 [docs/architecture.md](docs/architecture.md).
 
+## [0.22.0] - 2026-10-24
+
+### Added
+
+- The image now carries the container-native ISO contract for
+  [Titanoboa](https://github.com/ublue-os/titanoboa): `/usr/lib/bootc-image-builder/iso.yaml`
+  (Live, Safe Graphics, Autoinstall entries), a `dmsquash-live` initramfs,
+  livesys units, EFI binaries staged in `/boot/efi`, and the live `/var/tmp`
+  mount. A gated autoinstall unit only acts on
+  `wraindrock.autoinstall=1` **and** an explicit
+  `wraindrock.disk=/dev/...`; it never guesses a disk and refuses mounted
+  devices.
+
 ## [0.21.6] - 2026-10-24
 
 ### Removed

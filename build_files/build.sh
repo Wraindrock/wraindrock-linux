@@ -527,6 +527,44 @@ done
 [[ ! -e /usr/share/applications/firefox.desktop ]] || die "Firefox desktop entry is still present"
 [[ ! -e /usr/share/applications/org.gnome.Software.desktop ]] || die "GNOME Software desktop entry is still present"
 
+
+# --- 3i. Titanoboa live ISO contract ---------------------------------------
+# The ISO is built by Titanoboa straight from this image, so the live-boot
+# pieces must be inside the image: a dmsquash-live initramfs, livesys units,
+# the EFI binaries, the iso.yaml, and an explicitly-gated autoinstall unit.
+say "preparing the Titanoboa live ISO contract"
+dnf5 install -y --setopt=install_weak_deps=False \
+    dracut-live livesys-scripts grub2-efi-x64-cdboot
+kver="$(ls -1 /usr/lib/modules | head -n 1)"
+[[ -n ${kver} ]] || die "no kernel found under /usr/lib/modules"
+dracut --force --zstd --reproducible --no-hostonly \
+    --add "dmsquash-live dmsquash-live-autooverlay" \
+    "/usr/lib/modules/${kver}/initramfs.img" "${kver}"
+[[ -s /usr/lib/modules/${kver}/initramfs.img ]] || die "live initramfs was not generated"
+systemctl enable livesys.service livesys-late.service >/dev/null
+
+install -d /boot/efi
+cp -a /usr/lib/efi/*/*/EFI /boot/efi/
+[[ -f /boot/efi/EFI/fedora/shimx64.efi ]] || die "shim was not copied to /boot/efi"
+[[ -f /boot/efi/EFI/fedora/grubx64.efi ]] || die "GRUB EFI binary was not copied to /boot/efi"
+cp -f /boot/efi/EFI/fedora/grubx64.efi /boot/efi/EFI/BOOT/fbx64.efi
+
+install -D -m 0644 "${script_dir}/software/var-tmp.mount" \
+    /usr/lib/systemd/system/var-tmp.mount
+systemctl enable var-tmp.mount >/dev/null
+install -D -m 0755 "${script_dir}/software/wraindrock-autoinstall" \
+    /usr/libexec/wraindrock-autoinstall
+install -D -m 0644 "${script_dir}/software/wraindrock-autoinstall.service" \
+    /usr/lib/systemd/system/wraindrock-autoinstall.service
+systemctl enable wraindrock-autoinstall.service >/dev/null
+
+install -D -m 0644 "${script_dir}/iso/iso.yaml" \
+    /usr/lib/bootc-image-builder/iso.yaml
+grep -qx 'label: "Wraindrock-Live"' /usr/lib/bootc-image-builder/iso.yaml \
+    || die "iso.yaml label is wrong"
+grep -q 'wraindrock.autoinstall=1' /usr/lib/bootc-image-builder/iso.yaml \
+    || die "iso.yaml is missing the autoinstall entry"
+
 rpm_current_set_file="$(mktemp /tmp/wraindrock-current-rpm-set.XXXXXX)"
 rpm_added_file="$(mktemp /tmp/wraindrock-rpm-added.XXXXXX)"
 rpm_removed_file="$(mktemp /tmp/wraindrock-rpm-removed.XXXXXX)"
@@ -627,7 +665,8 @@ cat > /usr/share/wraindrock/delta.json <<EOF
       "/usr/share/glib-2.0/schemas/gschemas.compiled",
       "/usr/share/rpm/rpmdb.sqlite",
       "/etc/dconf/db/distro",
-      "/opt"
+      "/opt",
+      "/usr/lib/modules/${kver}/initramfs.img"
     ],
     "added": [
       "/usr/share/glib-2.0/schemas/zzzz-wraindrock.gschema.override",
@@ -669,6 +708,16 @@ cat > /usr/share/wraindrock/delta.json <<EOF
       "/usr/share/ublue-os/flatpak-overrides/io.github.kolunmi.Bazaar",
       "/usr/lib/tmpfiles.d/bazaar-flatpak.conf",
       "/etc/flatpak/remotes.d/flathub.flatpakrepo",
+      "/usr/lib/bootc-image-builder/iso.yaml",
+      "/usr/libexec/wraindrock-autoinstall",
+      "/usr/lib/systemd/system/wraindrock-autoinstall.service",
+      "/etc/systemd/system/multi-user.target.wants/wraindrock-autoinstall.service",
+      "/usr/lib/systemd/system/var-tmp.mount",
+      "/etc/systemd/system/local-fs.target.wants/var-tmp.mount",
+      "/etc/systemd/system/multi-user.target.wants/livesys.service",
+      "/etc/systemd/system/multi-user.target.wants/livesys-late.service",
+      "/boot/efi/EFI/fedora",
+      "/boot/efi/EFI/BOOT",
       "/usr/bin/ipp-duplexd",
       "/usr/bin/ipp-duplexd-setup",
       "/usr/lib/systemd/user/ipp-duplexd.service",

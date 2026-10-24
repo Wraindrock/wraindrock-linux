@@ -629,6 +629,22 @@ else
     pass "no credential-looking strings"
 fi
 
+for f in build_files/iso/iso.yaml build_files/software/wraindrock-autoinstall \
+    build_files/software/wraindrock-autoinstall.service build_files/software/var-tmp.mount; do
+    if [[ -s ${f} ]]; then
+        pass "Titanoboa contract file exists: ${f}"
+    else
+        fail "Titanoboa contract file missing: ${f}"
+    fi
+done
+for needle in 'dracut-live' 'dmsquash-live' 'wraindrock.autoinstall=1' \
+    '/usr/lib/bootc-image-builder/iso.yaml' 'grub2-efi-x64-cdboot'; do
+    if grep -Fq -- "${needle}" build_files/build.sh; then
+        pass "build.sh prepares the live ISO contract: ${needle}"
+    else
+        fail "build.sh is missing the live ISO contract step: ${needle}"
+    fi
+done
 if grep -Fq 'glib-compile-schemas "${schemas_dir}"' build_files/build.sh; then
     pass "build.sh compiles per-extension schemas"
 else

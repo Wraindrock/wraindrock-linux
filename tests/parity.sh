@@ -217,6 +217,7 @@ fi
 [[ -s ${tmpdir}/delta.json ]] || fail "delta manifest is missing"
 if python3 - "${tmpdir}/delta.json" "${tmpdir}/image-os-release" <<'PY'
 import json
+import re
 import sys
 
 with open(sys.argv[1], encoding="utf-8") as handle:
@@ -245,14 +246,17 @@ assert added == {}, added
 for key, value in changed.items():
     assert image[key] == value, f"delta says {key}={value!r}, image has {image[key]!r}"
 
-assert delta["files"]["modified"] == [
+modified = delta["files"]["modified"]
+assert modified[:6] == [
     "/usr/lib/os-release",
     "/etc/system-release",
     "/usr/share/glib-2.0/schemas/gschemas.compiled",
     "/usr/share/rpm/rpmdb.sqlite",
     "/etc/dconf/db/distro",
     "/opt",
-], delta["files"]
+], modified
+assert len(modified) == 7, modified
+assert re.fullmatch(r"/usr/lib/modules/[^/]+/initramfs.img", modified[6]), modified[6]
 expected_added = {
     "/usr/share/glib-2.0/schemas/zzzz-wraindrock.gschema.override",
     "/usr/share/wraindrock/base-os-release",
@@ -293,6 +297,16 @@ expected_added = {
     "/usr/share/ublue-os/flatpak-overrides/io.github.kolunmi.Bazaar",
     "/usr/lib/tmpfiles.d/bazaar-flatpak.conf",
     "/etc/flatpak/remotes.d/flathub.flatpakrepo",
+    "/usr/lib/bootc-image-builder/iso.yaml",
+    "/usr/libexec/wraindrock-autoinstall",
+    "/usr/lib/systemd/system/wraindrock-autoinstall.service",
+    "/etc/systemd/system/multi-user.target.wants/wraindrock-autoinstall.service",
+    "/usr/lib/systemd/system/var-tmp.mount",
+    "/etc/systemd/system/local-fs.target.wants/var-tmp.mount",
+    "/etc/systemd/system/multi-user.target.wants/livesys.service",
+    "/etc/systemd/system/multi-user.target.wants/livesys-late.service",
+    "/boot/efi/EFI/fedora",
+    "/boot/efi/EFI/BOOT",
     "/usr/bin/ipp-duplexd",
     "/usr/bin/ipp-duplexd-setup",
     "/usr/lib/systemd/user/ipp-duplexd.service",
@@ -601,6 +615,34 @@ if in_image "${IMAGE}" 'grep -aq 'Accessories' /etc/dconf/db/distro'; then
     pass "app folders are compiled into the distro dconf database"
 else
     fail "compiled distro dconf database does not contain the app folders"
+fi
+
+# --- Titanoboa live ISO contract -------------------------------------------
+if in_image "${IMAGE}" 'test -s /usr/lib/bootc-image-builder/iso.yaml && grep -qx "label: \"Wraindrock-Live\"" /usr/lib/bootc-image-builder/iso.yaml'; then
+    pass "Titanoboa iso.yaml is installed with the Wraindrock-Live label"
+else
+    fail "Titanoboa iso.yaml is missing or has the wrong label"
+fi
+if in_image "${IMAGE}" 'grep -qx "ConditionKernelCommandLine=wraindrock.autoinstall=1" /usr/lib/systemd/system/wraindrock-autoinstall.service && test -x /usr/libexec/wraindrock-autoinstall'; then
+    pass "autoinstall is gated on wraindrock.autoinstall=1"
+else
+    fail "autoinstall unit or script is missing"
+fi
+if in_image "${IMAGE}" 'test -f /boot/efi/EFI/fedora/shimx64.efi && test -f /boot/efi/EFI/fedora/grubx64.efi && test -f /boot/efi/EFI/BOOT/fbx64.efi'; then
+    pass "EFI binaries are staged in /boot/efi for the ISO contract"
+else
+    fail "EFI binaries are missing from /boot/efi"
+fi
+if in_image "${IMAGE}" 'systemctl is-enabled livesys.service livesys-late.service var-tmp.mount wraindrock-autoinstall.service >/dev/null'; then
+    pass "live-session units are enabled"
+else
+    fail "live-session units are not enabled"
+fi
+kver_in_image="$(in_image "${IMAGE}" 'ls -1 /usr/lib/modules | head -n 1')"
+if in_image "${IMAGE}" "lsinitrd /usr/lib/modules/${kver_in_image}/initramfs.img 2>/dev/null | grep -q dmsquash-live"; then
+    pass "live initramfs contains the dmsquash-live module"
+else
+    fail "live initramfs does not contain dmsquash-live"
 fi
 
 # Appearance customisation is deliberately absent: the wallpaper must stay the

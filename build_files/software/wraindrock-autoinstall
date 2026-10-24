@@ -1,0 +1,48 @@
+#!/usr/bin/bash
+# Unattended install from the Titanoboa live session.
+# Requires BOTH kernel arguments:
+#   wraindrock.autoinstall=1
+#   wraindrock.disk=/dev/nvme0n1
+# The disk is never guessed: a missing or implausible value aborts the unit and
+# leaves the user in the live desktop.
+set -euo pipefail
+
+say() { printf 'wraindrock-autoinstall: %s\n' "$*" | tee -a /dev/console; }
+
+cmdline="$(< /proc/cmdline)"
+getarg() {
+    local key=$1 value
+    for value in ${cmdline}; do
+        case ${value} in
+            "${key}="*) printf '%s\n' "${value#*=}"; return 0 ;;
+        esac
+    done
+    return 1
+}
+
+disk="$(getarg wraindrock.disk || true)"
+if [[ -z ${disk} ]]; then
+    say "refusing to guess a disk; add wraindrock.disk=/dev/<disk> to the kernel command line"
+    exit 0
+fi
+if [[ ${disk} != /dev/* || ! -b ${disk} ]]; then
+    say "not a block device: ${disk}"
+    exit 1
+fi
+if [[ "$(lsblk -ndo TYPE "${disk}")" != "disk" ]]; then
+    say "not a whole disk: ${disk}"
+    exit 1
+fi
+if [[ -n "$(lsblk -nlo MOUNTPOINT "${disk}" | tr -d '[:space:]')" ]]; then
+    say "refusing: ${disk} has mounted partitions"
+    exit 1
+fi
+
+imgref="${WRAINDROCK_AUTOINSTALL_IMGREF:-ghcr.io/wraindrock/wraindrock-linux:44}"
+say "installing ${imgref} to ${disk}; this erases the disk"
+bootc install to-disk --wipe \
+    --source-imgref "docker://${imgref}" \
+    --target-imgref "${imgref}" \
+    "${disk}"
+say "install finished; rebooting"
+systemctl reboot

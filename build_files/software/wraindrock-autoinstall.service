@@ -1,0 +1,14 @@
+[Unit]
+Description=Wraindrock unattended install (live media)
+ConditionKernelCommandLine=wraindrock.autoinstall=1
+After=local-fs.target network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/libexec/wraindrock-autoinstall
+StandardOutput=journal+console
+StandardError=journal+console
+
+[Install]
+WantedBy=multi-user.target
