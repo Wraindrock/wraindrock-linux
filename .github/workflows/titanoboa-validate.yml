@@ -24,6 +24,10 @@ jobs:
           sudo apt-get install -y --no-install-recommends podman xorriso
       - name: Pull the image
         run: sudo podman pull "${IMAGE_REF}"
+      - name: Prepare the ISO destination
+        run: |
+          mkdir -p output
+          : > output/Wraindrock-Live.iso
       - name: Build the ISO with Titanoboa
         id: build
         uses: ublue-os/titanoboa@5c457c3d0518bd17e754be0fd98a60d29d26abb4
