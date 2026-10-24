@@ -1,0 +1,13 @@
+# Container-native ISO contract for Titanoboa.
+# Installed into the image at /usr/lib/bootc-image-builder/iso.yaml.
+label: "Wraindrock-Live"
+grub2:
+  default: 0
+  timeout: 10
+  entries:
+    - name: "Wraindrock Live"
+      linux: "/images/pxeboot/vmlinuz quiet rhgb root=live:CDLABEL=Wraindrock-Live enforcing=0 rd.live.image"
+      initrd: "/images/pxeboot/initrd.img"
+    - name: "Wraindrock Live (Safe Graphics)"
+      linux: "/images/pxeboot/vmlinuz quiet rhgb root=live:CDLABEL=Wraindrock-Live enforcing=0 rd.live.image nomodeset"
+      initrd: "/images/pxeboot/initrd.img"
