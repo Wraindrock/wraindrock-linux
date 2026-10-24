@@ -76,7 +76,7 @@ jobs:
                   build=false
                   while IFS= read -r path; do
                     case "${path}" in
-                      docs/*|README.md|CHANGELOG.md|CONTRIBUTING.md|SECURITY.md|LICENSE|.gitignore|.dockerignore|.editorconfig|tools/*|tests/*) ;;
+                      docs/*|README.md|CHANGELOG.md|CONTRIBUTING.md|SECURITY.md|LICENSE|.gitignore|.dockerignore|.editorconfig|tools/*|tests/*|.github/workflows/disk.yml|.github/workflows/release-iso.yml|.github/workflows/titanoboa-validate.yml|.github/workflows/upstream-watch.yml) ;;
                       *) build=true; break ;;
                     esac
                   done <<< "${changed}"

@@ -7,6 +7,7 @@
 #
 #   tests/vm-test.sh qcow2 PATH [--timeout 300]
 #   tests/vm-test.sh iso   PATH [--timeout 1800] [--disk-size 30G]
+#   tests/vm-test.sh live  PATH [--timeout 1200]
 #
 # For an ISO the installer boots once, then the firmware boots the installed
 # disk. The ISO menu defaults to the interactive installer, so the test presses
@@ -45,8 +46,8 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-if [[ "${mode}" != qcow2 && "${mode}" != iso ]]; then
-    echo "usage: $0 qcow2|iso PATH [--timeout SECONDS] [--out DIR] [--disk-size SIZE]" >&2
+if [[ "${mode}" != qcow2 && "${mode}" != iso && "${mode}" != live ]]; then
+    echo "usage: $0 qcow2|iso|live PATH [--timeout SECONDS] [--out DIR] [--disk-size SIZE]" >&2
     exit 2
 fi
 if [[ ! -f "${artifact}" ]]; then
@@ -58,7 +59,9 @@ for tool in qemu-system-x86_64 qemu-img python3; do
 done
 
 if [[ -z "${timeout}" || "${timeout}" == 0 ]]; then
-    if [[ "${mode}" == iso ]]; then timeout=1800; else timeout=300; fi
+    if [[ "${mode}" == iso ]]; then timeout=1800
+    elif [[ "${mode}" == live ]]; then timeout=1200
+    else timeout=300; fi
 fi
 if [[ -z "${out_dir}" ]]; then
     out_dir="$(mktemp -d "${TMPDIR:-/tmp}/wraindrock-vm.XXXXXX")"
@@ -117,15 +120,24 @@ if [[ "${mode}" == qcow2 ]]; then
     boot_disk="${workdir}/disk.qcow2"
     cp --sparse=always -- "${artifact}" "${boot_disk}"
     qemu_args+=(-boot "order=c,menu=off" -drive "file=${boot_disk},if=virtio,format=qcow2")
-else
+elif [[ "${mode}" == iso ]]; then
     disk="${out_dir}/disk.qcow2"
     qemu-img create -f qcow2 "${disk}" "${disk_size}" >/dev/null
     # Boot the installer once; after its reboot the firmware falls back to the
     # disk, so the install is not repeated forever.
     qemu_args+=(
+        -m 4096
         -boot "once=d,menu=off"
         -drive "file=${artifact},media=cdrom,readonly=on"
         -drive "file=${disk},if=virtio,format=qcow2"
+    )
+else
+    # A live ISO boots entirely from the medium; give it room for the squashfs
+    # and the writable overlay.
+    qemu_args+=(
+        -m 6144
+        -boot "order=d,menu=off"
+        -drive "file=${artifact},media=cdrom,readonly=on"
     )
 fi
 
@@ -285,6 +297,21 @@ while :; do
         else
             screen_hits=0
         fi
+    elif [[ "${mode}" == live && -s "${frame}" ]]; then
+        # The live image auto-logs in to a full desktop; a bright frame is the
+        # signal that the graphical session is up.
+        mean=$(python3 "${script_dir}/png-stats.py" "${frame}" | sed 's/mean=//; s/,.*//')
+        if python3 -c "import sys; sys.exit(0 if float('${mean}') > 120 else 1)" 2>/dev/null; then
+            screen_hits=$((screen_hits + 1))
+            echo "graphical live session (mean=${mean}, hit ${screen_hits}/2)"
+            if [[ "${screen_hits}" -ge 2 ]]; then
+                screen_ok=1
+                echo "detected the live desktop; stopping"
+                break
+            fi
+        else
+            screen_hits=0
+        fi
     fi
     sleep 20
     # A serial getty carries the kernel hostname even when nobody logs in; on
@@ -315,12 +342,12 @@ if [[ "${best_size}" -le 30000 ]]; then
 fi
 echo "PASS: captured a non-trivial frame; inspect ${best_file}"
 
-if [[ "${mode}" == iso ]]; then
+if [[ "${mode}" == iso || "${mode}" == live ]]; then
     if [[ "${screen_ok}" != 1 ]]; then
-        echo "FAIL: the installed system never reached a graphical welcome/login screen" >&2
+        echo "FAIL: the ${mode} image never reached a graphical screen" >&2
         exit 1
     fi
-    echo "PASS: the ISO installer finished and the installed system reached its graphical screen"
+    echo "PASS: the ${mode} image reached its graphical screen"
     exit 0
 fi
 

@@ -526,15 +526,14 @@ else
 fi
 if [[ -r .github/workflows/disk.yml ]]; then
     pass "disk workflow exists"
-    for needle in 'bootc-image-builder' '--type anaconda-iso' '--type qcow2' \
+    for needle in 'bootc-image-builder' '--type qcow2' \
                   'SHA256SUMS' 'sha256sum' 'BIB_IMAGE' \
                   'wraindrock-linux-disk' 'oras push' 'oras manifest fetch' \
                   'immutable artifact tags are never overwritten' \
-                  'channel_ref' 'CHANNEL_REF=' 'osbuild-base.ks' \
-                  'tests/iso-menu.sh' \
-                  'tests/iso-interactive-shots.sh' \
-                  'Install Wraindrock (interactive, choose disks)' \
-                  'vm-interactive' \
+                  'channel_ref' 'titanoboa.git' 'TITANOBOA_CTR_IMAGE' \
+                  'TITANOBOA_OUTPUT_DIR' '5c457c3d0518bd17e754be0fd98a60d29d26abb4' \
+                  'LiveOS/squashfs.img' 'Wraindrock Autoinstall' \
+                  'wraindrock.autoinstall=1' 'vm-live' \
                   'f27adb935022d94df8dc77719c322dda592c78a0d57a6f7dcdd8d900b248c454'; do
         if grep -Fq -e "${needle}" .github/workflows/disk.yml; then
             pass "disk workflow contains ${needle}"

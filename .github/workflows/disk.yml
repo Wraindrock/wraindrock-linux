@@ -45,7 +45,7 @@ env:
 
 jobs:
   disk:
-    name: Build qcow2 + installer ISO
+    name: Build qcow2 + live ISO
     runs-on: ubuntu-24.04
     timeout-minutes: 120
 
@@ -155,38 +155,28 @@ jobs:
           qcow2=$(find output -type f -name '*.qcow2' | head -1)
           [ -n "${qcow2}" ] || { echo "::error::no qcow2 produced"; exit 1; }
 
-      - name: Build installer ISO
+      - name: Build live ISO with Titanoboa
         run: |
           set -euo pipefail
-          sudo podman run --rm --privileged \
-            --security-opt label=type:unconfined_t \
-            -v /var/lib/containers/storage:/var/lib/containers/storage \
-            -v "${PWD}/output:/output" \
-            "${BIB_IMAGE}" \
-            build --output /output --chown "$(id -u):$(id -g)" \
-            --rootfs btrfs --use-librepo=True \
-            --type anaconda-iso "${{ inputs.channel_ref }}"
-          iso=$(find output -type f -name '*.iso' | head -1)
-          [ -n "${iso}" ] || { echo "::error::no ISO produced"; exit 1; }
-          # Fedora-style live media name, not BIB's generic install.iso.
-          target="$(dirname "${iso}")/Wraindrock-Live.iso"
-          if [ "${iso}" != "${target}" ]; then
-            mv -f "${iso}" "${target}"
-          fi
-          echo "ISO: ${target}"
-
-      - name: Add the interactive/unattended boot-menu choice
-        # bootc-image-builder always injects a kickstart, which erases the first
-        # disk without asking. Remaster the ISO so the default entry starts the
-        # interactive installer (a partial kickstart only supplies the payload
-        # location) and the unattended entry stays an explicit choice.
-        run: |
-          set -euo pipefail
-          # The podman storage loopback is no longer needed once the ISO exists.
-          sudo umount /var/lib/containers/storage 2>/dev/null || true
-          sudo rm -f /mnt/podman-storage.img /var/tmp/podman-storage.img
+          # The image carries the container-native ISO contract
+          # (/usr/lib/bootc-image-builder/iso.yaml plus a dmsquash-live
+          # initramfs); Titanoboa assembles it into a live ISO.
+          git clone -q --filter=blob:none https://github.com/ublue-os/titanoboa.git /tmp/titanoboa
+          git -C /tmp/titanoboa fetch -q --depth 1 origin 5c457c3d0518bd17e754be0fd98a60d29d26abb4
+          git -C /tmp/titanoboa checkout -q FETCH_HEAD
+          # quay.io/fedora/fedora:latest intermittently returns 503 to hosted
+          # runners; Docker Hub serves the same base image.
+          sed -i 's|quay.io/fedora/fedora:latest|docker.io/library/fedora:latest|g' /tmp/titanoboa/main.sh
+          sudo podman pull docker.io/library/fedora:latest
+          mkdir -p output/bootiso
+          sudo env TITANOBOA_CTR_IMAGE="${{ inputs.channel_ref }}" \
+            TITANOBOA_OUTPUT_DIR="${PWD}/output/bootiso" bash /tmp/titanoboa/main.sh
           iso=$(find output/bootiso -name '*.iso' -print -quit)
-          CHANNEL_REF="${{ inputs.channel_ref }}" bash tests/iso-menu.sh "${iso}"
+          [ -n "${iso}" ] || { echo "::error::no ISO produced"; exit 1; }
+          if [ "$(basename "${iso}")" != "Wraindrock-Live.iso" ]; then
+            mv -f "${iso}" "output/bootiso/Wraindrock-Live.iso"
+          fi
+          ls -lh output/bootiso/Wraindrock-Live.iso
 
       - name: Verify artifacts
         run: |
@@ -200,40 +190,34 @@ jobs:
           [ "${magic}" = "514649fb" ] || { echo "::error::bad qcow2 magic: ${magic}"; exit 1; }
           qemu-img info "${qcow2}" || true
 
-          # ISO: ISO9660 primary volume descriptor at 32769 ("CD001") and a
-          # bootable MBR signature.
+          # ISO: ISO9660 primary volume descriptor at 32769 and the live
+          # payload the Titanoboa contract must produce.
+          iso_size=$(stat -c %s "${iso}")
+          [ "${iso_size}" -gt 1073741824 ] || { echo "::error::ISO is too small: ${iso_size}"; exit 1; }
           iso_magic=$(dd if="${iso}" bs=1 skip=32769 count=5 status=none)
           [ "${iso_magic}" = "CD001" ] || { echo "::error::not an ISO9660 image"; exit 1; }
           mbr=$(dd if="${iso}" bs=1 skip=510 count=2 status=none | od -An -tx1 | tr -d ' \n')
           [ "${mbr}" = "55aa" ] || { echo "::error::ISO is not bootable (no 0x55aa MBR)"; exit 1; }
 
-          # Mount and look for the pieces the installer needs.
           sudo mkdir -p /mnt/iso
           sudo mount -o loop,ro "${iso}" /mnt/iso
           trap 'sudo umount /mnt/iso' EXIT
-          test -f /mnt/iso/EFI/BOOT/BOOTX64.EFI || { echo "::error::ISO has no EFI bootloader"; exit 1; }
-          test -d /mnt/iso/images || { echo "::error::ISO has no images/ payload"; exit 1; }
-          # The boot menu must offer the choice: interactive by default, plus one
-          # explicit unattended entry. Both entries use a kickstart now: the
-          # interactive one only points Anaconda at the bootc payload.
-          test -f /mnt/iso/interactive.ks || { echo "::error::ISO has no interactive kickstart"; exit 1; }
-          grep -Fq "${{ inputs.channel_ref }}" /mnt/iso/interactive.ks \
-            || { echo "::error::interactive kickstart does not track the channel ref"; exit 1; }
-          grep -Fq "${{ inputs.channel_ref }}" /mnt/iso/osbuild-base.ks \
-            || { echo "::error::unattended kickstart does not track the channel ref"; exit 1; }
-          for menu in /mnt/iso/EFI/BOOT/grub.cfg /mnt/iso/boot/grub2/grub.cfg; do
-            grep -Fq "Install Wraindrock (interactive, choose disks)" "${menu}" \
-              || { echo "::error::${menu} lacks the interactive entry"; exit 1; }
-            grep -Fq "Install Wraindrock - erase first disk (unattended)" "${menu}" \
-              || { echo "::error::${menu} lacks the unattended entry"; exit 1; }
-            [ "$(grep -cF 'inst.ks=' "${menu}")" = 2 ] \
-              || { echo "::error::${menu} must have exactly two kickstart entries"; exit 1; }
-            grep -Fq '/interactive.ks' "${menu}" \
-              || { echo "::error::${menu} does not use the interactive kickstart"; exit 1; }
-            grep -Fq '/osbuild.ks' "${menu}" \
-              || { echo "::error::${menu} does not use the unattended kickstart"; exit 1; }
+          for path in EFI/BOOT/BOOTX64.EFI EFI/fedora/grubx64.efi \
+                      images/pxeboot/vmlinuz images/pxeboot/initrd.img \
+                      LiveOS/squashfs.img boot/grub2/grub.cfg; do
+            test -f "/mnt/iso/${path}" || { echo "::error::ISO lacks ${path}"; exit 1; }
           done
-          find /mnt/iso/EFI /mnt/iso/images -maxdepth 2 -type f | sort | head -20
+          menu=/mnt/iso/boot/grub2/grub.cfg
+          grep -Fq 'Wraindrock Live' "${menu}" \
+            || { echo "::error::boot menu lacks the live entry"; exit 1; }
+          grep -Fq 'Wraindrock Live (Safe Graphics)' "${menu}" \
+            || { echo "::error::boot menu lacks the safe-graphics entry"; exit 1; }
+          grep -Fq 'Wraindrock Autoinstall' "${menu}" \
+            || { echo "::error::boot menu lacks the autoinstall entry"; exit 1; }
+          grep -Fq 'wraindrock.autoinstall=1' "${menu}" \
+            || { echo "::error::autoinstall entry lacks the kernel flag"; exit 1; }
+          grep -Fq 'wraindrock.disk=' "${menu}" \
+            || { echo "::error::autoinstall entry lacks the disk parameter"; exit 1; }
           sudo umount /mnt/iso
           trap - EXIT
 
@@ -242,16 +226,14 @@ jobs:
           cat output/SHA256SUMS
           ls -lh "${iso}" "${qcow2}"
 
-      - name: Boot the ISO under KVM and wait for the installed system
+      - name: Boot the live ISO under KVM and require the desktop
         if: inputs.vm_test
         run: |
           set -euo pipefail
-          # GitHub-hosted Linux runners expose /dev/kvm to the kvm group; the
-          # workflow user is not in it, so open it up for this job only.
           sudo chmod 666 /dev/kvm 2>/dev/null || true
           iso=$(find output/bootiso -name '*.iso' -print -quit)
-          tests/vm-test.sh iso "${iso}" --timeout 3000 --out "${RUNNER_TEMP}/vm-iso"
-          echo "screenshots: ${RUNNER_TEMP}/vm-iso"
+          tests/vm-test.sh live "${iso}" --timeout 1500 --out "${RUNNER_TEMP}/vm-live"
+          echo "screenshots: ${RUNNER_TEMP}/vm-live"
 
       - name: Boot the qcow2 under KVM and require the Wraindrock hostname
         if: inputs.vm_test
@@ -261,14 +243,6 @@ jobs:
           qcow2=$(find output/qcow2 -name '*.qcow2' -print -quit)
           tests/vm-test.sh qcow2 "${qcow2}" --timeout 900 --out "${RUNNER_TEMP}/vm-qcow2"
           echo "screenshots: ${RUNNER_TEMP}/vm-qcow2"
-
-      - name: Capture the interactive installer screens
-        if: inputs.vm_test
-        run: |
-          set -euo pipefail
-          sudo chmod 666 /dev/kvm 2>/dev/null || true
-          iso=$(find output/bootiso -name '*.iso' -print -quit)
-          tests/iso-interactive-shots.sh "${iso}" "${RUNNER_TEMP}/vm-interactive"
 
       - name: Publish disk artifacts to GHCR
         id: publish
@@ -365,10 +339,9 @@ jobs:
           name: wraindrock-${{ steps.image.outputs.version }}-vm-evidence
           # Keep the evidence small: the 30 GiB boot disk is not evidence.
           path: |
-            ${{ runner.temp }}/vm-iso/*.png
-            ${{ runner.temp }}/vm-iso/serial.log
-            ${{ runner.temp }}/vm-iso/qemu.log
-            ${{ runner.temp }}/vm-interactive/*.png
+            ${{ runner.temp }}/vm-live/*.png
+            ${{ runner.temp }}/vm-live/serial.log
+            ${{ runner.temp }}/vm-live/qemu.log
             ${{ runner.temp }}/vm-qcow2/*.png
             ${{ runner.temp }}/vm-qcow2/serial.log
             ${{ runner.temp }}/vm-qcow2/qemu.log
