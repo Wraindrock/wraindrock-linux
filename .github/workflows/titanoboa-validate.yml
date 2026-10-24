@@ -77,7 +77,7 @@ jobs:
           iso="${{ steps.build.outputs.iso-dest }}"
           ls -l "${iso}"
           [[ $(stat -c %s "${iso}") -gt 1073741824 ]]
-          xorriso -indev "${iso}" -find / -type f 2>&1 | tee /mnt/iso/files.txt
+          xorriso -indev "${iso}" -find / -type f 2>&1 | tr -d "'" | tee /mnt/iso/files.txt
           grep -E '(^|/)(EFI/BOOT/(BOOTX64|grubx64|mmx64)\.efi|images/pxeboot/(vmlinuz|initrd\.img))$' /mnt/iso/files.txt
           sha256sum "${iso}" | tee "${iso}.sha256"
       - name: Upload the checksum
