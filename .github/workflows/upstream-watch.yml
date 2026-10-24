@@ -99,7 +99,7 @@ jobs:
               "SagerNet/sing-box", r"SFL-(.+?)-x86_64\.rpm"
           )
           ipp_version, ipp_url = latest_asset(
-              "SamiKalliomaki/ipp-duplexd", r"ipp-duplexd_(.+?)_amd64\.deb"
+              "Wraindrock/ipp-duplexd-fork", r"ipp-duplexd-fork-(.+?)-1\.fc44\.x86_64\.rpm"
           )
           tux_version, tux_url = latest_asset(
               "ronb1964/TuxTalk", r"tuxtalk-(.+?)-1\.x86_64\.rpm"
@@ -110,7 +110,7 @@ jobs:
               "rayburst": (ray_version, ray_url),
               # SFL's asset name has no release field; its RPM release is 1.
               "sing-box": (f"{sfl_version}-1", sfl_url),
-              "ipp-duplexd": (ipp_version, ipp_url),
+              "ipp-duplexd-fork": (f"{ipp_version}-1.fc44", ipp_url),
               # TuxTalk's asset name already includes the RPM release.
               "tuxtalk": (f"{tux_version}-1", tux_url),
           }
@@ -140,28 +140,9 @@ jobs:
                       line = "\t".join(fields)
               output.append(line)
 
-          IPP = "build_files/software/ipp-duplexd.tsv"
-          ipp_changed = False
-          ipp_output = []
-          for line in open(IPP).read().splitlines():
-              if not line or line.startswith("#"):
-                  ipp_output.append(line)
-                  continue
-              name, version, url, digest = line.split("\t")[:4]
-              new_version, new_url = resolved["ipp-duplexd"]
-              if new_version != version or new_url != url:
-                  data = get(new_url, raw=True)
-                  new_digest = hashlib.sha256(data).hexdigest()
-                  if new_digest != digest or new_version != version:
-                      changed.append(f"{name} {version} -> {new_version}")
-                      line = "\t".join([name, new_version, new_url, new_digest])
-                      ipp_changed = True
-              ipp_output.append(line)
-
           if changed:
               open(TSV, "w").write("\n".join(output) + "\n")
-              if ipp_changed:
-                  open(IPP, "w").write("\n".join(ipp_output) + "\n")
+
               print("\n".join(changed))
               with open(os.environ["GITHUB_OUTPUT"], "a") as handle:
                   handle.write("changed=true\n")
@@ -176,7 +157,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add build_files/software/rpms.tsv build_files/software/ipp-duplexd.tsv
+          git add build_files/software/rpms.tsv
           git commit -m "software: track new upstream releases"
           git push
 

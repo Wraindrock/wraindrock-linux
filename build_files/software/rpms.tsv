@@ -24,3 +24,4 @@ qt5-qtwebsockets	5.15.18-2.fc44	https://kojipkgs.fedoraproject.org/packages/qt5-
 hplip-gui	3.26.6-1.fc44	https://kojipkgs.fedoraproject.org/packages/hplip/3.26.6/1.fc44/x86_64/hplip-gui-3.26.6-1.fc44.x86_64.rpm	493ce9821d6e4bbf4fd2b5cc6243faaf4414c4d9652f43f4b68a508720bd096f	hplip=3.26.6-1.fc44
 hplip-gui	3.26.6-2.fc44	https://kojipkgs.fedoraproject.org/packages/hplip/3.26.6/2.fc44/x86_64/hplip-gui-3.26.6-2.fc44.x86_64.rpm	74047dddd313ea5756e20b07288a7a6420fecea64404f2f378ef6765bb9fa175	hplip=3.26.6-2.fc44
 tuxtalk	0.18.2-1	https://github.com/ronb1964/TuxTalk/releases/download/v0.18.2/tuxtalk-0.18.2-1.x86_64.rpm	566f0977636f0161d3a9af9142467df2687151621eac4a97f5cfa2585d85680c
+ipp-duplexd-fork	0.2.0-1.fc44	https://github.com/Wraindrock/ipp-duplexd-fork/releases/download/v0.2.0/ipp-duplexd-fork-0.2.0-1.fc44.x86_64.rpm	53d8c16655bb48cc2403e597e96fd6bf9e7d240a872a9b278746f137e49d4e4f

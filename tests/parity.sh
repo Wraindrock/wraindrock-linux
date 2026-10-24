@@ -307,13 +307,14 @@ expected_added = {
     "/etc/systemd/system/multi-user.target.wants/livesys-late.service",
     "/boot/efi/EFI/fedora",
     "/boot/efi/EFI/BOOT",
-    "/usr/bin/ipp-duplexd",
-    "/usr/bin/ipp-duplexd-setup",
-    "/usr/lib/systemd/user/ipp-duplexd.service",
-    "/usr/share/doc/ipp-duplexd/README.md",
-    "/usr/share/doc/ipp-duplexd/changelog.gz",
-    "/usr/share/doc/ipp-duplexd/copyright",
-    "/usr/share/doc/ipp-duplexd/ipp-duplexd.conf.example",
+    "/usr/bin/ipp-duplexd-fork",
+    "/usr/bin/ipp-duplexd-fork-setup",
+    "/usr/lib/systemd/user/ipp-duplexd-fork.service",
+    "/usr/share/doc/ipp-duplexd-fork",
+    "/usr/share/doc/ipp-duplexd-fork/README.md",
+    "/usr/share/doc/ipp-duplexd-fork/ipp-duplexd-fork.conf.example",
+    "/usr/share/licenses/ipp-duplexd-fork",
+    "/usr/share/licenses/ipp-duplexd-fork/LICENSE",
     "/usr/bin/hp-toolbox",
     "/usr/share/applications/hplip.desktop",
     "/usr/bin/tuxtalk",
@@ -362,22 +363,22 @@ else
     fail "RPM database is missing rpmdb.sqlite-shm"
 fi
 
-# --- ipp-duplexd ------------------------------------------------------------
+# --- ipp-duplexd-fork -------------------------------------------------------
 if in_image "${IMAGE}" \
-    'test -x /usr/bin/ipp-duplexd && test -x /usr/bin/ipp-duplexd-setup \
-        && test -r /usr/lib/systemd/user/ipp-duplexd.service \
-        && test -r /usr/share/doc/ipp-duplexd/ipp-duplexd.conf.example'; then
-    pass "ipp-duplexd binaries, unit and example config are installed"
+    'test -x /usr/bin/ipp-duplexd-fork && test -x /usr/bin/ipp-duplexd-fork-setup \
+        && test -r /usr/lib/systemd/user/ipp-duplexd-fork.service \
+        && test -r /usr/share/doc/ipp-duplexd-fork/ipp-duplexd-fork.conf.example'; then
+    pass "ipp-duplexd-fork binaries, unit and example config are installed"
 else
-    fail "ipp-duplexd installation is incomplete"
+    fail "ipp-duplexd-fork installation is incomplete"
 fi
-if in_image "${IMAGE}" 'out="$(/usr/bin/ipp-duplexd --help 2>&1 || true)"; grep -Fq -- "--printer" <<<"${out}"'; then
-    pass "ipp-duplexd runs and advertises --printer"
+if in_image "${IMAGE}" 'out="$(/usr/bin/ipp-duplexd-fork --help 2>&1 || true)"; grep -Fq -- "--printer" <<<"${out}"'; then
+    pass "ipp-duplexd-fork runs and advertises --printer"
 else
-    fail "ipp-duplexd does not run"
+    fail "ipp-duplexd-fork does not run"
 fi
 if in_image "${IMAGE}" 'rpm -q qpdf >/dev/null 2>&1'; then
-    pass "ipp-duplexd runtime dependency qpdf is present"
+    pass "ipp-duplexd-fork runtime dependency qpdf is present"
 else
     fail "qpdf is missing"
 fi

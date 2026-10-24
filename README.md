@@ -79,11 +79,11 @@ upstream RPM; hold its hotkey, speak, and the text is typed at the cursor. Its
 first run sets up a local hotkey helper; the app lives in `/opt/talktype`.
 
 Manual duplex printing is available through
-[ipp-duplexd](https://github.com/SamiKalliomaki/ipp-duplexd), a small virtual
-IPP printer that prints the odd pages, waits for you to flip the stack, then
-prints the backs. It is installed from its pinned upstream `.deb` (upstream
-publishes no RPM); run `ipp-duplexd-setup` once to point it at your real
-printer. Its `qpdf` dependency is installed too.
+[ipp-duplexd-fork](https://github.com/Wraindrock/ipp-duplexd-fork), a small
+virtual IPP printer that prints the odd pages, waits for you to flip the stack,
+then prints the backs. It is installed from the fork's pinned upstream RPM; run
+`ipp-duplexd-fork-setup` once to point it at your real printer. Its `qpdf`
+dependency is installed too.
 
 Printing and scanning are inherited from Fedora Silverblue: HPLIP 3.26.6 is
 already in the base with the HP CUPS backend and filters, `hp-setup`/`hp-info`,

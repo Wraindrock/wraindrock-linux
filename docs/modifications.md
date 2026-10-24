@@ -73,8 +73,8 @@ Docker and VS Code are deliberately **not** installed.
   is up and every declared app is present.
 - RPMs baked at pinned versions: Helium (official COPR), Clash Verge Rev,
   Rayburst, sing-box (SFL), TuxTalk, `hplip-gui` (matching the inherited HPLIP
-  core) and its Qt5/ReportLab closure. `ipp-duplexd` (upstream .deb) is unpacked
-  with its user unit. A daily watcher bumps upstream releases; every pin carries
+  core) and its Qt5/ReportLab closure, and `ipp-duplexd-fork` (the maintained
+  fork, with its user unit). A daily watcher bumps upstream releases; every pin carries
   a sha256 and an expected version.
 
 ## First boot

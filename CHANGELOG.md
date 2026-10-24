@@ -5,6 +5,16 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 image versions are the upstream channel plus an immutable build tag, see
 [docs/architecture.md](docs/architecture.md).
 
+## [0.22.1] - 2026-10-24
+
+### Changed
+
+- Replaced `ipp-duplexd` 0.1.3-1 (upstream Debian package) with
+  `ipp-duplexd-fork` 0.2.0-1.fc44 from the maintained fork
+  (`Wraindrock/ipp-duplexd-fork`), which publishes a native RPM. The binaries,
+  user unit and docs now carry the `-fork` names; `ipp-duplexd-fork-setup`
+  configures the real printer, and the upstream watcher tracks the fork's RPM.
+
 ## [0.22.0] - 2026-10-24
 
 ### Added

@@ -99,21 +99,6 @@ else
     fail "${containerfile} is missing"
 fi
 
-echo "ipp-duplexd"
-ipp_pin=build_files/software/ipp-duplexd.tsv
-if [[ -s ${ipp_pin} ]] && awk -F'\t' 'NF == 4 && $1 == "ipp-duplexd" && $2 != "" && $3 ~ /^https:\/\// && $4 ~ /^[0-9a-f]{64}$/' "${ipp_pin}" | grep -q .; then
-    pass "ipp-duplexd has a complete upstream pin"
-else
-    fail "ipp-duplexd pin is missing or incomplete"
-fi
-for needle in 'ipp-duplexd.tsv' 'data.tar' 'ipp-duplexd-setup' 'ipp-duplexd --help'; do
-    if grep -Fq -- "${needle}" build_files/build.sh; then
-        pass "build.sh handles ${needle}"
-    else
-        fail "build.sh does not handle ${needle}"
-    fi
-done
-
 echo "identity and application folders"
 if grep -Fq "Wraindrock release" build_files/build.sh; then
     pass "build.sh brands /etc/system-release (bootupd UEFI entry name)"
