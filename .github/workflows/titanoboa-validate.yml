@@ -77,15 +77,15 @@ jobs:
           iso="${{ steps.build.outputs.iso-dest }}"
           ls -l "${iso}"
           [[ $(stat -c %s "${iso}") -gt 1073741824 ]]
-          xorriso -indev "${iso}" -find / -type f 2>&1 | tr -d "'" > /mnt/iso/files.txt || true
-          test -s /mnt/iso/files.txt
-          python3 -c 'import re,sys; files=[l.strip() for l in open("/mnt/iso/files.txt")]; need=[r"^/EFI/BOOT/(BOOTX64|grubx64|mmx64)\.efi$", r"^/images/pxeboot/(vmlinuz|initrd\.img)$"]; missing=[p for p in need if not any(re.search(p,f) for f in files)]; print("ISO layout missing:", missing); sys.exit(1 if missing else 0)'
-          sha256sum "${iso}" | tee "${iso}.sha256"
+          xorriso -indev "${iso}" -find / -type f 2>&1 | tr -d "'" > ${RUNNER_TEMP}/files.txt || true
+          test -s ${RUNNER_TEMP}/files.txt
+          python3 -c 'import re,sys; files=[l.strip() for l in open(sys.argv[1])]; need=[r"^/EFI/BOOT/(BOOTX64|grubx64|mmx64)\.efi$", r"^/images/pxeboot/(vmlinuz|initrd\.img)$"]; missing=[p for p in need if not any(re.search(p,f) for f in files)]; print("ISO layout missing:", missing); sys.exit(1 if missing else 0)' "${RUNNER_TEMP}/files.txt"
+          sha256sum "${iso}" | tee "${RUNNER_TEMP}/iso.sha256"
       - name: Upload the checksum
         uses: actions/upload-artifact@v4
         with:
           name: titanoboa-validate-checksum
           path: |
-            /mnt/iso/*.sha256
-            /mnt/iso/files.txt
+            ${{ runner.temp }}/iso.sha256
+            ${{ runner.temp }}/files.txt
           retention-days: 3
