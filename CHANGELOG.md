@@ -5,6 +5,15 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 image versions are the upstream channel plus an immutable build tag, see
 [docs/architecture.md](docs/architecture.md).
 
+## [0.21.5] - 2026-10-24
+
+### Fixed
+
+- Each vendored GNOME extension now gets its own `schemas/gschemas.compiled`
+  at build time. Extension Manager and the shell open that file directly, so
+  Search Light and Logo Menu no longer fail with `GLib.FileError: Failed to
+  open file …/schemas/gschemas.compiled`.
+
 ## [0.21.4] - 2026-10-24
 
 ### Changed

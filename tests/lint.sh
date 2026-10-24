@@ -629,6 +629,11 @@ else
     pass "no credential-looking strings"
 fi
 
+if grep -Fq 'glib-compile-schemas "${schemas_dir}"' build_files/build.sh; then
+    pass "build.sh compiles per-extension schemas"
+else
+    fail "build.sh does not compile per-extension schemas"
+fi
 echo "shellcheck"
 if command -v shellcheck >/dev/null 2>&1; then
     if shellcheck --severity=warning --external-sources "${shell_files[@]}"; then

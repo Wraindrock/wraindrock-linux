@@ -166,7 +166,17 @@ for ext in appindicatorsupport@rgcjonas.gmail.com bazaar-integration@kolunmi.git
 done
 # GNOME launches ESM extensions from the system directory, but their settings
 # schemas must live in the system schema directory. Bluefin built them that
-# way; vendored extensions ship schemas/ next to their code.
+# way; vendored extensions ship schemas/ next to their code. The per-extension
+# gschemas.compiled is generated here (it is gitignored): Extension Manager and
+# the shell's settings helper open <extension>/schemas/gschemas.compiled
+# directly, so shipping only the XML is not enough.
+for schemas_dir in /usr/share/gnome-shell/extensions/*/schemas; do
+    [[ -d ${schemas_dir} ]] || continue
+    compgen -G "${schemas_dir}/*.gschema.xml" >/dev/null || continue
+    glib-compile-schemas "${schemas_dir}"
+    [[ -s ${schemas_dir}/gschemas.compiled ]] \
+        || die "could not compile extension schemas in ${schemas_dir}"
+done
 for schema in "${script_dir}"/gnome-extensions/*/schemas/*.xml; do
     [[ -e ${schema} ]] || continue
     install -m 0644 "${schema}" /usr/share/glib-2.0/schemas/

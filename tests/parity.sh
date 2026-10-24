@@ -758,6 +758,21 @@ for ext in appindicatorsupport@rgcjonas.gmail.com bazaar-integration@kolunmi.git
         fail "extension missing: ${ext}"
     fi
 done
+# Extension Manager and the shell's settings helper open the extension's own
+# schemas/gschemas.compiled. Shipping only the XML is not enough.
+for ext in appindicatorsupport@rgcjonas.gmail.com blur-my-shell@aunetx \
+    caffeine@patapon.info dash-to-dock@micxgx.gmail.com \
+    gradia-integration@alexandervanhee.github.io logomenu@aryan_k \
+    search-light@icedman.github.com; do
+    schemas="/usr/share/gnome-shell/extensions/${ext}/schemas"
+    if in_image "${IMAGE}" "test -d ${schemas}"; then
+        if in_image "${IMAGE}" "test -s ${schemas}/gschemas.compiled"; then
+            pass "extension schemas compiled: ${ext}"
+        else
+            fail "extension schemas not compiled: ${ext}"
+        fi
+    fi
+done
 
 expected_enabled="['appindicatorsupport@rgcjonas.gmail.com', 'bazaar-integration@kolunmi.github.io', 'blur-my-shell@aunetx', 'dash-to-dock@micxgx.gmail.com', 'gradia-integration@alexandervanhee.github.io', 'gsconnect@andyholmes.github.io', 'logomenu@aryan_k', 'search-light@icedman.github.com']"
 image_enabled="$(in_image "${IMAGE}" 'GSETTINGS_BACKEND=memory gsettings get org.gnome.shell enabled-extensions')"
