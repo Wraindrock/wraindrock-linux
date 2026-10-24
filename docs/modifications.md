@@ -55,7 +55,7 @@ Firefox and Software can be reinstalled from Bazaar when wanted.
   gdb/strace, python3-devel/pip, rpm-build) and extra fonts
   (JetBrains Mono, Cascadia Code, Adwaita, Inter).
 - Nine GNOME extensions (AppIndicator, Bazaar integration, Blur my Shell,
-  Caffeine, Dash to Dock, Gradia integration, GSConnect, Logo Menu, Search Light)
+  Caffeine, Dash to Dock, Gradia integration, Logo Menu, Search Light)
   with the Bluefin DX enabled set; Logo Menu is the official upstream v25.2 build,
   and all extension schemas are compiled into the system schema directory.
 

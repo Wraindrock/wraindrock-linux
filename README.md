@@ -43,7 +43,7 @@ silently.
 
 - 14 GNOME extensions are installed: the 5 Fedora ones plus AppIndicator
   support, Bazaar integration, Blur my Shell, Dash to Dock, Gradia integration,
-  GSConnect, Logo Menu and Search Light. The Bluefin DX enabled set is enabled
+  Logo Menu and Search Light. The Bluefin DX enabled set is enabled
   by default; `apps-menu`, `caffeine`, `places-menu`, `window-list` and
   `launch-new-instance` stay installed but off.
 - Extension Manager (`com.mattjakeman.ExtensionManager`) is installed on first

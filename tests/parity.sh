@@ -284,7 +284,6 @@ expected_added = {
     "/usr/share/gnome-shell/extensions/caffeine@patapon.info",
     "/usr/share/gnome-shell/extensions/dash-to-dock@micxgx.gmail.com",
     "/usr/share/gnome-shell/extensions/gradia-integration@alexandervanhee.github.io",
-    "/usr/share/gnome-shell/extensions/gsconnect@andyholmes.github.io",
     "/usr/share/gnome-shell/extensions/logomenu@aryan_k",
     "/usr/share/gnome-shell/extensions/search-light@icedman.github.com",
     "/etc/dconf/db/distro.d/20-wraindrock-keybindings",
@@ -750,7 +749,7 @@ else
 fi
 for ext in appindicatorsupport@rgcjonas.gmail.com bazaar-integration@kolunmi.github.io \
     blur-my-shell@aunetx caffeine@patapon.info dash-to-dock@micxgx.gmail.com \
-    gradia-integration@alexandervanhee.github.io gsconnect@andyholmes.github.io \
+    gradia-integration@alexandervanhee.github.io \
     logomenu@aryan_k search-light@icedman.github.com; do
     if in_image "${IMAGE}" "test -r /usr/share/gnome-shell/extensions/${ext}/metadata.json"; then
         pass "extension present: ${ext}"
@@ -774,7 +773,7 @@ for ext in appindicatorsupport@rgcjonas.gmail.com blur-my-shell@aunetx \
     fi
 done
 
-expected_enabled="['appindicatorsupport@rgcjonas.gmail.com', 'bazaar-integration@kolunmi.github.io', 'blur-my-shell@aunetx', 'dash-to-dock@micxgx.gmail.com', 'gradia-integration@alexandervanhee.github.io', 'gsconnect@andyholmes.github.io', 'logomenu@aryan_k', 'search-light@icedman.github.com']"
+expected_enabled="['appindicatorsupport@rgcjonas.gmail.com', 'bazaar-integration@kolunmi.github.io', 'blur-my-shell@aunetx', 'dash-to-dock@micxgx.gmail.com', 'gradia-integration@alexandervanhee.github.io', 'logomenu@aryan_k', 'search-light@icedman.github.com']"
 image_enabled="$(in_image "${IMAGE}" 'GSETTINGS_BACKEND=memory gsettings get org.gnome.shell enabled-extensions')"
 if [[ ${image_enabled} == "${expected_enabled}" ]]; then
     pass "enabled GNOME extensions match the Bluefin DX default"

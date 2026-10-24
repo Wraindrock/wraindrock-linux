@@ -122,7 +122,7 @@ cat > "${override}" <<'EOF'
 # same list; a user's own favorite-apps setting always wins.
 [org.gnome.shell]
 favorite-apps=['helium.desktop', 'com.github.flxzt.rnote.desktop', 'com.ranfdev.DistroShelf.desktop', 'org.gnome.Nautilus.desktop', 'io.github.kolunmi.Bazaar.desktop', 'io.missioncenter.MissionCenter.desktop', 'org.gnome.Ptyxis.desktop']
-enabled-extensions=['appindicatorsupport@rgcjonas.gmail.com', 'bazaar-integration@kolunmi.github.io', 'blur-my-shell@aunetx', 'dash-to-dock@micxgx.gmail.com', 'gradia-integration@alexandervanhee.github.io', 'gsconnect@andyholmes.github.io', 'logomenu@aryan_k', 'search-light@icedman.github.com']
+enabled-extensions=['appindicatorsupport@rgcjonas.gmail.com', 'bazaar-integration@kolunmi.github.io', 'blur-my-shell@aunetx', 'dash-to-dock@micxgx.gmail.com', 'gradia-integration@alexandervanhee.github.io', 'logomenu@aryan_k', 'search-light@icedman.github.com']
 
 # IBus (not Fcitx) is the input method; libpinyin is the Chinese engine. The
 # engine already ships in the base, so only the default needs declaring. A
@@ -152,14 +152,14 @@ if rpm -q fcitx5 >/dev/null 2>&1; then
 fi
 
 # 3d-bis. GNOME extensions and their dconf presets. The uBlue Silverblue base
-# ships Fedora's standard shell extensions; the Bluefin DX set (blur, GsConnect,
+# ships Fedora's standard shell extensions; the Bluefin DX set (blur,
 # Logo Menu, Search Light, AppIndicator support, Bazaar/Gradia integration,
 # Dash to Dock, Caffeine) is vendored under software/gnome-extensions.
 install -d /usr/share/gnome-shell/extensions
 cp -a "${script_dir}/gnome-extensions/." /usr/share/gnome-shell/extensions/
 for ext in appindicatorsupport@rgcjonas.gmail.com bazaar-integration@kolunmi.github.io \
     blur-my-shell@aunetx caffeine@patapon.info dash-to-dock@micxgx.gmail.com \
-    gradia-integration@alexandervanhee.github.io gsconnect@andyholmes.github.io \
+    gradia-integration@alexandervanhee.github.io \
     logomenu@aryan_k search-light@icedman.github.com; do
     [[ -r "/usr/share/gnome-shell/extensions/${ext}/metadata.json" ]] \
         || die "extension ${ext} is missing"
@@ -660,7 +660,6 @@ cat > /usr/share/wraindrock/delta.json <<EOF
       "/usr/share/gnome-shell/extensions/caffeine@patapon.info",
       "/usr/share/gnome-shell/extensions/dash-to-dock@micxgx.gmail.com",
       "/usr/share/gnome-shell/extensions/gradia-integration@alexandervanhee.github.io",
-      "/usr/share/gnome-shell/extensions/gsconnect@andyholmes.github.io",
       "/usr/share/gnome-shell/extensions/logomenu@aryan_k",
       "/usr/share/gnome-shell/extensions/search-light@icedman.github.com",
       "/etc/dconf/db/distro.d/20-wraindrock-keybindings",

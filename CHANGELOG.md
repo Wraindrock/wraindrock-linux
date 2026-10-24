@@ -5,6 +5,14 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 image versions are the upstream channel plus an immutable build tag, see
 [docs/architecture.md](docs/architecture.md).
 
+## [0.21.6] - 2026-10-24
+
+### Removed
+
+- GSConnect. The vendored copy does not work with GNOME Shell 50
+  (`Error: Value of property 'settings_schema' is not of type Gio.SettingsSchema`)
+  and is not needed, so it is no longer shipped or enabled.
+
 ## [0.21.5] - 2026-10-24
 
 ### Fixed
