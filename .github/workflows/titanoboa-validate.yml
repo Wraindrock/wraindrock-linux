@@ -76,12 +76,15 @@ jobs:
           set -euxo pipefail
           iso="${{ steps.build.outputs.iso-dest }}"
           ls -l "${iso}"
-          xorriso -indev "${iso}" -find / -type f 2>/dev/null \
-            | grep -E '^/EFI/BOOT/(BOOTX64|grubx64|mmx64)\.efi$|^/images/pxeboot/(vmlinuz|initrd\.img)$'
+          [[ $(stat -c %s "${iso}") -gt 1073741824 ]]
+          xorriso -indev "${iso}" -find / -type f 2>&1 | tee /mnt/iso/files.txt
+          grep -E '(^|/)(EFI/BOOT/(BOOTX64|grubx64|mmx64)\.efi|images/pxeboot/(vmlinuz|initrd\.img))$' /mnt/iso/files.txt
           sha256sum "${iso}" | tee "${iso}.sha256"
       - name: Upload the checksum
         uses: actions/upload-artifact@v4
         with:
           name: titanoboa-validate-checksum
-          path: /mnt/iso/*.sha256
+          path: |
+            /mnt/iso/*.sha256
+            /mnt/iso/files.txt
           retention-days: 3
