@@ -67,6 +67,7 @@ jobs:
           command -v mkfs.btrfs >/dev/null || missing+=(btrfs-progs)
           command -v qemu-img >/dev/null || missing+=(qemu-utils)
           command -v qemu-system-x86_64 >/dev/null || missing+=(qemu-system-x86)
+          command -v skopeo >/dev/null || missing+=(skopeo)
           if [ "${#missing[@]}" -gt 0 ]; then
             sudo apt-get update
             sudo apt-get install -y "${missing[@]}"
@@ -97,40 +98,37 @@ jobs:
           img=/mnt/podman-storage.img
           if [ ! -d /mnt ]; then img=/var/tmp/podman-storage.img; fi
           sudo mkdir -p /var/lib/containers/storage
-          sudo truncate -s 90G "$img"
+          sudo truncate -s 60G "$img"
           sudo mkfs.btrfs -f "$img"
           sudo podman system reset --force || true
           sudo systemctl stop podman.service podman.socket 2>/dev/null || true
           sudo mount -o compress=zstd:1 "$img" /var/lib/containers/storage
           sudo df -h /var/lib/containers/storage
 
-      - name: Pull image and builder
+      - name: Pull the builder and resolve the image
         run: |
           set -euo pipefail
-          for ref in "${{ inputs.image_ref }}" "${{ inputs.channel_ref }}"; do
-            for attempt in 1 2 3; do
-              sudo podman pull "${ref}" && break
-              [ "$attempt" = 3 ] && { echo "::error::cannot pull ${ref}"; exit 1; }
-              sleep $((attempt * 20))
-            done
-          done
-          # Installed systems track the channel tag, so it must resolve to the
-          # exact image we verified for this run (an immutable tag/digest).
-          image_id=$(sudo podman image inspect --format '{{ .Id }}' "${{ inputs.image_ref }}")
-          channel_id=$(sudo podman image inspect --format '{{ .Id }}' "${{ inputs.channel_ref }}")
-          if [ "${image_id}" != "${channel_id}" ]; then
+          sudo podman pull "${BIB_IMAGE}"
+          # Resolve the target image from the registry without copying it into
+          # podman storage: bootc-image-builder pulls it into its own storage,
+          # and a host copy would be a second full uncompressed copy (several
+          # GB) on a runner that already holds the deployment and the output.
+          mkdir -p output
+          sudo skopeo inspect "docker://${{ inputs.image_ref }}" > output/image-inspect.json
+          image_digest=$(python3 -c 'import json;print(json.load(open("output/image-inspect.json"))["Digest"])')
+          channel_digest=$(sudo skopeo inspect "docker://${{ inputs.channel_ref }}" | python3 -c 'import json,sys;print(json.load(sys.stdin)["Digest"])')
+          if [ "${image_digest}" != "${channel_digest}" ]; then
             echo "::error::channel tag and requested image differ; refusing to build"
             exit 1
           fi
-          sudo podman pull "${BIB_IMAGE}"
 
       - name: Record image identity
         id: image
         run: |
           set -euo pipefail
-          VERSION=$(sudo podman image inspect --format '{{ index .Labels "org.opencontainers.image.version" }}' "${{ inputs.image_ref }}")
-          REVISION=$(sudo podman image inspect --format '{{ index .Labels "org.opencontainers.image.revision" }}' "${{ inputs.image_ref }}")
-          DIGEST=$(sudo podman image inspect --format '{{ .Digest }}' "${{ inputs.image_ref }}")
+          VERSION=$(python3 -c 'import json;print(json.load(open("output/image-inspect.json"))["Labels"]["org.opencontainers.image.version"])')
+          REVISION=$(python3 -c 'import json;print(json.load(open("output/image-inspect.json"))["Labels"]["org.opencontainers.image.revision"])')
+          DIGEST=$(python3 -c 'import json;print(json.load(open("output/image-inspect.json"))["Digest"])')
           [ -n "${VERSION}" ] && [ -n "${REVISION}" ]
           {
             echo "version=${VERSION}"
@@ -163,6 +161,12 @@ jobs:
           # The image carries the container-native ISO contract
           # (/usr/lib/bootc-image-builder/iso.yaml plus a dmsquash-live
           # initramfs); Titanoboa assembles it into a live ISO.
+          # Reclaim the builder image before the live build: Titanoboa needs
+          # the target image in podman storage, and the runner store is sized
+          # for one copy at a time.
+          sudo podman rmi "${BIB_IMAGE}" 2>/dev/null || true
+          sudo podman image prune -f >/dev/null 2>&1 || true
+          sudo podman pull "${{ inputs.channel_ref }}"
           git clone -q --filter=blob:none https://github.com/ublue-os/titanoboa.git /tmp/titanoboa
           git -C /tmp/titanoboa fetch -q --depth 1 origin 5c457c3d0518bd17e754be0fd98a60d29d26abb4
           git -C /tmp/titanoboa checkout -q FETCH_HEAD
